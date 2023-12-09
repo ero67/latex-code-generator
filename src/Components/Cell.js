@@ -1,6 +1,6 @@
-import React, { useState, memo } from "react";
+import React, { useState } from "react";
 
-const Cell = memo (({ option, onClick, row, col }) => {
+const Cell = ({ option, onClick, row, col,marking }) => {
   // Declare a state variable to store the value of the cell
   const [cellValue, setCellValue] = useState (null);
 
@@ -11,6 +11,7 @@ const Cell = memo (({ option, onClick, row, col }) => {
   //       setCellValue (option);
   //    }
   // };
+  
 
   const handleClick = () => {
     if (cellValue === null) {
@@ -18,6 +19,7 @@ const Cell = memo (({ option, onClick, row, col }) => {
       // Call the onClick callback with row and col information
       onClick(row, col);
     }
+    // console.log(marking);
   };
   
   // Define a function to render the cell value
@@ -32,6 +34,6 @@ const Cell = memo (({ option, onClick, row, col }) => {
       {/* {<ValueOfCell/>} */}
     </div>
   );
-});
+};
 
 export default Cell;

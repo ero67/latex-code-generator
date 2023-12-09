@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import './index.css'
 import Cell from "./Components/Cell";
-import Implicant from "./Components/Implicant"
+// import Implicant from "./Components/Implicant"
 // import { Stage, Layer, Rect } from "react-konva";
 // import { Stage, Layer, Rect, Text, Circle, Line } from 'react-konva';
 
@@ -14,7 +14,8 @@ const Kmap = () => {
     const [opposite, setOpposite] = useState(1);
     const [disabled, Disable] = useState(false);
     const [implicants, addImplicant] = useState([]);
-    
+    const [markingImplicant,setMarkingImplicant]= useState(false);
+ 
 
     // zmena velkosti tabulky
     const handleTableSizeChange = (event) => {
@@ -42,7 +43,7 @@ const Kmap = () => {
             return;
           }
         }
-
+        
         Disable(true);
         setOption(null);
         setOpposite(null);
@@ -113,21 +114,6 @@ const Kmap = () => {
 
       code +="}";
 
-      if (disabled===false){
-        code += "\\implicant{";
-        for(let row = 0; row < rows; row++ ){
-          for(let col = 0; col < cols ; col++){
-            if(content[indexes[row][col]] === "1"){
-              code += indexes[row][col];
-              if(row*cols + col < content.length - 1){
-                code += ",";
-              }
-            }
-          }
-        }
-        code += "}";
-      }
-
       code += "\\end{karnaugh-map}";
       console.log(code);
       alert(code);
@@ -135,32 +121,52 @@ const Kmap = () => {
       
   };
 
+  const addingimplicant = () => {
+      setMarkingImplicant(!markingImplicant);
+  }
+
   const handleCellClick = (row, col) => {
-    console.log(`Clicked on cell at row ${row}, col ${col}`);
+    // console.log(markingImplicant);
+    // console.log(disabled);
     // code += "\\implicant"
+
+    let indexes= [
+      [0,1,3,2],
+      [4,5,7,6],
+      [12,13,15,14],
+      [8,9,11,10]
+    ];
+
+    if(disabled && markingImplicant){
+         addImplicant([...implicants, indexes[row][col]]);
+         console.log(implicants);
+      
+
+    }
     
   };
-    const generateTable = () => {
-        const [rows, cols] = tableSize.split('x').map(Number);
-        const table = [];
-        for (let row = 0; row < rows; row++) {
-            const currentRow = [];
-            for (let col = 0; col < cols; col++) {
-              currentRow.push(
-                <Cell 
-                key={`${row}${col}`} 
-                option={option}
-                onClick={handleCellClick} 
-                row={row}
-                col={col}
-                />
-              );
-            }
-            table.push(<div className="row">{currentRow}</div>);
-        }
+  const generateTable = () => {
+      const [rows, cols] = tableSize.split('x').map(Number);
+      const table = [];
+      for (let row = 0; row < rows; row++) {
+          const currentRow = [];
+          for (let col = 0; col < cols; col++) {
+            currentRow.push(
+              <Cell 
+              key={`${row}${col}`} 
+              option={option}
+              onClick={handleCellClick} 
+              row={row}
+              col={col}
+              marking={markingImplicant}
+              />
+            );
+          }
+          table.push(<div className="row">{currentRow}</div>);
+      }
 
-        return <div className='karnaugh-map'>{table}</div>;
-    }
+      return <div className='karnaugh-map'>{table}</div>;
+  }
 
 
     
@@ -186,6 +192,7 @@ const Kmap = () => {
                 <button id="autofill" disabled={disabled} onClick={fillCells}>Fill the rest</button>
                 <button id="submitBtn" onClick={handleDisable} disabled={disabled}>Submit</button>
                 <button onClick={()=>generateCodeLaTeX()}>test</button>
+                <button onClick={()=>addingimplicant()} style={{ backgroundColor: markingImplicant === true ? "grey" : 'white' }}>Add impl</button>
             </div>
         </div>
         <div className='container' >
