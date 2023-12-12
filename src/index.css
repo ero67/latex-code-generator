@@ -29,7 +29,7 @@
   left: 0;
   top: 0;
   height: 100vh;
-  width: 80px;
+  width: 5rem;
   background: rgb(128, 131, 219);
   padding: .4rem .8rem;
   transition: all 0.5s ease;
@@ -209,7 +209,7 @@ h1{
   height: 30px;
   background-color: #13b245;
   color: #fffdfd;
-  border: 1px solid #ffffff;
+  border: 1px solid #000000;
   border-radius: 3px;
   /* font-size: 10px; */
   font-weight: bold;
@@ -217,6 +217,32 @@ h1{
   margin-left: 10px;
   
 }
+#addImplicant{
+  width: 100px;
+  height: 30px;
+  background-color: #1368b2;
+  color: #000000;
+  border: 1px solid #000000;
+  border-radius: 3px;
+  /* font-size: 10px; */
+  font-weight: bold;
+  cursor: pointer; 
+  margin-left: 10px;
+}
+
+#finishImplicant{
+  width: 120px;
+  height: 30px;
+  background-color: #1368b2;
+  color: #ffffff;
+  border: 1px solid #000000;
+  border-radius: 3px;
+  /* font-size: 10px; */
+  font-weight: bold;
+  cursor: pointer; 
+  margin-left: 10px;
+}
+
 
 .Buttons {
   display: inline-block;
@@ -262,6 +288,20 @@ h1{
   margin: 3px;
   place-self: center;
 }
+
+@media screen and (max-width: 700px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .sidebar.active{
+    width: 100%;
+  }
+
+}
+
 
 :disabled{
   display: none;
@@ -380,4 +420,9 @@ select::after {
   transform: translateY(-50%); /* Center the pseudo-element vertically */
   color: #ccc; /* Set the color of the pseudo-element */
   pointer-events: none; /* Prevent the pseudo-element from being clickable */
+}
+
+.content{
+  position: relative;
+  transition: all 0.5s ease;
 }

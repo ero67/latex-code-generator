@@ -15,7 +15,8 @@ const Kmap = () => {
     const [disabled, Disable] = useState(false);
     const [implicants, addImplicant] = useState([]);
     const [markingImplicant,setMarkingImplicant]= useState(false);
- 
+    const [numberOfImplicants, setNumberOfImplicants] = useState(0);
+    const [implicant,addPartOfImplicant] = useState([]);
 
     // zmena velkosti tabulky
     const handleTableSizeChange = (event) => {
@@ -113,22 +114,49 @@ const Kmap = () => {
       }
 
       code +="}";
+      
+      for(let row =0; row < implicants.length; row ++){
+        code += "\\implicant{";
+        code += implicants[row][0];
+        code += "}";
+        code += "{";
+        code += implicants[row][1];
+        code +="}";
+        
+      }
+
 
       code += "\\end{karnaugh-map}";
-      console.log(code);
+      // console.log(code);
       alert(code);
+      console.log(implicants);
       return code;
       
   };
 
+
+  const finishImplicant = () =>{
+    // if(numberOfImplicants>=2){
+      addImplicant([...implicants, implicant]);
+      addPartOfImplicant([]);
+      setNumberOfImplicants(0);
+      setMarkingImplicant(false);
+    // }
+  }
+
   const addingimplicant = () => {
       setMarkingImplicant(!markingImplicant);
+      // if(markingImplicant===false){
+      //   setNumberOfImplicants(0);
+      // }
+      // console.log(implicants) 
   }
 
   const handleCellClick = (row, col) => {
     // console.log(markingImplicant);
     // console.log(disabled);
-    // code += "\\implicant"
+      // code += "\\implicant"
+    
 
     let indexes= [
       [0,1,3,2],
@@ -136,13 +164,25 @@ const Kmap = () => {
       [12,13,15,14],
       [8,9,11,10]
     ];
-
+    // console.log("number of iplmicants");
+    // console.log(numberOfImplicants);
+    console.log(disabled,markingImplicant);
     if(disabled && markingImplicant){
-         addImplicant([...implicants, indexes[row][col]]);
-         console.log(implicants);
-      
+        addPartOfImplicant([...implicant,indexes[row][col]])
+        setNumberOfImplicants(numberOfImplicants+1);
+        // if(numberOfImplicants===2){
+        //   addImplicant([...implicants, implicant]);
+        console.log("this is implicant");
+        console.log(implicant);
+        //   addPartOfImplicant([]);
+          
+        //   // console.log("implicantS")
+        //   // console.log(implicants);
+        //   setNumberOfImplicants(0);
+        //   setMarkingImplicant(false);
+        // }
+      }
 
-    }
     
   };
   const generateTable = () => {
@@ -190,16 +230,17 @@ const Kmap = () => {
                 <button id="button0" disabled={disabled} onClick={()=>handleOptionChange(0)} style={{ backgroundColor: option === 0 ? "green" : 'white' }}>0</button>
                 <button id="button1" disabled={disabled} onClick={()=>handleOptionChange(1)} style={{ backgroundColor: option === 1 ? "green" : 'white' }}>1</button>
                 <button id="autofill" disabled={disabled} onClick={fillCells}>Fill the rest</button>
-                <button id="submitBtn" onClick={handleDisable} disabled={disabled}>Submit</button>
-                <button onClick={()=>generateCodeLaTeX()}>test</button>
-                <button onClick={()=>addingimplicant()} style={{ backgroundColor: markingImplicant === true ? "grey" : 'white' }}>Add impl</button>
+                <button id="submitBtn" onClick={()=>handleDisable()} disabled={disabled}>Submit</button>
+                <button id="submitBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button>
+                <button id ="addImplicant" disabled={!disabled} onClick={()=>addingimplicant()} style={{ backgroundColor: markingImplicant === true ? "red" : 'white' }}>+ Add impl</button>
+                <button id="finishImplicant" disabled={!disabled} onClick={()=>finishImplicant()}>Finish Implicant</button>
             </div>
         </div>
         <div className='container' >
               {/* <canvas></canvas> */}
               {generateTable()}  
               </div>
-        
+              
       </div>
     );
 }
