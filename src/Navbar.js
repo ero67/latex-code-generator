@@ -6,16 +6,18 @@ import './index.css'
 import { BsTreeFill } from "react-icons/bs";
 import { BsTree } from "react-icons/bs";
 import { FaHome } from "react-icons/fa";
+import React, { useState } from "react";
 const Navbar = () => {
-
+    
+    
     const clickActiveSidebar = () =>{
         let sidebar = document.querySelector(".sidebar")
         sidebar.classList.toggle("active");
-        console.log("heloo")
     }
 
     return (  
         <div className="sidebar">
+        {/* // <div className="sidebar"> */}
             <div className="top">
                 <div className="logo">
                 

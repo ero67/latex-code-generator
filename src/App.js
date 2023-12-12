@@ -1,7 +1,13 @@
 
-import Navbar from './Navbar';
-import Home from './Home'
-import Kmap from './Kmap'
+import Navbar from './Components/Navbar/Navbar';
+import Home from './Pages/Home'
+import Kmap from './Pages/Kmap'
+// Bootstrap CSS
+// import "bootstrap/dist/css/bootstrap.min.css";
+// // Bootstrap Bundle JS
+// import "bootstrap/dist/js/bootstrap.bundle.min";
+
+
 // import Tree from './Tree'
 // import ReactDOM from 'react-dom';
 // import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
@@ -16,7 +22,7 @@ function App() {
       <div className="content">
           <Routes>
             <Route path='/' element={<Home></Home>}/>
-            <Route path='/karnaugh-map' element={<Kmap></Kmap>}/>
+            <Route path='/karnaughove-mapy' element={<Kmap></Kmap>}/>
             {/* <Route path='/ast' element={<Tree></Tree>}/> */}
           </Routes>
      </div>
