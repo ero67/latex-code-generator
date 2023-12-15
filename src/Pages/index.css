@@ -217,6 +217,23 @@ h1{
   margin-left: 10px;
   
 }
+
+#generateBtn {
+  place-self: center;
+  width: 100px;
+  height: 30px;
+  background-color: #13b245;
+  color: #fffdfd;
+  border: 1px solid #000000;
+  border-radius: 3px;
+  /* font-size: 10px; */
+  font-weight: bold;
+  cursor: pointer; 
+  margin-left: 10px;
+  margin-bottom: 1rem;
+  
+}
+
 #addImplicant{
   width: 100px;
   height: 30px;
@@ -359,6 +376,7 @@ h1{
   display: inline-block;
   border: 1px solid rgb(75, 43, 43);
   place-self: center;
+  margin-bottom: 5rem;
 }
 
 .row {
@@ -453,3 +471,5 @@ select::after {
   position: relative;
   transition: all 0.5s ease;
 }
+
+              

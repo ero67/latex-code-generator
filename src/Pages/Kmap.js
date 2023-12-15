@@ -3,7 +3,9 @@ import React, { useState } from 'react';
 // import * as React from 'react';
 import './index.css'
 import Cell from "../Components/Cell";
-// import { Link } from 'react-router-dom';
+import GeneratedCode from './GeneratedCode';
+
+import { Link, useNavigate } from 'react-router-dom';
 // import Button from '@mui/material/Button';
 
 // Bootstrap CSS
@@ -38,9 +40,22 @@ const Kmap = () => {
     // corner implicant
     const [implicantCorner, addImplicantCorner]= useState(false);
 
-    // const [generatedCode, setGeneratedCode] = useState([]);
+    const [generatedCode, setGeneratedCode] = useState("Your code will appear here \n after you click on Generate Code button");
+    // const code='a';
 
 
+    // const navigate= useNavigate();
+    // const navigateToCodePage = () => {
+    //   navigate ('/generated-code', {state: {code: generatedCode}})
+    // }
+
+
+    // const generateCodePage = () =>{
+    //   const code = new URLSearchParams();
+    //   console.log(generateCodeLaTeX());
+    //   code.append('code', generateCodeLaTeX());
+    //   navigate('/generated-code');
+    // }
 
     // zmena velkosti tabulky
     const handleTableSizeChange = (event) => {
@@ -111,9 +126,9 @@ const Kmap = () => {
       code += cols;
       code += "][";
       code += rows;
-      code += "]";
+      code += "]\n";
 
-      code += "\\manualterms{";
+      code += "       \\manualterms{";
       // indexes of cells on grid of karnaugh-map package
       let indexes= [
         [0,1,3,2],
@@ -149,23 +164,23 @@ const Kmap = () => {
         }
       }
 
-      code +="}";
+      code +="}\n";
       
 
       //generating code for classic implicant
       //required number of {} in \implicant command is 2 so wa can hardcode it
       for(let row =0; row < implicants.length; row ++){
-        code += "\\implicant{";
+        code += "       \\implicant{";
         code += implicants[row][0];
         code += "}";
         code += "{";
         code += implicants[row][1];
-        code +="}";
+        code +="}\n";
         
       }
 
       if(implicantCorner && rows===4 && cols===4){
-        code += "\\implicantcorner";
+        code += "       \\implicantcorner\n";
       }
       else if(implicantCorner && (rows!==4 || cols!==4)){
         alert('Implicant na rohy sa dá zaznačiť len na poliach rozmeru 4x4')
@@ -175,7 +190,7 @@ const Kmap = () => {
       // required number of {} for \implicantedge command is 4
       // if i want to mark only 2 cells i need to put both indexes twice
       for(let row =0; row < edgeImplicants.length; row ++){
-        code += "\\implicantedge";
+        code += "       \\implicantedge";
         if(edgeImplicants[row].length===2){
           code +="{";
           code += edgeImplicants[row][0];
@@ -189,7 +204,7 @@ const Kmap = () => {
           code +="}";
           code +="{";
           code += edgeImplicants[row][1];
-          code +="}";
+          code +="}\n";
         }
         else {
           code +="{";
@@ -204,7 +219,7 @@ const Kmap = () => {
           code +="}";
           code +="{";
           code += edgeImplicants[row][3];
-          code +="}";
+          code +="}\n";
 
         }
         // code += edgeImplicants[row][0];
@@ -217,9 +232,16 @@ const Kmap = () => {
 
       code += "\\end{karnaugh-map}";
       // console.log(code);
-      alert(code);
-      console.log(implicants);
-      return code;
+      // alert(code);
+      setGeneratedCode(code);
+
+      console.log(generatedCode)
+      // setGeneratedCode(generatedCode+code);
+      // console.log(generatedCode);
+      // alert(generatedCode);
+      // console.log(generatedCode);
+      // console.log(implicants);
+      // return code;
       
   };
 
@@ -306,9 +328,9 @@ const Kmap = () => {
   };
 
 
-  const sortEdgeImplicants = () =>{
+  // const sortEdgeImplicants = () =>{
     
-  }
+  // }
 
 
   const generateTable = () => {
@@ -356,7 +378,9 @@ const Kmap = () => {
                 <button id="button1" disabled={disabled} onClick={()=>handleOptionChange(1)} style={{ backgroundColor: option === 1 ? "green" : 'white' }}>1</button>
                 <button id="autofill" disabled={disabled} onClick={fillCells}>Fill the rest</button>
                 <button id="submitBtn" onClick={()=>handleDisable()} disabled={disabled}>Submit</button>
-                <button id="submitBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button>
+                
+                 {/* <button id="submitBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button> */}
+              
                 <button id ="addImplicant" disabled={!disabled} onClick={()=>addingimplicant()} style={{ backgroundColor: markingImplicant === true ? "red" : 'white' }}>+ Add impl</button>
                 <button id="addImplicant" disabled={!disabled} onClick={()=>addingEdgeimplicant()} style={{ backgroundColor: markingEdgeImplicant === true ? "red" : 'white' }}>+ Edge impl</button>
                 <button id ="cornerImplicant" disabled={!disabled} onClick={()=>addCornerImplicant()} >+ Corner impl</button>
@@ -369,7 +393,12 @@ const Kmap = () => {
                 
               {/* </div> */}
               {/* <div>{()=>generateCodeLaTeX()}</div> */}
+              <button id="generateBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button>
+
+              <GeneratedCode id="generatedCode" disabled = {!disabled} code={generatedCode}>
+              </GeneratedCode>
       </div>
+      
     );
 }
 
