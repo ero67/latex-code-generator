@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const Cell = ({ option, onClick, row, col,marking }) => {
+const Cell = ({ option, onClick, row, col}) => {
   // Declare a state variable to store the value of the cell
   const [cellValue, setCellValue] = useState (null);
 

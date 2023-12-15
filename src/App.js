@@ -1,19 +1,13 @@
 
 import Navbar from './Components/Navbar/Navbar';
+import GeneratedCode from './Pages/GeneratedCode';
 import Home from './Pages/Home'
 import Kmap from './Pages/Kmap'
-// Bootstrap CSS
-// import "bootstrap/dist/css/bootstrap.min.css";
-// // Bootstrap Bundle JS
-// import "bootstrap/dist/js/bootstrap.bundle.min";
 
-
-// import Tree from './Tree'
-// import ReactDOM from 'react-dom';
-// import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import {Route, Routes} from 'react-router-dom';
-import { BrowserRouter as Router } from 'react-router-dom';
-// import Implicant from "./Components/Implicant"
+// import { BrowserRouter as Router } from 'react-router-dom';
+// import "bootstrap/dist/css/bootstrap.min.css";
+
 
 function App() {
   return (
@@ -23,6 +17,7 @@ function App() {
           <Routes>
             <Route path='/' element={<Home></Home>}/>
             <Route path='/karnaughove-mapy' element={<Kmap></Kmap>}/>
+            <Route path='/generated-code' element={<GeneratedCode></GeneratedCode>}></Route>
             {/* <Route path='/ast' element={<Tree></Tree>}/> */}
           </Routes>
      </div>

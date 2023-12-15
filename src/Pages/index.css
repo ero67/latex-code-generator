@@ -231,6 +231,7 @@ h1{
 }
 
 #finishImplicant{
+  
   width: 120px;
   height: 30px;
   background-color: #1368b2;
@@ -243,10 +244,31 @@ h1{
   margin-left: 10px;
 }
 
+#cornerImplicant{
+  width: 120px;
+  height: 30px;
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid #000000;
+  border-radius: 3px;
+  /* font-size: 10px; */
+  font-weight: bold;
+  cursor: pointer; 
+  margin-left: 10px;
+}
+#cornerImplicant:hover {
+  background-color: #f2f2f2;
+}
+
+#cornerImplicant:active {
+  background-color: #d9d9d9;
+}
+
 
 .Buttons {
   display: inline-block;
   margin-right: 10px;
+  /* width: 37rem; */
  }
  
   #button0 {
@@ -287,6 +309,7 @@ h1{
   display: block;
   margin: 3px;
   place-self: center;
+  /* width: max-content; */
 }
 
 /* @media screen and (max-width: 700px) {
@@ -330,6 +353,7 @@ h1{
 
 .Kmap{
   display: grid;
+  width: max-content;
 }
 .karnaugh-map {
   display: inline-block;
@@ -361,17 +385,17 @@ h1{
 }
 
 .container{
-  display: grid;
+  display: flex;
   position: relative;
   /* place-self: center; */
 
 }
 
-.container canvas, .karnaugh-map {
+/* .container canvas, .karnaugh-map {
   position: absolute;
   top: 50%;
   left: 25%;
-}
+} */
 
 canvas{
   border: 1px solid black;
@@ -425,6 +449,7 @@ select::after {
 }
 
 .content{
+  display: flex;
   position: relative;
   transition: all 0.5s ease;
 }
