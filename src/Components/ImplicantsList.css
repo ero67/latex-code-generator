@@ -1,0 +1,25 @@
+/* ImplicantsList.css */
+.implicants-list-container {
+    margin-top: 20px;
+    margin-bottom: 2rem;
+    
+  }
+  
+  .implicants-list {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .implicant-item {
+    cursor: pointer;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  .implicant-item:hover {
+    background-color: #f0f0f0;
+  }
+  

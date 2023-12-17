@@ -16,7 +16,7 @@ function App() {
       <div className="content">
           <Routes>
             <Route path='/' element={<Home></Home>}/>
-            <Route path='/karnaughove-mapy' element={<Kmap></Kmap>}/>
+            <Route path='/karnaugh-maps' element={<Kmap></Kmap>}/>
             {/* <Route path='/generated-code' element={<GeneratedCode></GeneratedCode>}></Route> */}
             {/* <Route path='/generated-code' element={<GeneratedCode></GeneratedCode>}></Route> */}
             {/* <Route path='/ast' element={<Tree></Tree>}/> */}

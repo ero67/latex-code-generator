@@ -16,7 +16,7 @@ export const SidebarData = [
   },
   {
     title: 'Karnaughova mapa',
-    path: '/karnaughove-mapy',
+    path: '/karnaugh-maps',
     icon: <FaTableCells/>,
     cName: 'nav-text'
   },

@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import './index.css'
 import Cell from "../Components/Cell";
 import GeneratedCode from './GeneratedCode';
+import ImplicantsList from '../Components/ImplicantsList';
 
-import { Link, useNavigate } from 'react-router-dom';
+// import { Link, useNavigate } from 'react-router-dom';
 // import Button from '@mui/material/Button';
 
 // Bootstrap CSS
@@ -29,6 +30,11 @@ const Kmap = () => {
     const [numberOfEdgeImplicants, setNumberOfEdgeImplicants] = useState(0);
     const [edgeImplicant,addPartOfEdgeImplicant] = useState([]);
 
+    const [finishImplicantDisabled, setfinishImplicantDisabled] = useState(true);
+    const [classicImplicantDisabled, setClassicImplicantDisabled] = useState(true);
+    const [edgeImplicantDisabled, setEdgeImplicantDisabled] = useState(true);
+    const [cornerImplicantDisabled, setCornerImplicantDisabled] = useState(true);
+
 
     
     // default implicant
@@ -36,6 +42,8 @@ const Kmap = () => {
     const [markingImplicant,setMarkingImplicant]= useState(false);
     const [numberOfImplicants, setNumberOfImplicants] = useState(0);
     const [implicant,addPartOfImplicant] = useState([]);
+
+    
 
     // corner implicant
     const [implicantCorner, addImplicantCorner]= useState(false);
@@ -85,6 +93,9 @@ const Kmap = () => {
         }
         
         Disable(true);
+        setClassicImplicantDisabled(false);
+        setCornerImplicantDisabled(false);
+        setEdgeImplicantDisabled(false);
         setOption(null);
         setOpposite(null);
     } 
@@ -169,15 +180,21 @@ const Kmap = () => {
 
       //generating code for classic implicant
       //required number of {} in \implicant command is 2 so wa can hardcode it
+      if(implicants.length>0){
       for(let row =0; row < implicants.length; row ++){
-        code += "       \\implicant{";
-        code += implicants[row][0];
-        code += "}";
-        code += "{";
-        code += implicants[row][1];
-        code +="}\n";
-        
+        if(implicants[row][0]===undefined || implicants[row][1]===undefined){
+          continue;
+        }
+        else{
+          code += "       \\implicant{";
+          code += implicants[row][0];
+          code += "}";
+          code += "{";
+          code += implicants[row][1];
+          code +="}\n";
+        }
       }
+    }
 
       if(implicantCorner && rows===4 && cols===4){
         code += "       \\implicantcorner\n";
@@ -190,8 +207,10 @@ const Kmap = () => {
       // required number of {} for \implicantedge command is 4
       // if i want to mark only 2 cells i need to put both indexes twice
       for(let row =0; row < edgeImplicants.length; row ++){
-        code += "       \\implicantedge";
+        
+        
         if(edgeImplicants[row].length===2){
+          code += "       \\implicantedge";
           code +="{";
           code += edgeImplicants[row][0];
           code +="}";
@@ -206,7 +225,8 @@ const Kmap = () => {
           code += edgeImplicants[row][1];
           code +="}\n";
         }
-        else {
+        else if(edgeImplicants[row].length===4) {
+          code += "       \\implicantedge";
           code +="{";
           code += edgeImplicants[row][0];
           code +="}";
@@ -222,6 +242,10 @@ const Kmap = () => {
           code +="}\n";
 
         }
+        else{
+          // alert("Number of Cells for edge implicant is 2 or 4.Anything else is");
+          continue;
+        }
         // code += edgeImplicants[row][0];
         // code += "}";
         // code += "{";
@@ -235,7 +259,8 @@ const Kmap = () => {
       // alert(code);
       setGeneratedCode(code);
 
-      console.log(generatedCode)
+      console.log(generatedCode);
+      console.log(implicants);
       // setGeneratedCode(generatedCode+code);
       // console.log(generatedCode);
       // alert(generatedCode);
@@ -249,6 +274,8 @@ const Kmap = () => {
   const finishImplicant = () =>{
     // if(numberOfImplicants>=2){
       if(markingImplicant){  
+        console.log('this is implicant when finished button is pressed');
+        console.log(implicant);
         addImplicant([...implicants, implicant]);
         addPartOfImplicant([]);
         setNumberOfImplicants(0);
@@ -261,16 +288,30 @@ const Kmap = () => {
         setMarkingEdgeImplicant(false);
         console.log(edgeImplicants);
       }
+      setfinishImplicantDisabled(true);
+      setClassicImplicantDisabled(false);
+      setEdgeImplicantDisabled(false);
+      setCornerImplicantDisabled(false);
 
     // }
   }
 
   const addingimplicant = () => {
-      setMarkingImplicant(!markingImplicant); 
+      setMarkingImplicant(!markingImplicant);
+      setfinishImplicantDisabled(false);
+      setClassicImplicantDisabled(false);
+      setEdgeImplicantDisabled(true);
+      setCornerImplicantDisabled(true);
+       
   }
 
   const addingEdgeimplicant = () => {
-    setMarkingEdgeImplicant(!markingEdgeImplicant); 
+    setMarkingEdgeImplicant(!markingEdgeImplicant);
+
+    setfinishImplicantDisabled(false);
+    setClassicImplicantDisabled(true);
+    setEdgeImplicantDisabled(false);
+    setCornerImplicantDisabled(true); 
   }
   const handleCellClick = (row, col) => {
     let indexes=[]
@@ -305,7 +346,7 @@ const Kmap = () => {
   
 
     console.log(disabled,markingImplicant);
-    if(disabled && markingImplicant){
+    if(disabled && markingImplicant && implicant.length <= 1){
         addPartOfImplicant([...implicant,indexes[row][col]]);
         setNumberOfImplicants(numberOfImplicants+1);
         console.log("this is implicant");
@@ -320,7 +361,7 @@ const Kmap = () => {
             console.log(edgeImplicant);
         }
         else{
-          alert("you can only seledt Cells on edges");
+          alert("you can only select Cells on edges");
         }
       }
 
@@ -355,13 +396,46 @@ const Kmap = () => {
       return <div className='karnaugh-map' >{table}</div>;
   }
 
+  // const generateTable = () => {
+  //   const [rows, cols] = tableSize.split('x').map(Number);
+  //   const table = [];
+  
+  //   for (let row = 0; row < rows; row++) {
+  //     const currentRow = [];
+  
+  //     for (let col = 0; col < cols; col++) {
+  //       const cellValue = row * cols + col;
+  //       const isImplicantCell = implicants.some(implicant =>
+  //         implicant.includes(cellValue)
+  //       );
+  
+  //       const backgroundColor = isImplicantCell ? 'yellow' : 'white';
+  
+  //       currentRow.push(
+  //         <Cell
+  //           key={`${row}${col}`}
+  //           option={option}
+  //           onClick={handleCellClick}
+  //           row={row}
+  //           col={col}
+  //           style={{ backgroundColor }}
+  //         />
+  //       );
+  //     }
+  
+  //     table.push(<div className="row" key={row}>{currentRow}</div>);
+  //   }
+  
+  //   return <div className='karnaugh-map'>{table}</div>;
+  // };
+  
   
     
     
 
     return (
       <div className="Kmap">
-      <h1>Karnaughove mapy</h1>
+      <h1>Karnaugh maps</h1>
         <div className="settings" disabled={disabled}>
             {/* <div className="tableSize"> */}
                 {/* <label htmlFor="tableSize" disabled={disabled}>Select Table Size: </label> */}
@@ -381,22 +455,20 @@ const Kmap = () => {
                 
                  {/* <button id="submitBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button> */}
               
-                <button id ="addImplicant" disabled={!disabled} onClick={()=>addingimplicant()} style={{ backgroundColor: markingImplicant === true ? "red" : 'white' }}>+ Add impl</button>
-                <button id="addImplicant" disabled={!disabled} onClick={()=>addingEdgeimplicant()} style={{ backgroundColor: markingEdgeImplicant === true ? "red" : 'white' }}>+ Edge impl</button>
-                <button id ="cornerImplicant" disabled={!disabled} onClick={()=>addCornerImplicant()} >+ Corner impl</button>
-                <button id="finishImplicant" disabled={!disabled} onClick={()=>finishImplicant()}>Finish Implicant</button>
+                <button id ="addImplicant" disabled={classicImplicantDisabled} onClick={()=>addingimplicant()} style={{ backgroundColor: markingImplicant === true ? "red" : 'white' }}>+ Add impl</button>
+                <button id="addImplicant" disabled={edgeImplicantDisabled} onClick={()=>addingEdgeimplicant()} style={{ backgroundColor: markingEdgeImplicant === true ? "red" : 'white' }}>+ Edge impl</button>
+                <button id ="cornerImplicant" disabled={cornerImplicantDisabled} onClick={()=>addCornerImplicant()} >+ Corner impl</button>
+                <button id="finishImplicant" disabled={finishImplicantDisabled} onClick={()=>finishImplicant()}>Finish Implicant</button>
             </div>
         </div>
-        {/* <div className='container' > */}
-              {/* <canvas></canvas> */}
               {generateTable()}
-                
-              {/* </div> */}
-              {/* <div>{()=>generateCodeLaTeX()}</div> */}
-              <button id="generateBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button>
+              <ImplicantsList id="implicantlist" implicants={implicants}></ImplicantsList>
 
+              <button id="generateBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button>
+              
               <GeneratedCode id="generatedCode" disabled = {!disabled} code={generatedCode}>
               </GeneratedCode>
+              
       </div>
       
     );
