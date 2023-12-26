@@ -1,10 +1,12 @@
 // src/SyntaxTreeD3.js
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
+import GeneratedCode from '../GeneratedCode';
 
 const SyntaxTreeD3 = () => {
   const [treeData, setTreeData] = useState(null);
   const svgRef = useRef();
+  const [generatedCode, setGeneratedCode] = useState("Your code will appear here \n after you click on Generate Code button");
 
   useEffect(() => {
     if (!treeData) return;
@@ -52,7 +54,8 @@ const SyntaxTreeD3 = () => {
     nodes
       .append('circle')
       .attr('r', 15)
-      .attr('fill', 'grey');
+      .attr('stroke','black')
+      .attr('fill', 'white');
       
 
     nodes
@@ -88,16 +91,54 @@ const SyntaxTreeD3 = () => {
     }
   };
 
+
+  const generateLatexCode = (node) => {
+    // Recursively build the LaTeX code for the tree
+    if (!node) {
+      return '';
+    }
+  
+    // let latexCode = ` [${node.value}`; // Assume node value is directly accessible
+    // let latexCode =  '\\begin{forest}\n'
+    let latexCode = '          [';
+    latexCode += node.value;
+     
+    if (node.children) {
+      latexCode += node.children.map((child) => generateLatexCode(child)).join('');
+    }
+  
+    latexCode += ']';
+
+    // latexCode += '\n\\end{forest}'
+  
+    return latexCode;
+  };
+
+  const handleGenerateLatex = () => {
+    const latexCode = `\\begin{forest}\n${generateLatexCode(treeData)}\n\\end{forest}`;
+    setGeneratedCode(latexCode);
+    console.log(latexCode); // You can replace this with the code to save or display the LaTeX code
+  };
+
   return (
-    <div className='TreeDiv'>
-      <button onClick={handleCreateTree}>Create Tree</button>
+    
+    <div className='TreePageDiv'>
+    <div className='settings'>
+      <button id='createTree' onClick={handleCreateTree}>Create Tree</button>
+      <button id='generateBtn' onClick={handleGenerateLatex}>Generate LaTeX</button>
+      </div>
+      <div className='Tree'>
       <svg
         ref={svgRef}
         width={400}
         height={300}
         onClick={() => setTreeData(null)} // Clear selection when clicking on the background
       />
+      </div>
+      <GeneratedCode id="generatedCode" code={generatedCode}></GeneratedCode>
     </div>
+    
+  
   );
 };
 

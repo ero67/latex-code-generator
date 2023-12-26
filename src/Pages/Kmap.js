@@ -488,8 +488,7 @@ const Kmap = () => {
               
               <button id="generateBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button>
               
-              <GeneratedCode id="generatedCode" disabled = {!disabled} code={generatedCode}>
-              </GeneratedCode>
+              <GeneratedCode id="generatedCode" disabled = {!disabled} code={generatedCode}></GeneratedCode>
               
       </div>
       
