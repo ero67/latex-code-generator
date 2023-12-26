@@ -9,26 +9,26 @@ import { BsTree } from "react-icons/bs";
 
 export const SidebarData = [
   {
-    title: 'Domov',
+    title: 'Home',
     path: '/',
     icon: <AiIcons.AiFillHome />,
     cName: 'nav-text'
   },
   {
-    title: 'Karnaughova mapa',
+    title: 'Karnaugh maps',
     path: '/karnaugh-maps',
     icon: <FaTableCells/>,
     cName: 'nav-text'
   },
   {
-    title: 'Abstraktné syntaktické stromy',
-    path: '/abstraktne-syntakticke-stromy',
+    title: 'Abstract syntax trees',
+    path: '/ast',
     icon: <BsTreeFill />,
     cName: 'nav-text'
   },
   {
-    title: 'Dôkazové stromy',
-    path: '/dokazove-stromy',
+    title: 'Proof trees',
+    path: '/proof-trees',
     icon: <BsTree />,
     cName: 'nav-text'
   }

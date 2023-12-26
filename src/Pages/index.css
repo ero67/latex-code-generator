@@ -427,7 +427,7 @@ canvas{
 
 /* Style the select element */
 select {
-  width: 150px; /* Set the width of the select element */
+  /* width: 150px;
   height: 20px; /* Set the height of the select element */
   font-size: 14px; /* Set the font size of the select element */
   font-family: Arial, sans-serif; /* Set the font family of the select element */
@@ -491,5 +491,75 @@ p{
   margin-top: 10%;
   /* background-color: #39f; */
   /* width: 50rem; */
+}
+
+
+.ast{
+  display: grid;
+}
+#fulltree{
+  height: 80%;
+  width: 100%;
+}
+
+#asth1{
+  place-self: center;
+}
+
+/* src/App.css */
+.app {
+  text-align: center;
+}
+
+.ast {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.node {
+  padding: 10px;
+  margin: 5px;
+  border: 1px solid #333;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+}
+
+
+/* src/App.css */
+body {
+  font-family: 'Arial', sans-serif;
+}
+
+.app {
+  text-align: center;
+}
+
+.syntax-tree {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.node {
+  padding: 10px;
+  margin: 5px;
+  border: 1px solid #333;
+  background-color: #fff;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.node-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.node-child {
+  margin-top: 20px;
 }
 

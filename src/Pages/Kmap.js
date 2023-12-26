@@ -5,6 +5,7 @@ import './index.css'
 import Cell from "../Components/Cell";
 import GeneratedCode from './GeneratedCode';
 import ImplicantsList from '../Components/ImplicantsList';
+import EdgeImplicantList from '../Components/EdgeImplicantList';
 
 // import { Link, useNavigate } from 'react-router-dom';
 // import Button from '@mui/material/Button';
@@ -94,8 +95,10 @@ const Kmap = () => {
         
         Disable(true);
         setClassicImplicantDisabled(false);
-        setCornerImplicantDisabled(false);
-        setEdgeImplicantDisabled(false);
+        if(tableSize==='4x4'){
+          setCornerImplicantDisabled(false);
+          setEdgeImplicantDisabled(false);
+        }
         setOption(null);
         setOpposite(null);
     } 
@@ -182,8 +185,19 @@ const Kmap = () => {
       //required number of {} in \implicant command is 2 so wa can hardcode it
       if(implicants.length>0){
       for(let row =0; row < implicants.length; row ++){
-        if(implicants[row][0]===undefined || implicants[row][1]===undefined){
+        
+        if(implicants[row][0]===undefined){
+      
           continue;
+        }
+        else if ((implicants[row].length===1 )){
+      
+          code += "       \\implicant{";
+          code += implicants[row][0];
+          code += "}";
+          code += "{";
+          code += implicants[row][0];
+          code +="}\n";
         }
         else{
           code += "       \\implicant{";
@@ -259,8 +273,8 @@ const Kmap = () => {
       // alert(code);
       setGeneratedCode(code);
 
-      console.log(generatedCode);
-      console.log(implicants);
+      // console.log(generatedCode);
+      // console.log(implicants);
       // setGeneratedCode(generatedCode+code);
       // console.log(generatedCode);
       // alert(generatedCode);
@@ -290,9 +304,10 @@ const Kmap = () => {
       }
       setfinishImplicantDisabled(true);
       setClassicImplicantDisabled(false);
-      setEdgeImplicantDisabled(false);
-      setCornerImplicantDisabled(false);
-
+      if(tableSize==='4x4'){
+        setEdgeImplicantDisabled(false);
+        setCornerImplicantDisabled(false);
+      }
     // }
   }
 
@@ -346,6 +361,8 @@ const Kmap = () => {
   
 
     console.log(disabled,markingImplicant);
+    // disabled means that we are in the implicant part of this page
+    // if am am marking basic implicant
     if(disabled && markingImplicant && implicant.length <= 1){
         addPartOfImplicant([...implicant,indexes[row][col]]);
         setNumberOfImplicants(numberOfImplicants+1);
@@ -353,6 +370,9 @@ const Kmap = () => {
         console.log(implicant);
        
       }
+
+      // if i am choosing esge implicant and also disbled is true
+      // disabled means that we are in the implicant part of this page
       else if(disabled && markingEdgeImplicant){
         if(row === 0 || row === rows-1 || col === 0 || col === cols-1){
             addPartOfEdgeImplicant([...edgeImplicant,indexes[row][col]]);
@@ -463,7 +483,9 @@ const Kmap = () => {
         </div>
               {generateTable()}
               <ImplicantsList id="implicantlist" implicants={implicants}></ImplicantsList>
+              <EdgeImplicantList id="implicantlist" edgeImplicants={edgeImplicants}></EdgeImplicantList>
 
+              
               <button id="generateBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button>
               
               <GeneratedCode id="generatedCode" disabled = {!disabled} code={generatedCode}>
