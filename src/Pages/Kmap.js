@@ -7,15 +7,7 @@ import GeneratedCode from './GeneratedCode';
 import ImplicantsList from '../Components/ImplicantsList';
 import EdgeImplicantList from '../Components/EdgeImplicantList';
 
-// import { Link, useNavigate } from 'react-router-dom';
-// import Button from '@mui/material/Button';
 
-// Bootstrap CSS
-// import "bootstrap/dist/css/bootstrap.min.css";
-
-// import Implicant from "./Components/Implicant"
-// import { Stage, Layer, Rect } from "react-konva";
-// import { Stage, Layer, Rect, Text, Circle, Line } from 'react-konva';
 
 
 
@@ -53,19 +45,6 @@ const Kmap = () => {
     // const code='a';
 
 
-    // const navigate= useNavigate();
-    // const navigateToCodePage = () => {
-    //   navigate ('/generated-code', {state: {code: generatedCode}})
-    // }
-
-
-    // const generateCodePage = () =>{
-    //   const code = new URLSearchParams();
-    //   console.log(generateCodeLaTeX());
-    //   code.append('code', generateCodeLaTeX());
-    //   navigate('/generated-code');
-    // }
-
     // zmena velkosti tabulky
     const handleTableSizeChange = (event) => {
         setTableSize(event.target.value);
@@ -83,6 +62,7 @@ const Kmap = () => {
       //console.log(value);
     }
     
+    // handling initail state of buttons shown
     const handleDisable = () =>{
         const cells = document.getElementsByClassName("cell");
         for (let cell of cells) {
@@ -95,9 +75,9 @@ const Kmap = () => {
         
         Disable(true);
         setClassicImplicantDisabled(false);
+        setEdgeImplicantDisabled(false);
         if(tableSize==='4x4'){
           setCornerImplicantDisabled(false);
-          setEdgeImplicantDisabled(false);
         }
         setOption(null);
         setOpposite(null);
@@ -115,6 +95,7 @@ const Kmap = () => {
       }
     }
   };
+
 
   const getContentOfCells = () =>{
     const cells = document.getElementsByClassName("cell");
@@ -260,11 +241,6 @@ const Kmap = () => {
           // alert("Number of Cells for edge implicant is 2 or 4.Anything else is");
           continue;
         }
-        // code += edgeImplicants[row][0];
-        // code += "}";
-        // code += "{";
-        // code += edgeImplicants[row][1];
-        // code +="}";
         }
 
 
@@ -272,15 +248,6 @@ const Kmap = () => {
       // console.log(code);
       // alert(code);
       setGeneratedCode(code);
-
-      // console.log(generatedCode);
-      // console.log(implicants);
-      // setGeneratedCode(generatedCode+code);
-      // console.log(generatedCode);
-      // alert(generatedCode);
-      // console.log(generatedCode);
-      // console.log(implicants);
-      // return code;
       
   };
 
@@ -296,7 +263,10 @@ const Kmap = () => {
         setMarkingImplicant(false);
       }
       else if(markingEdgeImplicant){
-        addEdgeImplicant([...edgeImplicants,edgeImplicant]);
+        if(edgeImplicant.length > 1){
+          addEdgeImplicant([...edgeImplicants,edgeImplicant]);  
+        }
+        // addEdgeImplicant([...edgeImplicants,edgeImplicant]);
         addPartOfEdgeImplicant([]);
         setNumberOfEdgeImplicants(0);
         setMarkingEdgeImplicant(false);
@@ -304,8 +274,8 @@ const Kmap = () => {
       }
       setfinishImplicantDisabled(true);
       setClassicImplicantDisabled(false);
+      setEdgeImplicantDisabled(false);
       if(tableSize==='4x4'){
-        setEdgeImplicantDisabled(false);
         setCornerImplicantDisabled(false);
       }
     // }
@@ -385,13 +355,10 @@ const Kmap = () => {
         }
       }
 
-    
   };
 
 
-  // const sortEdgeImplicants = () =>{
-    
-  // }
+// TODO function for sorting edge implicants so they are generated correctly no matter the order of being clicked
 
 
   const generateTable = () => {
@@ -416,40 +383,7 @@ const Kmap = () => {
       return <div className='karnaugh-map' >{table}</div>;
   }
 
-  // const generateTable = () => {
-  //   const [rows, cols] = tableSize.split('x').map(Number);
-  //   const table = [];
-  
-  //   for (let row = 0; row < rows; row++) {
-  //     const currentRow = [];
-  
-  //     for (let col = 0; col < cols; col++) {
-  //       const cellValue = row * cols + col;
-  //       const isImplicantCell = implicants.some(implicant =>
-  //         implicant.includes(cellValue)
-  //       );
-  
-  //       const backgroundColor = isImplicantCell ? 'yellow' : 'white';
-  
-  //       currentRow.push(
-  //         <Cell
-  //           key={`${row}${col}`}
-  //           option={option}
-  //           onClick={handleCellClick}
-  //           row={row}
-  //           col={col}
-  //           style={{ backgroundColor }}
-  //         />
-  //       );
-  //     }
-  
-  //     table.push(<div className="row" key={row}>{currentRow}</div>);
-  //   }
-  
-  //   return <div className='karnaugh-map'>{table}</div>;
-  // };
-  
-  
+ 
     
     
 

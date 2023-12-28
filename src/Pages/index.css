@@ -542,7 +542,7 @@ p{
 
 
 /* src/App.css */
-body {
+/* body {
   font-family: 'Arial', sans-serif;
 }
 
@@ -576,4 +576,18 @@ body {
 .node-child {
   margin-top: 20px;
 }
+ */
 
+ .TreeDiv{
+  display: grid;
+  max-width: 100%;
+ }
+
+ .Tree{
+  display: grid;
+ }
+
+ svg{
+  cursor: pointer;
+
+ }

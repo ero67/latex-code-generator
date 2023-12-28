@@ -100,7 +100,7 @@ const SyntaxTreeD3 = () => {
   
     // let latexCode = ` [${node.value}`; // Assume node value is directly accessible
     // let latexCode =  '\\begin{forest}\n'
-    let latexCode = '          [';
+    let latexCode = '[';
     latexCode += node.value;
      
     if (node.children) {
@@ -122,10 +122,11 @@ const SyntaxTreeD3 = () => {
 
   return (
     
-    <div className='TreePageDiv'>
+    <div className='TreeDiv'>
+    <h1>Abstract syntax tree</h1>
     <div className='settings'>
       <button id='createTree' onClick={handleCreateTree}>Create Tree</button>
-      <button id='generateBtn' onClick={handleGenerateLatex}>Generate LaTeX</button>
+      
       </div>
       <div className='Tree'>
       <svg
@@ -135,8 +136,12 @@ const SyntaxTreeD3 = () => {
         onClick={() => setTreeData(null)} // Clear selection when clicking on the background
       />
       </div>
+      <button id='generateBtn' onClick={handleGenerateLatex}>Generate LaTeX</button>
       <GeneratedCode id="generatedCode" code={generatedCode}></GeneratedCode>
+
     </div>
+   
+
     
   
   );
