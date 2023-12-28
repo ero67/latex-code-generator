@@ -374,6 +374,7 @@ const Kmap = () => {
               onClick={handleCellClick} 
               row={row}
               col={col}
+              disabled={disabled}
               />
             );
           }
