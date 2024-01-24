@@ -41,6 +41,9 @@ const Kmap = () => {
     //useStates for coloring implicants
     const [singeImplicantIndexes, addPartOfSingleImplicantIndex] = useState([]);
     const [implicantCellIndexes, addImplicantCellIndexes]= useState([]);
+
+    const [singeEdgeImplicantIndexes, addPartOfSingleEdgeImplicantIndex] = useState([]);
+    const [edgeimplicantCellIndexes, addEdgeImplicantCellIndexes]= useState([]);
     
 
     // corner implicant
@@ -49,6 +52,79 @@ const Kmap = () => {
     const [generatedCode, setGeneratedCode] = useState("Your code will appear here \n after you click on Generate Code button");
     // const code='a';
     const colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink", "cyan", "magenta"];
+
+
+    const [activeImplicantIndex, setActiveImplicantIndex] = useState(null);
+    const [activeImplicantType, setActiveImplicantType] = useState(null);
+
+
+    const handleImplicantClick = (index,typeOfImplicant) => {
+      setActiveImplicantIndex(index);
+      setActiveImplicantType(typeOfImplicant);
+    };
+//function for finding out what color should the cell be after hovering over list
+    function getCellColor(row, col, activeImplicantIndex,activeImplicantType, implicantCellIndexes,edgeimplicantCellIndexes, defaultColor, activeColor) {
+      // Check if there's an active implicant
+      console.log(activeImplicantType);
+      let activeImplicanCellIndexes = edgeimplicantCellIndexes;
+      if(activeImplicantType==="default"){
+        activeImplicanCellIndexes = implicantCellIndexes;
+      }
+      else if(activeImplicantType==="edge"){
+        activeImplicanCellIndexes = edgeimplicantCellIndexes;
+      }
+
+      if (activeImplicantIndex !== null) {
+          const activeImplicant = activeImplicanCellIndexes[activeImplicantIndex];
+          if (activeImplicant.some(cell => cell.row === row && cell.col === col)) {
+              return activeColor; // Color for active implicant cells
+          }
+      }
+      
+      // Check if the cell belongs to any other implicant
+      for (let i = 0; i < activeImplicanCellIndexes.length; i++) {
+          if (i !== activeImplicantIndex) {
+              const implicant = activeImplicanCellIndexes[i];
+              if (implicant.some(cell => cell.row === row && cell.col === col)) {
+                  return defaultColor; // Color for non-active implicant cells
+              }
+          }
+      }
+  
+      return null; // No color if the cell is not part of any implicant
+  }
+  
+//   function getCellColor(row, col, activeImplicantIndex, activeImplicantType, implicantCellIndexes, edgeImplicantCellIndexes, defaultColor, activeColor) {
+//     // Function to check if the cell is part of the given implicant array
+//     function isCellPartOfImplicant(implicantArray, implicantIndex) {
+//         return implicantArray.some((implicant, index) => {
+//             if (index === implicantIndex) {
+//                 return implicant.some(cell => cell.row === row && cell.col === col);
+//             }
+//             return false;
+//         });
+//     }
+
+//     // Check for active implicant
+//     if (activeImplicantIndex !== null) {
+//         if (activeImplicantType === "default" && isCellPartOfImplicant(implicantCellIndexes, activeImplicantIndex)) {
+//             return activeColor;
+//         } else if (activeImplicantType === "edge" && isCellPartOfImplicant(edgeImplicantCellIndexes, activeImplicantIndex)) {
+//             return activeColor;
+//         }
+//     }
+
+//     // Check for non-active implicants
+//     const isPartOfNormalImplicant = isCellPartOfImplicant(implicantCellIndexes, activeImplicantIndex);
+//     const isPartOfEdgeImplicant = isCellPartOfImplicant(edgeImplicantCellIndexes, activeImplicantIndex);
+//     if (isPartOfNormalImplicant || isPartOfEdgeImplicant) {
+//         return defaultColor;
+//     }
+
+//     return null; // No color if the cell is not part of any implicant
+// }
+
+  
 
     function getColorForImplicant(implicantIndex) {
       return colors[implicantIndex % colors.length];
@@ -259,6 +335,8 @@ const Kmap = () => {
       setGeneratedCode(code);
       console.log("this is implicantCellIndexes");
       console.log(implicantCellIndexes);
+      console.log("this is edgeimplicantCellIndexes");
+      console.log(edgeimplicantCellIndexes);
       
   };
 // adding all cell which are supposed to be in chosen implicant
@@ -268,7 +346,7 @@ const Kmap = () => {
     if(endPoint===null){
       endPoint = startPoint;
     }
-    // Check if it's a single cell selection
+    // check if its a single cell selection
     if (startPoint.row === endPoint.row && startPoint.col === endPoint.col) {
         return [startPoint];
     }
@@ -283,16 +361,28 @@ const Kmap = () => {
     return implicantIndices;
 }
 
-
+//handle logic of finish implicant button and all things that this button press triggers
   const finishImplicant = () =>{
     // if(numberOfImplicants>=2){
       if(markingImplicant){  
         console.log('this is implicant when finished button is pressed');
         console.log(implicant);
+        //adds implicant to the all implicants list
         addImplicant([...implicants, implicant]);
-        const singeImplicantIndex = calculateImplicantIndices(singeImplicantIndexes[0],singeImplicantIndexes[1]);
+
+
+        //logic for addding indexes of all cells which are part of the implicant to the another array
+        let singeImplicantIndex=[];
+        if(singeImplicantIndexes[1]===undefined){
+           singeImplicantIndex = calculateImplicantIndices(singeImplicantIndexes[0],singeImplicantIndexes[0]);
+        }
+        else{
+          singeImplicantIndex = calculateImplicantIndices(singeImplicantIndexes[0],singeImplicantIndexes[1]);
+        }
         addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndex]);
         console.log(singeImplicantIndexes[0],singeImplicantIndexes[1]);
+
+        //reseting variables connected with adding implicant
         addPartOfSingleImplicantIndex([]);
         addPartOfImplicant([]);
         setNumberOfImplicants(0);
@@ -301,9 +391,12 @@ const Kmap = () => {
       else if(markingEdgeImplicant){
         if(edgeImplicant.length > 1){
           addEdgeImplicant([...edgeImplicants,edgeImplicant]);  
+          // addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndexes])
+          addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes,singeEdgeImplicantIndexes]);
         }
         // addEdgeImplicant([...edgeImplicants,edgeImplicant]);
         addPartOfEdgeImplicant([]);
+        addPartOfSingleEdgeImplicantIndex([]);
         setNumberOfEdgeImplicants(0);
         setMarkingEdgeImplicant(false);
         console.log(edgeImplicants);
@@ -316,7 +409,7 @@ const Kmap = () => {
       }
     // }
   }
-
+//set up buttons settings and interface when adding deafult implicant
   const addingimplicant = () => {
       setMarkingImplicant(!markingImplicant);
       setfinishImplicantDisabled(false);
@@ -328,6 +421,7 @@ const Kmap = () => {
        
   }
 
+  //set up buttons settings and interface when adding edge implicant
   const addingEdgeimplicant = () => {
     setMarkingEdgeImplicant(!markingEdgeImplicant);
 
@@ -385,6 +479,7 @@ const Kmap = () => {
       else if(disabled && markingEdgeImplicant){
         if(row === 0 || row === rows-1 || col === 0 || col === cols-1){
             addPartOfEdgeImplicant([...edgeImplicant,indexes[row][col]]);
+            addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{row,col}]);
             setNumberOfEdgeImplicants(numberOfEdgeImplicants+1);
             console.log("this is edge implicant");
             console.log(edgeImplicant);
@@ -393,6 +488,7 @@ const Kmap = () => {
           alert("you can only select Cells on edges");
           setMarkingEdgeImplicant(false);
           setfinishImplicantDisabled(true);
+          setClassicImplicantDisabled(false);
         }
       }
 
@@ -411,11 +507,20 @@ const Kmap = () => {
 
 
             let cellColor = null;
+            if(activeImplicantType==='default'){
             implicantCellIndexes.forEach((implicant, index) => {
                 if (implicant.some(cell => cell.row === row && cell.col === col)) {
                     cellColor = getColorForImplicant(index);
                 }
-            });
+            })}
+
+            else if(activeImplicantType==='edge'){
+                edgeimplicantCellIndexes.forEach((implicant, index) => {
+                if (implicant.some(cell => cell.row === row && cell.col === col)) {
+                    cellColor = getColorForImplicant(index);
+                }
+            })
+            }
 
 
             currentRow.push(
@@ -426,7 +531,8 @@ const Kmap = () => {
               row={row}
               col={col}
               disabled={disabled}
-              cellColor = {cellColor}
+              // cellColor = {cellColor}
+              cellColor={getCellColor(row, col, activeImplicantIndex,activeImplicantType, implicantCellIndexes,edgeimplicantCellIndexes, 'white', 'red')}
               />
             );
           }
@@ -498,8 +604,15 @@ const handleGoBackButton = () =>{
         </div>
               {generateTable()}
               
-                <ImplicantsList id="implicantlist" implicants={implicants}></ImplicantsList>
-                <EdgeImplicantList id="implicantlist" edgeImplicants={edgeImplicants}></EdgeImplicantList>
+                {/* <ImplicantsList id="implicantlist" implicants={implicants}></ImplicantsList> */}
+                <ImplicantsList 
+                // implicants={implicantCellIndexes}
+                  implicants={implicants} 
+                  onImplicantClick={handleImplicantClick} 
+                />
+                <EdgeImplicantList id="implicantlist" edgeImplicants={edgeImplicants} onImplicantClick={handleImplicantClick}>
+
+                </EdgeImplicantList>
                
               
               <button id="generateBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button>
