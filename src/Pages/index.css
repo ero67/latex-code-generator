@@ -192,7 +192,7 @@
 
 h1{
   place-self: center;
-  margin-bottom: 10%;
+  margin-bottom: 5%;
 }
 
 
@@ -311,6 +311,7 @@ h1{
   cursor: pointer;
   border: 1px solid #000000;
   font-weight: bold;
+  border-radius: 3px;
  }
 
  #button1 {
@@ -322,6 +323,7 @@ h1{
   margin-left: 10px;
   border: 1px solid #000000;
   font-weight: bold;
+  border-radius: 3px;
  }
  #autofill{
   width: 80px;
@@ -334,11 +336,25 @@ h1{
   font-weight: bold;
   cursor: pointer; 
   margin-left: 10px;
+  border: 1px solid #000000;
  }
  
+ #goback{
+  width: 80px;
+  height: 30px;
+  background-color: #3a91dd;
+  color: #ffffff;
+  border: 1px solid #ffffff;
+  border-radius: 3px;
+  /* font-size: 10px; */
+  font-weight: bold;
+  cursor: pointer; 
+  margin-left: 10px;
+  border: 1px solid #000000;
+ }
 .settings{
   display: block;
-  margin: 3px;
+  margin: 20px;
   place-self: center;
   /* width: max-content; */
 }
@@ -508,9 +524,6 @@ p{
 }
 
 
-.ast{
-  display: grid;
-}
 #fulltree{
   height: 80%;
   width: 100%;
@@ -526,10 +539,8 @@ p{
 }
 
 .ast {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 300px;
+  display: grid;
+  width: 100%;
 }
 
 .node {
@@ -591,3 +602,50 @@ p{
   cursor: pointer;
 
  }
+
+
+
+div.containerText {
+background-color: #ffffff;
+
+}
+div.containerText p {
+text-align: center;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+font-size: 14px;
+font-style: normal;
+line-height: 25px;
+text-decoration: none;
+text-transform: none;
+color: #000000;
+background-color: #efefef;
+}
+
+div.containerText #question {
+  text-align: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 20px;
+  font-style: normal;
+  
+  text-decoration: none;
+  text-transform: none;
+  color: #000000;
+  background-color: #ffffff;
+  margin-bottom: 10px;
+  }
+  
+  div.containerText #question2 {
+    text-align: center;
+    font-family: Arial;
+    font-size: 20px;
+    font-style: normal;
+    
+    text-decoration: none;
+    text-transform: none;
+    color: #000000;
+    background-color: #ffffff;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    }
+
+

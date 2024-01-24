@@ -3,13 +3,15 @@ import React, { useState } from 'react';
 // import * as React from 'react';
 import './index.css'
 import Cell from "../Components/Cell";
-import GeneratedCode from './GeneratedCode';
+import GeneratedCode from '../Components/GeneratedCode';
 import ImplicantsList from '../Components/ImplicantsList';
 import EdgeImplicantList from '../Components/EdgeImplicantList';
+import Instructions from '../Components/Instructions';
 
 
 
-
+// TODO generovat mapu uplne odznova aj s farbami na zaklade implicants poli
+// TODO pridat do Cell komponentu moznost zafarbit pozadie nejakym sposobom na zaklade nejakeho argumentu ze implicant...a ze kde ma byt
 
 const Kmap = () => {
     const [tableSize, setTableSize] = useState('0x0');
@@ -36,6 +38,9 @@ const Kmap = () => {
     const [numberOfImplicants, setNumberOfImplicants] = useState(0);
     const [implicant,addPartOfImplicant] = useState([]);
 
+    //useStates for coloring implicants
+    const [singeImplicantIndexes, addPartOfSingleImplicantIndex] = useState([]);
+    const [implicantCellIndexes, addImplicantCellIndexes]= useState([]);
     
 
     // corner implicant
@@ -248,6 +253,8 @@ const Kmap = () => {
       // console.log(code);
       // alert(code);
       setGeneratedCode(code);
+      console.log("this is implicantCellIndexes");
+      console.log(implicantCellIndexes);
       
   };
 
@@ -258,6 +265,8 @@ const Kmap = () => {
         console.log('this is implicant when finished button is pressed');
         console.log(implicant);
         addImplicant([...implicants, implicant]);
+        addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndexes])
+        addPartOfSingleImplicantIndex([]);
         addPartOfImplicant([]);
         setNumberOfImplicants(0);
         setMarkingImplicant(false);
@@ -287,6 +296,8 @@ const Kmap = () => {
       setClassicImplicantDisabled(false);
       setEdgeImplicantDisabled(true);
       setCornerImplicantDisabled(true);
+      
+
        
   }
 
@@ -335,6 +346,7 @@ const Kmap = () => {
     // if am am marking basic implicant
     if(disabled && markingImplicant && implicant.length <= 1){
         addPartOfImplicant([...implicant,indexes[row][col]]);
+        addPartOfSingleImplicantIndex([...singeImplicantIndexes,{row,col}]);
         setNumberOfImplicants(numberOfImplicants+1);
         console.log("this is implicant");
         console.log(implicant);
@@ -352,6 +364,8 @@ const Kmap = () => {
         }
         else{
           alert("you can only select Cells on edges");
+          setMarkingEdgeImplicant(false);
+          setfinishImplicantDisabled(true);
         }
       }
 
@@ -375,6 +389,7 @@ const Kmap = () => {
               row={row}
               col={col}
               disabled={disabled}
+              // implicants={implicants}
               />
             );
           }
@@ -383,14 +398,39 @@ const Kmap = () => {
 
       return <div className='karnaugh-map' >{table}</div>;
   }
+const handleGoBackButton = () =>{
+  Disable(false);
+  setClassicImplicantDisabled(true);
+  setEdgeImplicantDisabled(true);
+  setCornerImplicantDisabled(true);
+  setMarkingEdgeImplicant(false);
+  setMarkingImplicant(false);
+  setfinishImplicantDisabled(true);
+  addImplicant([]);
+  addEdgeImplicant([]);
+    
+}
 
+// const handleClearButton = () =>{
+//     setOption(0);
+//     setOpposite(1);
+//     // Loop through all the cells in the table
+//     const cells = document.getElementsByClassName("cell");
+//     for (let cell of cells) {
+//       // If the cell is empty, set its value to the opposite number
+//         cell.textContent = ''; 
+//     }
+//     // window.location.reload(false)
+//   }
  
     
     
 
     return (
-      <div className="Kmap">
+      // <span>
+      <div className="Kmap"> 
       <h1>Karnaugh maps</h1>
+        <Instructions></Instructions>
         <div className="settings" disabled={disabled}>
             {/* <div className="tableSize"> */}
                 {/* <label htmlFor="tableSize" disabled={disabled}>Select Table Size: </label> */}
@@ -407,26 +447,30 @@ const Kmap = () => {
                 <button id="button1" disabled={disabled} onClick={()=>handleOptionChange(1)} style={{ backgroundColor: option === 1 ? "green" : 'white' }}>1</button>
                 <button id="autofill" disabled={disabled} onClick={fillCells}>Fill the rest</button>
                 <button id="submitBtn" onClick={()=>handleDisable()} disabled={disabled}>Submit</button>
-                
-                 {/* <button id="submitBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button> */}
-              
+
+                {/* <button id="clearBtn" onClick={()=>handleClearButton()} disabled={disabled}>Clear Cells</button> */}
+                {/* create button and when its clicked console log hello */}
+                <button id="goback" disabled={!disabled} onClick={handleGoBackButton}>Go back</button>
+                 {/* {/* <but id="submitBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </but */}
                 <button id ="addImplicant" disabled={classicImplicantDisabled} onClick={()=>addingimplicant()} style={{ backgroundColor: markingImplicant === true ? "red" : 'white' }}>+ Add impl</button>
                 <button id="addImplicant" disabled={edgeImplicantDisabled} onClick={()=>addingEdgeimplicant()} style={{ backgroundColor: markingEdgeImplicant === true ? "red" : 'white' }}>+ Edge impl</button>
                 <button id ="cornerImplicant" disabled={cornerImplicantDisabled} onClick={()=>addCornerImplicant()} >+ Corner impl</button>
                 <button id="finishImplicant" disabled={finishImplicantDisabled} onClick={()=>finishImplicant()}>Finish Implicant</button>
             </div>
+            
         </div>
               {generateTable()}
-              <ImplicantsList id="implicantlist" implicants={implicants}></ImplicantsList>
-              <EdgeImplicantList id="implicantlist" edgeImplicants={edgeImplicants}></EdgeImplicantList>
-
+              
+                <ImplicantsList id="implicantlist" implicants={implicants}></ImplicantsList>
+                <EdgeImplicantList id="implicantlist" edgeImplicants={edgeImplicants}></EdgeImplicantList>
+               
               
               <button id="generateBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button>
               
               <GeneratedCode id="generatedCode" disabled = {!disabled} code={generatedCode}></GeneratedCode>
               
       </div>
-      
+    
     );
 }
 

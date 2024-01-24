@@ -1,7 +1,7 @@
 // src/SyntaxTreeD3.js
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import GeneratedCode from '../GeneratedCode';
+import GeneratedCode from '../../Components/GeneratedCode';
 
 const SyntaxTreeD3 = () => {
   const [treeData, setTreeData] = useState(null);
@@ -124,6 +124,16 @@ const SyntaxTreeD3 = () => {
     
     <div className='TreeDiv'>
     <h1>Abstract syntax tree</h1>
+    
+    <div class="containerText">
+      <p id="question" style={{fontWeight: 'bold'}}>How to use ?</p>
+      {/* <div></div> */}
+      <p>1. Click on Create Tree button and type in the value of the root node.</p>
+      <p>2. Click on the node you want to expand and enter the value of the child.</p>
+      <p>3. After you are finished, generated the code for created tree.</p>
+      <p></p>
+
+    </div>
     <div className='settings'>
       <button id='createTree' onClick={handleCreateTree}>Create Tree</button>
       
