@@ -340,7 +340,7 @@ const Kmap = () => {
       cols=4;
     }
   
-
+//testtesttest
     console.log(disabled,markingImplicant);
     // disabled means that we are in the implicant part of this page
     // if am am marking basic implicant
