@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const Cell = ({ option, onClick, row, col, disabled}) => {
+const Cell = ({ option, onClick, row, col, disabled,cellColor}) => {
   // Declare a state variable to store the value of the cell
   const [cellValue, setCellValue] = useState (null);
 
@@ -41,9 +41,10 @@ const Cell = ({ option, onClick, row, col, disabled}) => {
   // const ValueOfCell = () => {
   //   return <div>{cellValue}</div> ;
   // };
+  const cellStyle = cellColor ? { backgroundColor: cellColor } : {};
 
   return (
-    <div className="cell" onClick= {handleClick} >
+    <div className="cell" onClick= {handleClick} style={cellStyle} >
       {/* Render the cell value if it is not null */}
       {/* {cellValue && <ValueOfCell />} */}
       {cellValue}

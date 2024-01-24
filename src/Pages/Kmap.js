@@ -48,7 +48,11 @@ const Kmap = () => {
 
     const [generatedCode, setGeneratedCode] = useState("Your code will appear here \n after you click on Generate Code button");
     // const code='a';
+    const colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink", "cyan", "magenta"];
 
+    function getColorForImplicant(implicantIndex) {
+      return colors[implicantIndex % colors.length];
+  }
 
     // zmena velkosti tabulky
     const handleTableSizeChange = (event) => {
@@ -257,6 +261,27 @@ const Kmap = () => {
       console.log(implicantCellIndexes);
       
   };
+// adding all cell which are supposed to be in chosen implicant
+
+  function calculateImplicantIndices(startPoint, endPoint) {
+    const implicantIndices = [];
+    if(endPoint===null){
+      endPoint = startPoint;
+    }
+    // Check if it's a single cell selection
+    if (startPoint.row === endPoint.row && startPoint.col === endPoint.col) {
+        return [startPoint];
+    }
+
+    // Otherwise, calculate indices for rectangular or linear implicants
+    for (let r = startPoint.row; r <= endPoint.row; r++) {
+        for (let c = startPoint.col; c <= endPoint.col; c++) {
+            implicantIndices.push({ row: r, col: c });
+        }
+    }
+
+    return implicantIndices;
+}
 
 
   const finishImplicant = () =>{
@@ -265,7 +290,9 @@ const Kmap = () => {
         console.log('this is implicant when finished button is pressed');
         console.log(implicant);
         addImplicant([...implicants, implicant]);
-        addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndexes])
+        const singeImplicantIndex = calculateImplicantIndices(singeImplicantIndexes[0],singeImplicantIndexes[1]);
+        addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndex]);
+        console.log(singeImplicantIndexes[0],singeImplicantIndexes[1]);
         addPartOfSingleImplicantIndex([]);
         addPartOfImplicant([]);
         setNumberOfImplicants(0);
@@ -381,6 +408,16 @@ const Kmap = () => {
       for (let row = 0; row < rows; row++) {
           const currentRow = [];
           for (let col = 0; col < cols; col++) {
+
+
+            let cellColor = null;
+            implicantCellIndexes.forEach((implicant, index) => {
+                if (implicant.some(cell => cell.row === row && cell.col === col)) {
+                    cellColor = getColorForImplicant(index);
+                }
+            });
+
+
             currentRow.push(
               <Cell 
               key={`${row}${col}`} 
@@ -389,7 +426,7 @@ const Kmap = () => {
               row={row}
               col={col}
               disabled={disabled}
-              // implicants={implicants}
+              cellColor = {cellColor}
               />
             );
           }
