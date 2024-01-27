@@ -421,6 +421,7 @@ h1{
   height: 60px;
   text-align: center;
   line-height: 40px;
+  cursor: pointer;
 }
 
 .cell:hover {
@@ -649,3 +650,101 @@ div.containerText #question {
     }
 
 
+    .proof-tree-container {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .proof-tree-node {
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      margin-bottom: 20px; /* Spacing between parent and children nodes */
+    }
+    
+    .proof-tree-content {
+      z-index: 1; /* Ensure that node content appears above connecting lines */
+      background: white; /* Background to cover the connecting lines */
+      border: 1px solid #ccc;
+      padding: 5px;
+      border-radius: 3px;
+      margin-top: 20px; /* This creates space for the connecting line */
+    }
+    
+    .proof-tree-children {
+      display: flex;
+      justify-content: center;
+      position: relative;
+      width: 100%; /* Ensure children take full width for proper centering */
+    }
+    
+    .proof-tree-children::before {
+      content: '';
+      position: absolute;
+      bottom: 0; /* Line starts from the bottom */
+      left: 50%;
+      transform: translateX(-50%); /* Center the line horizontally */
+      width: 2px;
+      height: 20px; /* Height of the connecting line */
+      background: rgb(0, 0, 0); /* Line color */
+    }
+    
+    .proof-tree-node input, .proof-tree-node button {
+      padding: 5px;
+      margin: 5px;
+      border-radius: 3px;
+    }
+    
+    .proof-tree-node button {
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    
+    .proof-tree-node button:hover {
+      background-color: #45a049;
+    }
+    
+    /* Styling for the connecting lines between siblings */
+    .proof-tree-children > .proof-tree-node:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      bottom: 0; /* Line starts from the bottom */
+      left: 50%;
+      right: 50%;
+      height: 2px;
+      background: rgb(0, 0, 0); /* Line color */
+    }
+    
+
+    .button-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background-color: #f8f8f8;
+    }
+    
+
+    .symbolBtn {
+      padding: 5px 10px;
+      margin: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #e7e7e7;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    
+    .symbolBtn:hover {
+      background-color: #d7d7d7;
+      border-color: #b6b6b6;
+    }
+    

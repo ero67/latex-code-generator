@@ -28,19 +28,6 @@ const Cell = ({ option, onClick, row, col, disabled,cellColor}) => {
         // console.log("handleClick in Cell compnent");
   };
 
-  // const isImplicantCell = implicants.some(
-  //   (implicant) => implicant.row === row && implicant.col === col
-  // );
-
-  // const cellStyle = isImplicantCell
-  //   ? { backgroundColor: "red" }
-  //   : {};
-
-  
-  // Define a function to render the cell value
-  // const ValueOfCell = () => {
-  //   return <div>{cellValue}</div> ;
-  // };
   const cellStyle = cellColor ? { backgroundColor: cellColor } : {};
 
   return (

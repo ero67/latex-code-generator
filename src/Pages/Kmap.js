@@ -64,7 +64,7 @@ const Kmap = () => {
     };
 //function for finding out what color should the cell be after hovering over list
     function getCellColor(row, col, activeImplicantIndex,activeImplicantType, implicantCellIndexes,edgeimplicantCellIndexes, defaultColor, activeColor) {
-      // Check if there's an active implicant
+      // Check if there is an active implicant
       console.log(activeImplicantType);
       let activeImplicanCellIndexes = edgeimplicantCellIndexes;
       if(activeImplicantType==="default"){
@@ -193,9 +193,52 @@ const Kmap = () => {
     return content;
   };
 
-  const addCornerImplicant = () =>{
+  // const addCornerImplicant = () =>{
+  //   addImplicantCorner(true);
+  //   addPartOfEdgeImplicant([...edgeImplicant,0]);
+  //   addPartOfEdgeImplicant([...edgeImplicant,2]);
+  //   addPartOfEdgeImplicant([...edgeImplicant,8]);
+  //   addPartOfEdgeImplicant([...edgeImplicant,10]);
+  //   console.log(edgeImplicant);
+  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{'0'',0'}]);
+  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{'0','3'}]);
+  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{3,0}]);
+  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{3,3}]);
+  //   console.log(singeEdgeImplicantIndexes);
+  //   addEdgeImplicant([...edgeImplicants,edgeImplicant]);  
+  //   addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes,singeEdgeImplicantIndexes]);
+  //   addPartOfEdgeImplicant([]);
+  //   addPartOfSingleEdgeImplicantIndex([]);
+  //   setNumberOfEdgeImplicants(0);
+
+
+  // };
+
+  const addCornerImplicant = () => {
+    // Correctly adding all corner indices in a single update
+    const newEdgeImplicant = [...edgeImplicant, 0, 2, 8, 10];
+    // addPartOfEdgeImplicant(newEdgeImplicant);
+    console.log(newEdgeImplicant);
+   
+    const newSingleEdgeImplicantIndexes = [
+        { row: 0, col: 0 },
+        { row: 0, col: 3 },
+        { row: 3, col: 0 },
+        { row: 3, col: 3 }
+    ];
+
+    addPartOfSingleEdgeImplicantIndex(newSingleEdgeImplicantIndexes);
+    console.log(newSingleEdgeImplicantIndexes);
+
+    // Final state updates
+    // addEdgeImplicant([...edgeImplicants, newEdgeImplicant]);  
     addImplicantCorner(true);
-  };
+    addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes, newSingleEdgeImplicantIndexes]);
+    addPartOfEdgeImplicant([]);
+    addPartOfSingleEdgeImplicantIndex([]);
+    setNumberOfEdgeImplicants(0);
+};
+
   
   const generateCodeLaTeX = () =>{
       const [rows, cols] = tableSize.split('x').map(Number);
@@ -368,6 +411,7 @@ const Kmap = () => {
         console.log('this is implicant when finished button is pressed');
         console.log(implicant);
         //adds implicant to the all implicants list
+        if(implicant.length>0){
         addImplicant([...implicants, implicant]);
 
 
@@ -381,7 +425,7 @@ const Kmap = () => {
         }
         addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndex]);
         console.log(singeImplicantIndexes[0],singeImplicantIndexes[1]);
-
+      }
         //reseting variables connected with adding implicant
         addPartOfSingleImplicantIndex([]);
         addPartOfImplicant([]);
@@ -532,7 +576,9 @@ const Kmap = () => {
               col={col}
               disabled={disabled}
               // cellColor = {cellColor}
-              cellColor={getCellColor(row, col, activeImplicantIndex,activeImplicantType, implicantCellIndexes,edgeimplicantCellIndexes, 'white', 'red')}
+              cellColor={getCellColor(row, col, activeImplicantIndex,activeImplicantType, implicantCellIndexes,edgeimplicantCellIndexes, null, '#f1f38e')}
+              // '#7CFC00'
+
               />
             );
           }
@@ -551,6 +597,8 @@ const handleGoBackButton = () =>{
   setfinishImplicantDisabled(true);
   addImplicant([]);
   addEdgeImplicant([]);
+  addImplicantCellIndexes([]);
+  addEdgeImplicantCellIndexes([]);
     
 }
 

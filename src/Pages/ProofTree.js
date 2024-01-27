@@ -1,78 +1,212 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { fabric } from 'fabric';
+// import React, { useState, useEffect } from 'react';
 
+import React, { useState } from 'react';
+import './index.css'
+import GeneratedCode from '../Components/GeneratedCode';
+
+// ProofTreeNode Data Structure
+let nodeId = 0;
+const createProofTreeNode = (content = '', children = [], rightLabel = '') => {
+  return { id: nodeId++, content, children, rightLabel };
+};
+
+const specialSymbols = {
+  '→': ' $\\to$ ',
+  '∧': ' $\\land$ ',
+  '∨': ' $\\lor$ ',
+  '¬': ' $\\neg$ ',
+  // Add more symbols as needed
+};
+
+// ProofTree Component
 const ProofTree = () => {
-  const canvasRef = useRef(null);
-  const [nodes, setNodes] = useState([]);
-  const [currentStatement, setCurrentStatement] = useState('');
-  const canvas = new fabric.Canvas(canvasRef.current, {
-    width: 800,
-    height: 600,
-  });
-  useEffect(() => {
-    // Initialize Fabric.js canvas
+  const [rootNode, setRootNode] = useState(createProofTreeNode());
+  const [generatedCode, setGeneratedCode] = useState("Your code will appear here \n after you click on Generate Code button");
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
+
+
+  const addNode = (parentId) => {
     
-
-    // Handle canvas click event to add nodes
-    canvas.on('mouse:down', (event) => {
-      if (event.target === canvas) {
-        addNode(event.e.clientX, event.e.clientY);
+    const stack = [rootNode];
+    let found = false;
+  
+    while (stack.length > 0 && !found) {
+      const currentNode = stack.pop();
+  
+      if (currentNode.id === parentId && currentNode.children.length < 3) {
+        currentNode.children.push(createProofTreeNode());
+        found = true; // Node added, exit the loop
+      } else {
+        // Add children to the stack for further processing
+        currentNode.children.forEach(child => stack.push(child));
       }
-    });
-  }, []);
-
-  const addNode = (x, y) => {
-    if (currentStatement.trim() !== '') {
-      // Create a Fabric.js object representing a node
-      const rect = new fabric.Rect({
-        width: 100,
-        height: 50,
-        fill: 'white',
-        stroke: 'black',
-        strokeWidth: 2,
-        left: x,
-        top: y,
-      });
-
-      // Create a Fabric.js text object for the logical statement
-      const text = new fabric.Text(currentStatement, {
-        left: x + 30,
-        top: y + 10,
-        fontSize: 16,
-      });
-
-      // Add the objects to the canvas and the nodes state
-      canvas.add(rect, text);
-      setNodes([...nodes, { statement: currentStatement, objects: [rect, text] }]);
-      setCurrentStatement('');
+    }
+  
+    if (found) {
+      setRootNode({ ...rootNode });
+    } else {
+      console.log("Parent node not found.");
     }
   };
 
-  const generateLatexCode = () => {
-    const latexCode = nodes.map((node) => node.statement).join(' \\to ');
-    console.log(latexCode);
-    // You can use the generated LaTeX code as needed
+
+
+  const editNodeContent = (nodeId, newContent) => {
+    const stack = [rootNode];
+    while (stack.length > 0) {
+      const currentNode = stack.pop();
+  
+      if (currentNode.id === nodeId) {
+        currentNode.content = newContent;
+        break;
+      }
+  
+      // Add children to the stack to be processed
+      currentNode.children.forEach(child => stack.push(child));
+    }
+  
+    setRootNode({ ...rootNode });
+  };
+  
+
+  const editNodeRightLabel = (nodeId, newRightLabel) => {
+    const stack = [rootNode];
+    while (stack.length > 0) {
+      const currentNode = stack.pop();
+  
+      if (currentNode.id === nodeId) {
+        currentNode.rightLabel = newRightLabel;
+        break; // Stop the loop as we've found and updated the node
+      }
+  
+      // Add children to the stack for further processing
+      currentNode.children.forEach(child => stack.push(child));
+    }
+  
+    setRootNode({ ...rootNode });
   };
 
-  return (
-    <div>
-      <div>
+
+  
+  const insertSymbol = (symbolLatex) => {
+    if (selectedNodeId != null) {
+      // Find the selected node by ID and update its content
+      const updateNodeContent = (node, newSymbol) => {
+        if (node.id === selectedNodeId) {
+          // Append the new symbol to the current content of the node
+          return { ...node, content: node.content + newSymbol };
+        } else if (node.children) {
+          // Recursively update children
+          return { ...node, children: node.children.map(child => updateNodeContent(child, newSymbol)) };
+        }
+        return node;
+      };
+  
+      // Create a new tree with the updated content
+      const newRoot = updateNodeContent(rootNode, symbolLatex);
+      setRootNode(newRoot);
+    }
+  };
+  
+
+
+
+
+  const renderTreeNode = (node, isChild = false) => {
+    return (
+      <div className='proof-tree-node'>
+        {/* Recursively render the children, passing true as they are child nodes */}
+       
+        
+        {/* Render the current node's content */}
+        <div className='proof-tree-content'>
         <input
-          type="text"
-          placeholder="Enter logical statement"
-          value={currentStatement}
-          onChange={(e) => setCurrentStatement(e.target.value)}
-        />
-        {/* Button to manually add nodes */}
-        <button onClick={() => addNode(100, 100)}>Add Node</button>
+             type="text"
+             value={node.content}
+             onFocus={() => setSelectedNodeId(node.id)}
+             onChange={(e) => editNodeContent(node.id, e.target.value)}
+           />
+          
+          {/* Conditionally render the right label input only if this is a child node */}
+          {isChild && (
+            <input
+              type="text"
+              value={node.rightLabel}
+              placeholder="Right label"
+              onChange={(e) => editNodeRightLabel(node.id, e.target.value)}
+            />
+          )}
+          
+          <button onClick={() => addNode(node.id)}>Add Child</button>
+        </div>
+        <div className='proof-tree-children'>
+          {node.children.map((child) => renderTreeNode(child, true))}
+        </div>
       </div>
-      {/* Canvas for rendering the proof tree */}
-      <canvas ref={canvasRef}></canvas>
+    );
+  };
+  
+
+
+  // Render buttons for each special symbol
+  const renderSymbolButtons = () => {
+    return Object.entries(specialSymbols).map(([symbol, latex]) => (
+      <button className='symbolBtn' key={symbol} onClick={() => insertSymbol(latex)}>
+        {symbol}
+      </button>
+    ));
+  };
+  
+  
+  // Function to generate LaTeX code
+  const generateLatexCode = (node) => {
+    let code = '';
+  
+    // Base case: If the node has no children, return it as an axiom
+    if (node.children.length === 0) {
+      code = `    \\AxiomC{${node.content}} \n`;
+    } else {
+      // Generate code for children and apply the right inference command
+      const childrenCode = node.children.map(generateLatexCode).join(' ');
+      let nodeCommand = '   \\UnaryInfC';
+      if (node.children.length === 2) {
+        nodeCommand = '    \\BinaryInfC';
+      } else if (node.children.length === 3) {
+        nodeCommand = '    \\TrinaryInfC';
+      }
+  
+      code = `${childrenCode} ${nodeCommand}{${node.content}} \n`;
+    }
+  
+    // Add the right label if it exists and this is not the root node
+    if (node.rightLabel && node.children.length > 0) {
+      code += `    \\RightLabel{${node.rightLabel}}\n`;
+    }
+  
+    return code;
+  };
+  
+
+  const generateBtn = () => {
+    const proofTreeCode = generateLatexCode(rootNode);
+    setGeneratedCode(`\\begin{prooftree}\n${proofTreeCode}\n   \\end{prooftree}`);
+  };
+  
+
+  return (
+    <div className="proof-tree-container">
+      <h1>Proof Tree</h1>
+      <div className='btn-container'>{renderSymbolButtons()}</div>
+      {renderTreeNode(rootNode)}
       <div>
-        <button onClick={generateLatexCode}>Generate LaTeX Code</button>
       </div>
+      <button id="generateBtn" onClick={()=>generateBtn()}>Generate code </button>
+      <GeneratedCode id="generatedCode"  code={generatedCode}></GeneratedCode>
     </div>
+    
   );
 };
 
 export default ProofTree;
+
+

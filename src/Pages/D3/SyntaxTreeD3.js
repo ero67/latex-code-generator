@@ -117,7 +117,7 @@ const SyntaxTreeD3 = () => {
   const handleGenerateLatex = () => {
     const latexCode = `\\begin{forest}\n${generateLatexCode(treeData)}\n\\end{forest}`;
     setGeneratedCode(latexCode);
-    console.log(latexCode); // You can replace this with the code to save or display the LaTeX code
+    console.log(latexCode);
   };
 
   return (
