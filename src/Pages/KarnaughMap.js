@@ -1,0 +1,677 @@
+
+import React, { useState } from 'react';
+// import * as React from 'react';
+import './index.css'
+import Cell from "../Components/Cell";
+import GeneratedCode from '../Components/GeneratedCode';
+import ImplicantsList from '../Components/ImplicantsList';
+import EdgeImplicantList from '../Components/EdgeImplicantList';
+import Instructions from '../Components/Instructions';
+
+
+
+// TODO generovat mapu uplne odznova aj s farbami na zaklade implicants poli
+// TODO pridat do Cell komponentu moznost zafarbit pozadie nejakym sposobom na zaklade nejakeho argumentu ze implicant...a ze kde ma byt
+
+const Kmap = () => {
+    const [tableSize, setTableSize] = useState('0x0');
+    const [option, setOption] = useState(0);
+    const [opposite, setOpposite] = useState(1);
+    const [disabled, Disable] = useState(false);
+      
+    // edge implicant
+    const [markingEdgeImplicant,setMarkingEdgeImplicant] = useState(false);
+    const [edgeImplicants, addEdgeImplicant] = useState([]);
+    const [numberOfEdgeImplicants, setNumberOfEdgeImplicants] = useState(0);
+    const [edgeImplicant,addPartOfEdgeImplicant] = useState([]);
+
+    const [finishImplicantDisabled, setfinishImplicantDisabled] = useState(true);
+    const [classicImplicantDisabled, setClassicImplicantDisabled] = useState(true);
+    const [edgeImplicantDisabled, setEdgeImplicantDisabled] = useState(true);
+    const [cornerImplicantDisabled, setCornerImplicantDisabled] = useState(true);
+
+
+    
+    // default implicant
+    const [implicants, addImplicant] = useState([]);
+    const [markingImplicant,setMarkingImplicant]= useState(false);
+    const [numberOfImplicants, setNumberOfImplicants] = useState(0);
+    const [implicant,addPartOfImplicant] = useState([]);
+
+    //useStates for coloring implicants
+    const [singeImplicantIndexes, addPartOfSingleImplicantIndex] = useState([]);
+    const [implicantCellIndexes, addImplicantCellIndexes]= useState([]);
+
+    const [singeEdgeImplicantIndexes, addPartOfSingleEdgeImplicantIndex] = useState([]);
+    const [edgeimplicantCellIndexes, addEdgeImplicantCellIndexes]= useState([]);
+    
+
+    // corner implicant
+    const [implicantCorner, addImplicantCorner]= useState(false);
+
+    const [generatedCode, setGeneratedCode] = useState("Your code will appear here \n after you click on Generate Code button");
+    // const code='a';
+    const colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink", "cyan", "magenta"];
+
+
+    const [activeImplicantIndex, setActiveImplicantIndex] = useState(null);
+    const [activeImplicantType, setActiveImplicantType] = useState(null);
+
+
+    const handleImplicantClick = (index,typeOfImplicant) => {
+      setActiveImplicantIndex(index);
+      setActiveImplicantType(typeOfImplicant);
+    };
+//function for finding out what color should the cell be after hovering over list
+    function getCellColor(row, col, activeImplicantIndex,activeImplicantType, implicantCellIndexes,edgeimplicantCellIndexes, defaultColor, activeColor) {
+      // Check if there is an active implicant
+      console.log(activeImplicantType);
+      let activeImplicanCellIndexes = edgeimplicantCellIndexes;
+      if(activeImplicantType==="default"){
+        activeImplicanCellIndexes = implicantCellIndexes;
+      }
+      else if(activeImplicantType==="edge"){
+        activeImplicanCellIndexes = edgeimplicantCellIndexes;
+      }
+
+      if (activeImplicantIndex !== null) {
+          const activeImplicant = activeImplicanCellIndexes[activeImplicantIndex];
+          if (activeImplicant.some(cell => cell.row === row && cell.col === col)) {
+              return activeColor; // Color for active implicant cells
+          }
+      }
+      
+      // Check if the cell belongs to any other implicant
+      for (let i = 0; i < activeImplicanCellIndexes.length; i++) {
+          if (i !== activeImplicantIndex) {
+              const implicant = activeImplicanCellIndexes[i];
+              if (implicant.some(cell => cell.row === row && cell.col === col)) {
+                  return defaultColor; // Color for non-active implicant cells
+              }
+          }
+      }
+  
+      return null; // No color if the cell is not part of any implicant
+  }
+  
+//   function getCellColor(row, col, activeImplicantIndex, activeImplicantType, implicantCellIndexes, edgeImplicantCellIndexes, defaultColor, activeColor) {
+//     // Function to check if the cell is part of the given implicant array
+//     function isCellPartOfImplicant(implicantArray, implicantIndex) {
+//         return implicantArray.some((implicant, index) => {
+//             if (index === implicantIndex) {
+//                 return implicant.some(cell => cell.row === row && cell.col === col);
+//             }
+//             return false;
+//         });
+//     }
+
+//     // Check for active implicant
+//     if (activeImplicantIndex !== null) {
+//         if (activeImplicantType === "default" && isCellPartOfImplicant(implicantCellIndexes, activeImplicantIndex)) {
+//             return activeColor;
+//         } else if (activeImplicantType === "edge" && isCellPartOfImplicant(edgeImplicantCellIndexes, activeImplicantIndex)) {
+//             return activeColor;
+//         }
+//     }
+
+//     // Check for non-active implicants
+//     const isPartOfNormalImplicant = isCellPartOfImplicant(implicantCellIndexes, activeImplicantIndex);
+//     const isPartOfEdgeImplicant = isCellPartOfImplicant(edgeImplicantCellIndexes, activeImplicantIndex);
+//     if (isPartOfNormalImplicant || isPartOfEdgeImplicant) {
+//         return defaultColor;
+//     }
+
+//     return null; // No color if the cell is not part of any implicant
+// }
+
+  
+
+    function getColorForImplicant(implicantIndex) {
+      return colors[implicantIndex % colors.length];
+  }
+
+    // zmena velkosti tabulky
+    const handleTableSizeChange = (event) => {
+        setTableSize(event.target.value);
+    };
+
+    // zmena hodnoty ktoru budeme davat do cells na ktore budeme klikat
+    const handleOptionChange = (value) =>{
+      setOption(value);
+      if(value===1){
+        setOpposite(0);
+      } 
+      else{
+        setOpposite(1);
+      } 
+      //console.log(value);
+    }
+    
+    // handling initail state of buttons shown
+    const handleDisable = () =>{
+        const cells = document.getElementsByClassName("cell");
+        for (let cell of cells) {
+          // If the cell is empty, set its value to the opposite number
+          if (!cell.textContent) {
+            alert('fill all the cells');
+            return;
+          }
+        }
+        
+        Disable(true);
+        setClassicImplicantDisabled(false);
+        setEdgeImplicantDisabled(false);
+        if(tableSize==='4x4'){
+          setCornerImplicantDisabled(false);
+        }
+        setOption(null);
+        setOpposite(null);
+    } 
+
+
+    // Define a function to fill the cells with the opposite number
+  const fillCells = () => {
+    // Loop through all the cells in the table
+    const cells = document.getElementsByClassName("cell");
+    for (let cell of cells) {
+      // If the cell is empty, set its value to the opposite number
+      if (!cell.textContent) {
+        cell.textContent = opposite;
+      }
+    }
+  };
+
+
+  const getContentOfCells = () =>{
+    const cells = document.getElementsByClassName("cell");
+    let content = [];
+    for (let cell of cells) {
+      content.push(cell.textContent);
+      console.log(cell.textContent);
+    }
+    
+    return content;
+  };
+
+  // const addCornerImplicant = () =>{
+  //   addImplicantCorner(true);
+  //   addPartOfEdgeImplicant([...edgeImplicant,0]);
+  //   addPartOfEdgeImplicant([...edgeImplicant,2]);
+  //   addPartOfEdgeImplicant([...edgeImplicant,8]);
+  //   addPartOfEdgeImplicant([...edgeImplicant,10]);
+  //   console.log(edgeImplicant);
+  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{'0'',0'}]);
+  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{'0','3'}]);
+  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{3,0}]);
+  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{3,3}]);
+  //   console.log(singeEdgeImplicantIndexes);
+  //   addEdgeImplicant([...edgeImplicants,edgeImplicant]);  
+  //   addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes,singeEdgeImplicantIndexes]);
+  //   addPartOfEdgeImplicant([]);
+  //   addPartOfSingleEdgeImplicantIndex([]);
+  //   setNumberOfEdgeImplicants(0);
+
+
+  // };
+
+  const addCornerImplicant = () => {
+    // Correctly adding all corner indices in a single update
+    const newEdgeImplicant = [...edgeImplicant, 0, 2, 8, 10];
+    // addPartOfEdgeImplicant(newEdgeImplicant);
+    console.log(newEdgeImplicant);
+   
+    const newSingleEdgeImplicantIndexes = [
+        { row: 0, col: 0 },
+        { row: 0, col: 3 },
+        { row: 3, col: 0 },
+        { row: 3, col: 3 }
+    ];
+
+    addPartOfSingleEdgeImplicantIndex(newSingleEdgeImplicantIndexes);
+    console.log(newSingleEdgeImplicantIndexes);
+
+    // Final state updates
+    // addEdgeImplicant([...edgeImplicants, newEdgeImplicant]);  
+    addImplicantCorner(true);
+    addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes, newSingleEdgeImplicantIndexes]);
+    addPartOfEdgeImplicant([]);
+    addPartOfSingleEdgeImplicantIndex([]);
+    setNumberOfEdgeImplicants(0);
+};
+
+  
+  const generateCodeLaTeX = () =>{
+      const [rows, cols] = tableSize.split('x').map(Number);
+      const content = getContentOfCells();
+      let code = "";
+      code += "\\begin{karnaugh-map}";
+      code += "[";
+      code += cols;
+      code += "][";
+      code += rows;
+      code += "]\n";
+
+      code += "       \\manualterms{";
+      // indexes of cells on grid of karnaugh-map package
+      let indexes= [
+        [0,1,3,2],
+        [4,5,7,6],
+        [12,13,15,14],
+        [8,9,11,10]
+      ];
+
+      let indexes_2_x_2=[
+        [0,1],
+        [2,3]
+      ]
+
+      let indexes_2_x_1=[
+        [0],
+        [1]
+      ]
+      // generating the code for manualterms
+      for(let row = 0; row < rows; row++ ){
+        for(let col = 0; col < cols ; col++){
+          if(cols===2 && rows===2){
+            code += content[indexes_2_x_2[row][col]];
+          }
+          else if(cols===1){
+            code += content[indexes_2_x_1[row][col]];
+          }
+          else{
+            code += content[indexes[row][col]];
+          }
+          if(row*cols + col < content.length - 1){
+            code += ",";
+          }
+        }
+      }
+
+      code +="}\n";
+      
+
+      //generating code for classic implicant
+      //required number of {} in \implicant command is 2 so wa can hardcode it
+      if(implicants.length>0){
+      for(let row =0; row < implicants.length; row ++){
+        
+        if(implicants[row][0]===undefined){
+      
+          continue;
+        }
+        else if ((implicants[row].length===1 )){
+      
+          code += "       \\implicant{";
+          code += implicants[row][0];
+          code += "}";
+          code += "{";
+          code += implicants[row][0];
+          code +="}\n";
+        }
+        else{
+          code += "       \\implicant{";
+          code += implicants[row][0];
+          code += "}";
+          code += "{";
+          code += implicants[row][1];
+          code +="}\n";
+        }
+      }
+    }
+
+      if(implicantCorner && rows===4 && cols===4){
+        code += "       \\implicantcorner\n";
+      }
+      else if(implicantCorner && (rows!==4 || cols!==4)){
+        alert('Implicant na rohy sa dá zaznačiť len na poliach rozmeru 4x4')
+      }
+
+      // logic for generating code for edge implicant
+      // required number of {} for \implicantedge command is 4
+      // if i want to mark only 2 cells i need to put both indexes twice
+      for(let row =0; row < edgeImplicants.length; row ++){
+        
+        
+        if(edgeImplicants[row].length===2){
+          code += "       \\implicantedge";
+          code +="{";
+          code += edgeImplicants[row][0];
+          code +="}";
+          code +="{";
+          code += edgeImplicants[row][0];
+          code +="}";
+
+          code +="{";
+          code += edgeImplicants[row][1];
+          code +="}";
+          code +="{";
+          code += edgeImplicants[row][1];
+          code +="}\n";
+        }
+        else if(edgeImplicants[row].length===4) {
+          code += "       \\implicantedge";
+          code +="{";
+          code += edgeImplicants[row][0];
+          code +="}";
+          code +="{";
+          code += edgeImplicants[row][1];
+          code +="}";
+
+          code +="{";
+          code += edgeImplicants[row][2];
+          code +="}";
+          code +="{";
+          code += edgeImplicants[row][3];
+          code +="}\n";
+
+        }
+        else{
+          // alert("Number of Cells for edge implicant is 2 or 4.Anything else is");
+          continue;
+        }
+        }
+
+
+      code += "\\end{karnaugh-map}";
+      // console.log(code);
+      // alert(code);
+      setGeneratedCode(code);
+      console.log("this is implicantCellIndexes");
+      console.log(implicantCellIndexes);
+      console.log("this is edgeimplicantCellIndexes");
+      console.log(edgeimplicantCellIndexes);
+      
+  };
+// adding all cell which are supposed to be in chosen implicant
+
+  function calculateImplicantIndices(startPoint, endPoint) {
+    const implicantIndices = [];
+    if(endPoint===null){
+      endPoint = startPoint;
+    }
+    // check if its a single cell selection
+    if (startPoint.row === endPoint.row && startPoint.col === endPoint.col) {
+        return [startPoint];
+    }
+
+    // Otherwise, calculate indices for rectangular or linear implicants
+    for (let r = startPoint.row; r <= endPoint.row; r++) {
+        for (let c = startPoint.col; c <= endPoint.col; c++) {
+            implicantIndices.push({ row: r, col: c });
+        }
+    }
+
+    return implicantIndices;
+}
+
+//handle logic of finish implicant button and all things that this button press triggers
+  const finishImplicant = () =>{
+    // if(numberOfImplicants>=2){
+      if(markingImplicant){  
+        console.log('this is implicant when finished button is pressed');
+        console.log(implicant);
+        //adds implicant to the all implicants list
+        if(implicant.length>0){
+        addImplicant([...implicants, implicant]);
+
+
+        //logic for addding indexes of all cells which are part of the implicant to the another array
+        let singeImplicantIndex=[];
+        if(singeImplicantIndexes[1]===undefined){
+           singeImplicantIndex = calculateImplicantIndices(singeImplicantIndexes[0],singeImplicantIndexes[0]);
+        }
+        else{
+          singeImplicantIndex = calculateImplicantIndices(singeImplicantIndexes[0],singeImplicantIndexes[1]);
+        }
+        addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndex]);
+        console.log(singeImplicantIndexes[0],singeImplicantIndexes[1]);
+      }
+        //reseting variables connected with adding implicant
+        addPartOfSingleImplicantIndex([]);
+        addPartOfImplicant([]);
+        setNumberOfImplicants(0);
+        setMarkingImplicant(false);
+      }
+      else if(markingEdgeImplicant){
+        if(edgeImplicant.length > 1){
+          addEdgeImplicant([...edgeImplicants,edgeImplicant]);  
+          // addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndexes])
+          addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes,singeEdgeImplicantIndexes]);
+        }
+        // addEdgeImplicant([...edgeImplicants,edgeImplicant]);
+        addPartOfEdgeImplicant([]);
+        addPartOfSingleEdgeImplicantIndex([]);
+        setNumberOfEdgeImplicants(0);
+        setMarkingEdgeImplicant(false);
+        console.log(edgeImplicants);
+      }
+      setfinishImplicantDisabled(true);
+      setClassicImplicantDisabled(false);
+      setEdgeImplicantDisabled(false);
+      if(tableSize==='4x4'){
+        setCornerImplicantDisabled(false);
+      }
+    // }
+  }
+//set up buttons settings and interface when adding deafult implicant
+  const addingimplicant = () => {
+      setMarkingImplicant(!markingImplicant);
+      setfinishImplicantDisabled(false);
+      setClassicImplicantDisabled(false);
+      setEdgeImplicantDisabled(true);
+      setCornerImplicantDisabled(true);
+      
+
+       
+  }
+
+  //set up buttons settings and interface when adding edge implicant
+  const addingEdgeimplicant = () => {
+    setMarkingEdgeImplicant(!markingEdgeImplicant);
+
+    setfinishImplicantDisabled(false);
+    setClassicImplicantDisabled(true);
+    setEdgeImplicantDisabled(false);
+    setCornerImplicantDisabled(true); 
+  }
+  const handleCellClick = (row, col) => {
+    let indexes=[]
+    let rows=0;
+    let cols=0;
+    if(tableSize==='2x2'){
+       indexes=[
+        [0,1],
+        [2,3]
+      ]
+      rows=2;
+      cols=2;
+    }
+    else if(tableSize==='2x1'){
+      indexes=[
+        [0],
+        [1]
+      ]
+      rows=2;
+      cols=1;
+    }
+    else{
+      indexes= [
+        [0,1,3,2],
+        [4,5,7,6],
+        [12,13,15,14],
+        [8,9,11,10]
+      ];
+      rows=4;
+      cols=4;
+    }
+  
+//testtesttest
+    console.log(disabled,markingImplicant);
+    // disabled means that we are in the implicant part of this page
+    // if am am marking basic implicant
+    if(disabled && markingImplicant && implicant.length <= 1){
+        addPartOfImplicant([...implicant,indexes[row][col]]);
+        addPartOfSingleImplicantIndex([...singeImplicantIndexes,{row,col}]);
+        setNumberOfImplicants(numberOfImplicants+1);
+        console.log("this is implicant");
+        console.log(implicant);
+       
+      }
+
+      // if i am choosing esge implicant and also disbled is true
+      // disabled means that we are in the implicant part of this page
+      else if(disabled && markingEdgeImplicant){
+        if(row === 0 || row === rows-1 || col === 0 || col === cols-1){
+            addPartOfEdgeImplicant([...edgeImplicant,indexes[row][col]]);
+            addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{row,col}]);
+            setNumberOfEdgeImplicants(numberOfEdgeImplicants+1);
+            console.log("this is edge implicant");
+            console.log(edgeImplicant);
+        }
+        else{
+          alert("you can only select Cells on edges");
+          setMarkingEdgeImplicant(false);
+          setfinishImplicantDisabled(true);
+          setClassicImplicantDisabled(false);
+        }
+      }
+
+  };
+
+
+// TODO function for sorting edge implicants so they are generated correctly no matter the order of being clicked
+
+
+  const generateTable = () => {
+      const [rows, cols] = tableSize.split('x').map(Number);
+      const table = [];
+      for (let row = 0; row < rows; row++) {
+          const currentRow = [];
+          for (let col = 0; col < cols; col++) {
+
+
+            let cellColor = null;
+            if(activeImplicantType==='default'){
+            implicantCellIndexes.forEach((implicant, index) => {
+                if (implicant.some(cell => cell.row === row && cell.col === col)) {
+                    cellColor = getColorForImplicant(index);
+                }
+            })}
+
+            else if(activeImplicantType==='edge'){
+                edgeimplicantCellIndexes.forEach((implicant, index) => {
+                if (implicant.some(cell => cell.row === row && cell.col === col)) {
+                    cellColor = getColorForImplicant(index);
+                }
+            })
+            }
+
+
+            currentRow.push(
+              <Cell 
+              key={`${row}${col}`} 
+              option={option}
+              onClick={handleCellClick} 
+              row={row}
+              col={col}
+              disabled={disabled}
+              // cellColor = {cellColor}
+              cellColor={getCellColor(row, col, activeImplicantIndex,activeImplicantType, implicantCellIndexes,edgeimplicantCellIndexes, null, '#f1f38e')}
+              // '#7CFC00'
+
+              />
+            );
+          }
+          table.push(<div className="row" key={row}>{currentRow}</div>);
+      }
+
+      return <div className='karnaugh-map' >{table}</div>;
+  }
+const handleGoBackButton = () =>{
+  Disable(false);
+  setClassicImplicantDisabled(true);
+  setEdgeImplicantDisabled(true);
+  setCornerImplicantDisabled(true);
+  setMarkingEdgeImplicant(false);
+  setMarkingImplicant(false);
+  setfinishImplicantDisabled(true);
+  addImplicant([]);
+  addEdgeImplicant([]);
+  addImplicantCellIndexes([]);
+  addEdgeImplicantCellIndexes([]);
+    
+}
+
+// const handleClearButton = () =>{
+//     setOption(0);
+//     setOpposite(1);
+//     // Loop through all the cells in the table
+//     const cells = document.getElementsByClassName("cell");
+//     for (let cell of cells) {
+//       // If the cell is empty, set its value to the opposite number
+//         cell.textContent = ''; 
+//     }
+//     // window.location.reload(false)
+//   }
+ 
+    
+    
+
+    return (
+      // <span>
+      <div className="Kmap"> 
+      <h1>Karnaugh maps</h1>
+        <Instructions></Instructions>
+        <div className="settings" disabled={disabled}>
+            {/* <div className="tableSize"> */}
+                {/* <label htmlFor="tableSize" disabled={disabled}>Select Table Size: </label> */}
+                
+            {/* </div> */}
+            <div className='Buttons'>
+            <select id="tableSize" onChange={handleTableSizeChange} disabled={disabled} value={tableSize}>
+                    <option value="0x0">Select map size</option>
+                    <option value="2x1">2 x 1</option>
+                    <option value="2x2">2 x 2</option>
+                    <option value="2x4">4 x 2</option>
+                    <option value="4x4">4 x 4</option>
+                </select>
+                <button id="button0" disabled={disabled} onClick={()=>handleOptionChange(0)} style={{ backgroundColor: option === 0 ? "green" : 'white' }}>0</button>
+                <button id="button1" disabled={disabled} onClick={()=>handleOptionChange(1)} style={{ backgroundColor: option === 1 ? "green" : 'white' }}>1</button>
+                <button id="autofill" disabled={disabled} onClick={fillCells}>Fill the rest</button>
+                <button id="submitBtn" onClick={()=>handleDisable()} disabled={disabled}>Submit</button>
+
+                {/* <button id="clearBtn" onClick={()=>handleClearButton()} disabled={disabled}>Clear Cells</button> */}
+                {/* create button and when its clicked console log hello */}
+                <button id="goback" disabled={!disabled} onClick={handleGoBackButton}>Go back</button>
+                 {/* {/* <but id="submitBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </but */}
+                <button id ="addImplicant" disabled={classicImplicantDisabled} onClick={()=>addingimplicant()} style={{ backgroundColor: markingImplicant === true ? "red" : 'white' }}>+ Add impl</button>
+                <button id="addImplicant" disabled={edgeImplicantDisabled} onClick={()=>addingEdgeimplicant()} style={{ backgroundColor: markingEdgeImplicant === true ? "red" : 'white' }}>+ Edge impl</button>
+                <button id ="cornerImplicant" disabled={cornerImplicantDisabled} onClick={()=>addCornerImplicant()} >+ Corner impl</button>
+                <button id="finishImplicant" disabled={finishImplicantDisabled} onClick={()=>finishImplicant()}>Finish Implicant</button>
+            </div>
+            
+        </div>
+              {generateTable()}
+              
+                {/* <ImplicantsList id="implicantlist" implicants={implicants}></ImplicantsList> */}
+                <ImplicantsList 
+                // implicants={implicantCellIndexes}
+                  implicants={implicants} 
+                  onImplicantClick={handleImplicantClick} 
+                />
+                <EdgeImplicantList id="implicantlist" edgeImplicants={edgeImplicants} onImplicantClick={handleImplicantClick}>
+
+                </EdgeImplicantList>
+               
+              
+              <button id="generateBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </button>
+              
+              <GeneratedCode id="generatedCode" disabled = {!disabled} code={generatedCode}></GeneratedCode>
+              
+      </div>
+    
+    );
+}
+
+export default Kmap;
+
