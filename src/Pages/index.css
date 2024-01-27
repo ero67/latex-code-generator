@@ -299,7 +299,11 @@ h1{
 .Buttons {
   display: inline-block;
   margin-right: 10px;
+  background-color: #ffffff;
+  /* border-radius: 10%; */
   /* width: 37rem; */
+
+  
  }
  
   #button0 {
@@ -661,16 +665,17 @@ div.containerText #question {
       display: flex;
       flex-direction: column-reverse;
       align-items: center;
-      margin-bottom: 20px; /* Spacing between parent and children nodes */
+      margin-bottom: 30px; /* Spacing between parent and children nodes */
     }
     
     .proof-tree-content {
       z-index: 1; /* Ensure that node content appears above connecting lines */
-      background: white; /* Background to cover the connecting lines */
+      background: rgb(234, 233, 233); /* Background to cover the connecting lines */
       border: 1px solid #ccc;
       padding: 5px;
       border-radius: 3px;
       margin-top: 20px; /* This creates space for the connecting line */
+      margin-left: 10px;
     }
     
     .proof-tree-children {
@@ -720,11 +725,11 @@ div.containerText #question {
     }
     
 
-    .button-container {
+    .btn-container {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 40px;
       padding: 10px;
       border: 1px solid #ddd;
       border-radius: 8px;

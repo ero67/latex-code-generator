@@ -2,13 +2,13 @@
 import Navbar from './Components/Navbar/Navbar';
 // import GeneratedCode from './Pages/GeneratedCode';
 import Home from './Pages/Home'
-import Kmap from './Pages/Kmap'
+import Kmap from './Pages/KarnaughMap'
 // import Tree from './Pages/Tree'
 // import SyntaxTree from './Components/AST/SyntaxTree';
 // import AbstractTree from './Pages/AbstractTree';
 import ProofTree from './Pages/ProofTree';
 import {Route, Routes} from 'react-router-dom';
-import SyntaxTreeD3 from './Pages/D3/SyntaxTreeD3';
+import SyntaxTreeD3 from './Pages/AST';
 // import { BrowserRouter as Router } from 'react-router-dom';
 // import "bootstrap/dist/css/bootstrap.min.css";
 

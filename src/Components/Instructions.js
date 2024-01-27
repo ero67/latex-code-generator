@@ -12,7 +12,7 @@ const Instructions = () => {
             <p id="question2" style={{ fontWeight: 'bold' }}>How to mark implicants?</p>
             <p>- If marking a rectangular implicant, click the upper left corner and bottom right corner of desired implicant</p>
             <p>- If marking a implicant in single row or column click the beginning and the end of the implicant</p>
-            <p>- If marking an edge implicant, click the corresponding cell on edge.</p>
+            <p>- If marking an edge implicant, click the corresponding cells on edge.</p>
         </div>
     );
 };
