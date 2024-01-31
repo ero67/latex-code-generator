@@ -1,7 +1,8 @@
 // src/SyntaxTreeD3.js
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import GeneratedCode from '../Components/GeneratedCode';
+
 
 const SyntaxTreeD3 = () => {
   const [treeData, setTreeData] = useState(null);
@@ -64,9 +65,9 @@ const SyntaxTreeD3 = () => {
       .attr('dy', 5)
       .attr('text-anchor', 'middle')
       .text((d) => d.data.value);
-  }, [treeData]);
+  });
 
-  const handleNodeClick = (event, node) => {
+  const handleNodeClick =useCallback( (event, node) => {
     // event.stopPropagation(); // Prevent propagation to the parent SVG
     const childValue = prompt('Enter value for the new child node:');
     if (childValue !== null) {
@@ -82,7 +83,8 @@ const SyntaxTreeD3 = () => {
 
       setTreeData({ ...treeData });
     }
-  };
+  },[treeData]);
+  
 
   const handleCreateTree = () => {
     const rootValue = prompt('Enter value for the root node:');

@@ -15,9 +15,10 @@
   border: 1px solid #000000;
 }
 .content {
-  max-width: 600px;
+  max-width: 900px;
   margin: auto auto;
   padding: 20px;
+  justify-content: center;
 }
 
 .tuke_logo{
@@ -601,6 +602,7 @@ p{
 
  .Tree{
   display: grid;
+  justify-content: center;
  }
 
  svg{
@@ -753,3 +755,35 @@ div.containerText #question {
       border-color: #b6b6b6;
     }
     
+
+
+    /* HOME PAGE CSS */
+    .home{
+      display: table;
+      /* background-color: #39f; */
+      /* width: 50rem; */
+      margin-top: 30%;
+      /* width: 100%; */
+    }
+
+    .kmaps, .asts, .prooftrees{
+      display: table-cell;
+      /* vertical-align: middle; */
+      width: 10%;
+      text-align: center;
+    }
+
+    .homeMain{
+      display: table-cell;
+      /* vertical-align: middle; */
+      width: 80%;
+      text-align: center;
+    }
+
+    
+    .homeMain h1{
+      font-size: 3rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      margin-top: 5rem;
+    }
