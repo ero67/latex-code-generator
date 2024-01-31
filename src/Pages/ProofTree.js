@@ -112,23 +112,21 @@ const ProofTree = () => {
 
 
 
-  const renderTreeNode = (node, isChild = false) => {
+  const renderTreeNode = (node) => {
     return (
-      <div className='proof-tree-node'>
-        {/* Recursively render the children, passing true as they are child nodes */}
-       
-        
-        {/* Render the current node's content */}
+      <div className='proof-tree-node'> 
+        {/* render content of current node */}
         <div className='proof-tree-content'>
         <input
              type="text"
              value={node.content}
              onFocus={() => setSelectedNodeId(node.id)}
+            //  onClick={() => setSelectedNodeId(node.id)}
              onChange={(e) => editNodeContent(node.id, e.target.value)}
            />
           
           {/* Conditionally render the right label input only if this is a child node */}
-          {isChild && (
+          {node.children.length > 0 && (
             <input
               type="text"
               value={node.rightLabel}
@@ -158,33 +156,74 @@ const ProofTree = () => {
   };
   
   
-  // Function to generate LaTeX code
+  // // Function to generate LaTeX code
+  // const generateLatexCode = (node) => {
+  //   let code = '';
+  
+  
+
+  //   // Base case: If the node has no children, return it as an axiom
+  //   if (node.children.length === 0) {
+  //     code = `    \\AxiomC{${node.content}} \n`;
+  //   } 
+    
+    
+  //   else {
+  //     // Generate code for children and apply the right inference command
+  //     const childrenCode = node.children.map(generateLatexCode).join(' ');
+  //     let nodeCommand = '   \\UnaryInfC';
+  //     if (node.children.length === 2) {
+  //       nodeCommand = '    \\BinaryInfC';
+  //     } else if (node.children.length === 3) {
+  //       nodeCommand = '    \\TrinaryInfC';
+  //     }
+  
+  //     code = `${childrenCode} ${nodeCommand}{${node.content}} \n`;
+  //   }
+  //   // Add the right label if it exists and this is not the root node
+  //   if (node.rightLabel && node.children.length > 0) {
+  //     code += `    \\RightLabel{${node.rightLabel}}\n`;
+  //   }
+    
+  
+  //   return code;
+  // };
   const generateLatexCode = (node) => {
     let code = '';
   
-    // Base case: If the node has no children, return it as an axiom
-    if (node.children.length === 0) {
-      code = `    \\AxiomC{${node.content}} \n`;
-    } else {
-      // Generate code for children and apply the right inference command
-      const childrenCode = node.children.map(generateLatexCode).join(' ');
-      let nodeCommand = '   \\UnaryInfC';
-      if (node.children.length === 2) {
-        nodeCommand = '    \\BinaryInfC';
-      } else if (node.children.length === 3) {
-        nodeCommand = '    \\TrinaryInfC';
-      }
+    // Generate code for children first
+    let childrenCode = "";
+    for (let i = 0; i < node.children.length; i++) {
+        const childLatexCode = generateLatexCode(node.children[i]);
+        childrenCode += childLatexCode;
+        if (i < node.children.length - 1) {
+            childrenCode += " "; // Add a space between codes, but not after the last one
+        }
+    }
+    
   
-      code = `${childrenCode} ${nodeCommand}{${node.content}} \n`;
+    // Determine the appropriate command based on the number of children
+    let nodeCommand = '';
+    if (node.children.length === 0) {
+      nodeCommand = `     \\AxiomC{${node.content}}`;
+    } else if (node.children.length === 1) {
+      nodeCommand = `     \\UnaryInfC{${node.content}}`;
+    } else if (node.children.length === 2) {
+      nodeCommand = `    \\BinaryInfC{${node.content}}`;
+    } else if (node.children.length === 3) {
+      nodeCommand = `     \\TrinaryInfC{${node.content}}`;
     }
   
-    // Add the right label if it exists and this is not the root node
-    if (node.rightLabel && node.children.length > 0) {
-      code += `    \\RightLabel{${node.rightLabel}}\n`;
+    // If the node has a right label, it should come before the node's inference command
+    if (node.rightLabel) {
+      code = `${childrenCode} \\RightLabel{${node.rightLabel}} ${nodeCommand}\n`;
+    } else {
+      code = `${childrenCode} ${nodeCommand} \n`;
     }
   
     return code;
   };
+  
   
 
   const generateBtn = () => {
