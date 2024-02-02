@@ -1,5 +1,6 @@
 
 import Navbar from './Components/Navbar/Navbar';
+// import Navbar from './Navbar';
 // import GeneratedCode from './Pages/GeneratedCode';
 import Home from './Pages/Home'
 import Kmap from './Pages/KarnaughMap'

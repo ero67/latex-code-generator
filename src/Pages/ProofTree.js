@@ -1,47 +1,50 @@
-// import React, { useState, useEffect } from 'react';
-
-import React, { useState } from 'react';
-import './index.css'
-import GeneratedCode from '../Components/GeneratedCode';
+// TODO: PROOF TREES : right label nech ma mensiu velkost pisma jak nazvy v nodoch
+// TODO: PROOF TREES : dat na vyber ci generovat takto {$E \to B$} abo takto {E  $\to$  B}. 
+//                     To znamena ze dat na vyber ci vsetko bude v matematickom pisme to znamena ze $takto$ alebo nie
+// TODO: PROOF TREES : namiesto tlacitok hore pre davanie specialnych znakov pridat ze ak napise "\" tak mu to da na vyber tie specialne znaky, jak taky autocomplete cca
+// TODO: PROOF TREES : podpora az 5tich potomkov https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
+import React, { useState } from "react";
+import "./index.css";
+import GeneratedCode from "../Components/GeneratedCode";
 
 // ProofTreeNode Data Structure
 let nodeId = 0;
-const createProofTreeNode = (content = '', children = [], rightLabel = '') => {
+const createProofTreeNode = (content = "", children = [], rightLabel = "") => {
   return { id: nodeId++, content, children, rightLabel };
 };
 
 const specialSymbols = {
-  '→': ' $\\to$ ',
-  '∧': ' $\\land$ ',
-  '∨': ' $\\lor$ ',
-  '¬': ' $\\neg$ ',
+  "→": " $\\to$ ",
+  "∧": " $\\land$ ",
+  "∨": " $\\lor$ ",
+  "¬": " $\\neg$ ",
   // Add more symbols as needed
 };
 
 // ProofTree Component
 const ProofTree = () => {
   const [rootNode, setRootNode] = useState(createProofTreeNode());
-  const [generatedCode, setGeneratedCode] = useState("Your code will appear here \n after you click on Generate Code button");
+  const [generatedCode, setGeneratedCode] = useState(
+    "Your code will appear here \n after you click on Generate Code button"
+  );
   const [selectedNodeId, setSelectedNodeId] = useState(null);
 
-
   const addNode = (parentId) => {
-    
     const stack = [rootNode];
     let found = false;
-  
+
     while (stack.length > 0 && !found) {
       const currentNode = stack.pop();
-  
+
       if (currentNode.id === parentId && currentNode.children.length < 3) {
         currentNode.children.push(createProofTreeNode());
         found = true; // Node added, exit the loop
       } else {
         // Add children to the stack for further processing
-        currentNode.children.forEach(child => stack.push(child));
+        currentNode.children.forEach((child) => stack.push(child));
       }
     }
-  
+
     if (found) {
       setRootNode({ ...rootNode });
     } else {
@@ -51,43 +54,41 @@ const ProofTree = () => {
 
 
 
+  // function to edit the content of a node based on its ID
   const editNodeContent = (nodeId, newContent) => {
     const stack = [rootNode];
     while (stack.length > 0) {
       const currentNode = stack.pop();
-  
+
       if (currentNode.id === nodeId) {
         currentNode.content = newContent;
         break;
       }
-  
-      // Add children to the stack to be processed
-      currentNode.children.forEach(child => stack.push(child));
+
+      // adding children to the stack... so they are processed
+      currentNode.children.forEach((child) => stack.push(child));
     }
-  
+
     setRootNode({ ...rootNode });
   };
-  
 
   const editNodeRightLabel = (nodeId, newRightLabel) => {
     const stack = [rootNode];
     while (stack.length > 0) {
       const currentNode = stack.pop();
-  
+
       if (currentNode.id === nodeId) {
         currentNode.rightLabel = newRightLabel;
         break; // Stop the loop as we've found and updated the node
       }
-  
+
       // Add children to the stack for further processing
-      currentNode.children.forEach(child => stack.push(child));
+      currentNode.children.forEach((child) => stack.push(child));
     }
-  
+
     setRootNode({ ...rootNode });
   };
 
-
-  
   const insertSymbol = (symbolLatex) => {
     if (selectedNodeId != null) {
       // Find the selected node by ID and update its content
@@ -97,11 +98,16 @@ const ProofTree = () => {
           return { ...node, content: node.content + newSymbol };
         } else if (node.children) {
           // Recursively update children
-          return { ...node, children: node.children.map(child => updateNodeContent(child, newSymbol)) };
+          return {
+            ...node,
+            children: node.children.map((child) =>
+              updateNodeContent(child, newSymbol)
+            ),
+          };
         }
         return node;
       };
-  
+
       // Create a new tree with the updated content
       const newRoot = updateNodeContent(rootNode, symbolLatex);
       setRootNode(newRoot);
@@ -111,7 +117,7 @@ const ProofTree = () => {
 
 
 
-
+// function to render the tree nodes
   const renderTreeNode = (node) => {
     return (
       <div className='proof-tree-node'> 
@@ -131,25 +137,28 @@ const ProofTree = () => {
               type="text"
               value={node.rightLabel}
               placeholder="Right label"
+              // onFocus={() => setSelectedNodeId(node.id)}
               onChange={(e) => editNodeRightLabel(node.id, e.target.value)}
             />
           )}
           
           <button onClick={() => addNode(node.id)}>Add Child</button>
         </div>
-        <div className='proof-tree-children'>
+        <div className="proof-tree-children">
           {node.children.map((child) => renderTreeNode(child, true))}
         </div>
       </div>
     );
   };
-  
-
 
   // Render buttons for each special symbol
   const renderSymbolButtons = () => {
     return Object.entries(specialSymbols).map(([symbol, latex]) => (
-      <button className='symbolBtn' key={symbol} onClick={() => insertSymbol(latex)}>
+      <button
+        className="symbolBtn"
+        key={symbol}
+        onClick={() => insertSymbol(latex)}
+      >
         {symbol}
       </button>
     ));
@@ -220,7 +229,7 @@ const ProofTree = () => {
     } else {
       code = `${childrenCode} ${nodeCommand} \n`;
     }
-  
+
     return code;
   };
   
@@ -228,24 +237,23 @@ const ProofTree = () => {
 
   const generateBtn = () => {
     const proofTreeCode = generateLatexCode(rootNode);
-    setGeneratedCode(`\\begin{prooftree}\n${proofTreeCode}\n   \\end{prooftree}`);
+    setGeneratedCode(
+      `\\begin{prooftree}\n${proofTreeCode}\n   \\end{prooftree}`
+    );
   };
-  
 
   return (
     <div className="proof-tree-container">
       <h1>Proof Tree</h1>
-      <div className='btn-container'>{renderSymbolButtons()}</div>
+      <div className="btn-container">{renderSymbolButtons()}</div>
       {renderTreeNode(rootNode)}
-      <div>
-      </div>
-      <button id="generateBtn" onClick={()=>generateBtn()}>Generate code </button>
-      <GeneratedCode id="generatedCode"  code={generatedCode}></GeneratedCode>
+      <div></div>
+      <button id="generateBtn" onClick={() => generateBtn()}>
+        Generate code{" "}
+      </button>
+      <GeneratedCode id="generatedCode" code={generatedCode}></GeneratedCode>
     </div>
-    
   );
 };
 
 export default ProofTree;
-
-

@@ -1,6 +1,10 @@
 
+// TODO: KARNAUGHOE MAPY : pridat to ze sa zakruzkuje/nejakym sposobom oznaci implicant 
+// TODO: KARNAUGHOVE MAPY : aby user nemusel klikat presne v danom poradi na cells.... proste nech len klikne hocijak... nech to zoradi indexy aby fungoval LaTeX kod
+
+
+
 import React, { useState } from 'react';
-// import * as React from 'react';
 import './index.css'
 import Cell from "../Components/Cell";
 import GeneratedCode from '../Components/GeneratedCode';
@@ -8,10 +12,6 @@ import ImplicantsList from '../Components/ImplicantsList';
 import EdgeImplicantList from '../Components/EdgeImplicantList';
 import Instructions from '../Components/Instructions';
 
-
-
-// TODO generovat mapu uplne odznova aj s farbami na zaklade implicants poli
-// TODO pridat do Cell komponentu moznost zafarbit pozadie nejakym sposobom na zaklade nejakeho argumentu ze implicant...a ze kde ma byt
 
 const Kmap = () => {
     const [tableSize, setTableSize] = useState('0x0');
@@ -29,7 +29,6 @@ const Kmap = () => {
     const [classicImplicantDisabled, setClassicImplicantDisabled] = useState(true);
     const [edgeImplicantDisabled, setEdgeImplicantDisabled] = useState(true);
     const [cornerImplicantDisabled, setCornerImplicantDisabled] = useState(true);
-
 
     
     // default implicant

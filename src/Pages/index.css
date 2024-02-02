@@ -364,19 +364,6 @@ h1{
   /* width: max-content; */
 }
 
-/* @media screen and (max-width: 700px) {
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-  }
-
-  .sidebar.active{
-    width: 100%;
-  }
-
-} */
-
 
 
 
@@ -384,23 +371,6 @@ h1{
   display: none;
 }
 
-/* .karnaugh-map {
-  position: relative;
-  display: flex;
-  margin: 50px;
-}
-
-.row{
-  display: table-row;
-}
-
-.cell {
-  border: 0.5px solid #000;
-  height: 60px;
-  width: 60px;
-  text-align: center;
-  line-height: 40px;
-} */
 
 
 .Kmap{
@@ -558,42 +528,6 @@ p{
 }
 
 
-/* src/App.css */
-/* body {
-  font-family: 'Arial', sans-serif;
-}
-
-.app {
-  text-align: center;
-}
-
-.syntax-tree {
-  display: flex;
-  justify-content: center;
-  padding: 20px;
-}
-
-.node {
-  padding: 10px;
-  margin: 5px;
-  border: 1px solid #333;
-  background-color: #fff;
-  border-radius: 5px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.node-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.node-child {
-  margin-top: 20px;
-}
- */
 
  .TreeDiv{
   display: grid;
@@ -655,7 +589,7 @@ div.containerText #question {
     margin-top: 10px;
     }
 
-
+/* proof tree css */
     .proof-tree-container {
       font-family: Arial, sans-serif;
       display: flex;

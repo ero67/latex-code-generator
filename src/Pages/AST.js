@@ -1,4 +1,8 @@
-// src/SyntaxTreeD3.js
+// TODO: AST : dat na vyber ci pri generovani maju byt ohranicene hodnoty v nodoch " $ $" ... matematickep pismo ci co
+// TODO: AST : dat na vyber ako chcem mat otoceny strom
+// TODO: AST : dat moznost pomenovat hrany (kill me pls)
+
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import GeneratedCode from '../Components/GeneratedCode';
