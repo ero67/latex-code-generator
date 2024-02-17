@@ -1,11 +1,13 @@
-// TODO: PROOF TREES : right label nech ma mensiu velkost pisma jak nazvy v nodoch
+// NOTE DONE : PROOF TREES : right label nech ma mensiu velkost pisma jak nazvy v nodoch
 // TODO: PROOF TREES : dat na vyber ci generovat takto {$E \to B$} abo takto {E  $\to$  B}.
 //                     To znamena ze dat na vyber ci vsetko bude v matematickom pisme to znamena ze $takto$ alebo nie
 // TODO: PROOF TREES : namiesto tlacitok hore pre davanie specialnych znakov pridat ze ak napise "\" tak mu to da na vyber tie specialne znaky, jak taky autocomplete cca
-// TODO: PROOF TREES : podpora az 5tich potomkov https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
+// NOTE DONE: PROOF TREES : podpora az 5tich potomkov https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
 import React, { useState } from "react";
 import "./index.css";
 import GeneratedCode from "../Components/GeneratedCode";
+import LatexInput from "../Components/LatexInput";
+
 
 // ProofTreeNode Data Structure
 let nodeId = 0;
@@ -118,23 +120,21 @@ const ProofTree = () => {
       <div className="proof-tree-node">
         {/* render content of current node */}
         <div className="proof-tree-content">
-          <input
+          {/* <input
             type="text"
             value={node.content}
             onFocus={() => setSelectedNodeId(node.id)}
             //  onClick={() => setSelectedNodeId(node.id)}
             onChange={(e) => editNodeContent(node.id, e.target.value)}
-          />
+          /> */}
+            
+          <LatexInput value={node.content} onChange={(value) => editNodeContent(node.id, value)} />
 
           {/* Conditionally render the right label input only if this is a child node */}
           {node.children.length > 0 && (
-            <input
-              type="text"
-              value={node.rightLabel}
-              placeholder="Right label"
-              // onFocus={() => setSelectedNodeId(node.id)}
-              onChange={(e) => editNodeRightLabel(node.id, e.target.value)}
-            />
+
+            <LatexInput value={node.rightLabel} onChange={(value) => editNodeRightLabel(node.id, value)} />
+           
           )}
 
           <button onClick={() => addNode(node.id)}>Add Child</button>
@@ -145,6 +145,15 @@ const ProofTree = () => {
       </div>
     );
   };
+
+
+//  /* <input
+//               type="text"
+//               value={node.rightLabel}
+//               placeholder="Right label"
+//               // onFocus={() => setSelectedNodeId(node.id)}
+//               onChange={(e) => editNodeRightLabel(node.id, e.target.value)}
+//             /> */
 
   // Render buttons for each special symbol
   const renderSymbolButtons = () => {
@@ -209,7 +218,7 @@ const ProofTree = () => {
   return (
     <div className="proof-tree-container">
       <h1>Proof Tree</h1>
-      <div className="btn-container">{renderSymbolButtons()}</div>
+      {/* <div className="btn-container">{renderSymbolButtons()}</div> */}
       {renderTreeNode(rootNode)}
       <div></div>
       <button id="generateBtn" onClick={() => generateBtn()}>
