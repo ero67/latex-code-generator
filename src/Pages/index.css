@@ -621,7 +621,8 @@ div.containerText #question {
       width: 100%; /* Ensure children take full width for proper centering */
     }
     
-    .proof-tree-children::before {
+    /* .proof-tree-children::before { */
+      .proof-tree-children > .proof-tree-node:not(:last-child)::before {
       content: '';
       position: absolute;
       bottom: 0; /* Line starts from the bottom */
@@ -648,18 +649,6 @@ div.containerText #question {
     .proof-tree-node button:hover {
       background-color: #45a049;
     }
-    
-    /* Styling for the connecting lines between siblings */
-    .proof-tree-children > .proof-tree-node:not(:last-child)::after {
-      content: '';
-      position: absolute;
-      bottom: 0; /* Line starts from the bottom */
-      left: 50%;
-      right: 50%;
-      height: 2px;
-      background: rgb(0, 0, 0); /* Line color */
-    }
-    
 
     .btn-container {
       display: flex;

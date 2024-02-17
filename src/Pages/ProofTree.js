@@ -1,13 +1,12 @@
 // NOTE DONE : PROOF TREES : right label nech ma mensiu velkost pisma jak nazvy v nodoch
 // TODO: PROOF TREES : dat na vyber ci generovat takto {$E \to B$} abo takto {E  $\to$  B}.
 //                     To znamena ze dat na vyber ci vsetko bude v matematickom pisme to znamena ze $takto$ alebo nie
-// TODO: PROOF TREES : namiesto tlacitok hore pre davanie specialnych znakov pridat ze ak napise "\" tak mu to da na vyber tie specialne znaky, jak taky autocomplete cca
+// NOTE DONE: PROOF TREES : namiesto tlacitok hore pre davanie specialnych znakov pridat ze ak napise "\" tak mu to da na vyber tie specialne znaky, jak taky autocomplete cca
 // NOTE DONE: PROOF TREES : podpora az 5tich potomkov https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
 import React, { useState } from "react";
 import "./index.css";
 import GeneratedCode from "../Components/GeneratedCode";
 import LatexInput from "../Components/LatexInput";
-
 
 // ProofTreeNode Data Structure
 let nodeId = 0;
@@ -30,7 +29,11 @@ const ProofTree = () => {
     "Your code will appear here \n after you click on Generate Code button"
   );
   const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [math_notation, setMathNotation] = useState(false);
 
+  const handleOptionChange = (option) => {
+    setMathNotation(option);
+  };
   const addNode = (parentId) => {
     const stack = [rootNode];
     let found = false;
@@ -127,14 +130,20 @@ const ProofTree = () => {
             //  onClick={() => setSelectedNodeId(node.id)}
             onChange={(e) => editNodeContent(node.id, e.target.value)}
           /> */}
-            
-          <LatexInput value={node.content} onChange={(value) => editNodeContent(node.id, value)} />
+
+          <LatexInput
+            value={node.content}
+            onChange={(value) => editNodeContent(node.id, value)}
+            mathNotation={math_notation}
+          />
 
           {/* Conditionally render the right label input only if this is a child node */}
           {node.children.length > 0 && (
-
-            <LatexInput value={node.rightLabel} onChange={(value) => editNodeRightLabel(node.id, value)} />
-           
+            <LatexInput
+              value={node.rightLabel}
+              onChange={(value) => editNodeRightLabel(node.id, value)}
+              mathNotation={math_notation}
+            />
           )}
 
           <button onClick={() => addNode(node.id)}>Add Child</button>
@@ -146,14 +155,13 @@ const ProofTree = () => {
     );
   };
 
-
-//  /* <input
-//               type="text"
-//               value={node.rightLabel}
-//               placeholder="Right label"
-//               // onFocus={() => setSelectedNodeId(node.id)}
-//               onChange={(e) => editNodeRightLabel(node.id, e.target.value)}
-//             /> */
+  //  /* <input
+  //               type="text"
+  //               value={node.rightLabel}
+  //               placeholder="Right label"
+  //               // onFocus={() => setSelectedNodeId(node.id)}
+  //               onChange={(e) => editNodeRightLabel(node.id, e.target.value)}
+  //             /> */
 
   // Render buttons for each special symbol
   const renderSymbolButtons = () => {
@@ -184,26 +192,57 @@ const ProofTree = () => {
     // Determine the appropriate command based on the number of children
     let nodeCommand = "";
     if (node.children.length === 0) {
-      nodeCommand = `     \\AxiomC{${node.content}}`;
+      if (math_notation === false) {
+        nodeCommand = `     \\AxiomC{${node.content}}`;
+      } else {
+        nodeCommand = `     \\AxiomC{$${node.content}$}`;
+      }
     } else if (node.children.length === 1) {
-      nodeCommand = `     \\UnaryInfC{${node.content}}`;
+      if (math_notation === false) {
+        nodeCommand = `     \\UnaryInfC{${node.content}}`;
+      } else {
+        nodeCommand = `     \\UnaryInfC{$${node.content}$}`;
+      }
     } else if (node.children.length === 2) {
-      nodeCommand = `    \\BinaryInfC{${node.content}}`;
+      if (math_notation === false) {
+        nodeCommand = `    \\BinaryInfC{${node.content}}`;
+      } else {
+        nodeCommand = `    \\BinaryInfC{$${node.content}$}`;
+      }
     } else if (node.children.length === 3) {
-      nodeCommand = `     \\TrinaryInfC{${node.content}}`;
+      if (math_notation === false) {
+        nodeCommand = `     \\TrinaryInfC{${node.content}}`;
+      } else {
+        nodeCommand = `     \\TrinaryInfC{$${node.content}$}`;
+      }
     } else if (node.children.length === 4) {
-      nodeCommand = `     \\QuinaryInfC{${node.content}}`;
+      if (math_notation === false) {
+        nodeCommand = `     \\QuinaryInfC{${node.content}}`;
+      } else {
+        nodeCommand = `     \\QuinaryInfC{$${node.content}$}`;
+      }
     } else if (node.children.length === 5) {
-      nodeCommand = `     \\QuaternaryInfC{${node.content}}`;
+      if (math_notation === false) {
+        nodeCommand = `     \\QuaternaryInfC{${node.content}}`;
+      } else {
+        nodeCommand = `     \\QuaternaryInfC{$${node.content}$}`;
+      }
     }
 
     // If the node has a right label, it should come before the node's inference command
     if (node.rightLabel) {
       // code = `${childrenCode} \\RightLabel{${node.rightLabel}} ${nodeCommand}\n`;
-      code = `${childrenCode} \\RightLabel{\\scriptsize{${node.rightLabel}}} ${nodeCommand}\n`;
+      if(math_notation === false){
+        code = `${childrenCode} \\RightLabel{\\scriptsize{${node.rightLabel}}} ${nodeCommand}\n`;
     } else {
-      code = `${childrenCode} ${nodeCommand} \n`;
+        code = `${childrenCode} \\RightLabel{\\scriptsize{$${node.rightLabel}$}} ${nodeCommand}\n`;
     }
+  }
+    else{
+      code = `${childrenCode} ${nodeCommand}\n`;
+
+    }
+  
 
     return code;
   };
@@ -218,6 +257,20 @@ const ProofTree = () => {
   return (
     <div className="proof-tree-container">
       <h1>Proof Tree</h1>
+      <button
+        id="button0"
+        onClick={() => handleOptionChange(true)}
+        style={{ backgroundColor: math_notation === true ? "green" : "white" }}
+      >
+        Math
+      </button>
+      <button
+        id="button1"
+        onClick={() => handleOptionChange(false)}
+        style={{ backgroundColor: math_notation === false ? "green" : "white" }}
+      >
+        No Math
+      </button>
       {/* <div className="btn-container">{renderSymbolButtons()}</div> */}
       {renderTreeNode(rootNode)}
       <div></div>
