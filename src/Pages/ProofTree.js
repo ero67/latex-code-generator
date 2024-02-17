@@ -1,5 +1,5 @@
 // TODO: PROOF TREES : right label nech ma mensiu velkost pisma jak nazvy v nodoch
-// TODO: PROOF TREES : dat na vyber ci generovat takto {$E \to B$} abo takto {E  $\to$  B}. 
+// TODO: PROOF TREES : dat na vyber ci generovat takto {$E \to B$} abo takto {E  $\to$  B}.
 //                     To znamena ze dat na vyber ci vsetko bude v matematickom pisme to znamena ze $takto$ alebo nie
 // TODO: PROOF TREES : namiesto tlacitok hore pre davanie specialnych znakov pridat ze ak napise "\" tak mu to da na vyber tie specialne znaky, jak taky autocomplete cca
 // TODO: PROOF TREES : podpora az 5tich potomkov https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
@@ -36,7 +36,7 @@ const ProofTree = () => {
     while (stack.length > 0 && !found) {
       const currentNode = stack.pop();
 
-      if (currentNode.id === parentId && currentNode.children.length < 3) {
+      if (currentNode.id === parentId && currentNode.children.length < 5) {
         currentNode.children.push(createProofTreeNode());
         found = true; // Node added, exit the loop
       } else {
@@ -51,8 +51,6 @@ const ProofTree = () => {
       console.log("Parent node not found.");
     }
   };
-
-
 
   // function to edit the content of a node based on its ID
   const editNodeContent = (nodeId, newContent) => {
@@ -113,24 +111,21 @@ const ProofTree = () => {
       setRootNode(newRoot);
     }
   };
-  
 
-
-
-// function to render the tree nodes
+  // function to render the tree nodes
   const renderTreeNode = (node) => {
     return (
-      <div className='proof-tree-node'> 
+      <div className="proof-tree-node">
         {/* render content of current node */}
-        <div className='proof-tree-content'>
-        <input
-             type="text"
-             value={node.content}
-             onFocus={() => setSelectedNodeId(node.id)}
+        <div className="proof-tree-content">
+          <input
+            type="text"
+            value={node.content}
+            onFocus={() => setSelectedNodeId(node.id)}
             //  onClick={() => setSelectedNodeId(node.id)}
-             onChange={(e) => editNodeContent(node.id, e.target.value)}
-           />
-          
+            onChange={(e) => editNodeContent(node.id, e.target.value)}
+          />
+
           {/* Conditionally render the right label input only if this is a child node */}
           {node.children.length > 0 && (
             <input
@@ -141,7 +136,7 @@ const ProofTree = () => {
               onChange={(e) => editNodeRightLabel(node.id, e.target.value)}
             />
           )}
-          
+
           <button onClick={() => addNode(node.id)}>Add Child</button>
         </div>
         <div className="proof-tree-children">
@@ -163,56 +158,22 @@ const ProofTree = () => {
       </button>
     ));
   };
-  
-  
-  // // Function to generate LaTeX code
-  // const generateLatexCode = (node) => {
-  //   let code = '';
-  
-  
 
-  //   // Base case: If the node has no children, return it as an axiom
-  //   if (node.children.length === 0) {
-  //     code = `    \\AxiomC{${node.content}} \n`;
-  //   } 
-    
-    
-  //   else {
-  //     // Generate code for children and apply the right inference command
-  //     const childrenCode = node.children.map(generateLatexCode).join(' ');
-  //     let nodeCommand = '   \\UnaryInfC';
-  //     if (node.children.length === 2) {
-  //       nodeCommand = '    \\BinaryInfC';
-  //     } else if (node.children.length === 3) {
-  //       nodeCommand = '    \\TrinaryInfC';
-  //     }
-  
-  //     code = `${childrenCode} ${nodeCommand}{${node.content}} \n`;
-  //   }
-  //   // Add the right label if it exists and this is not the root node
-  //   if (node.rightLabel && node.children.length > 0) {
-  //     code += `    \\RightLabel{${node.rightLabel}}\n`;
-  //   }
-    
-  
-  //   return code;
-  // };
   const generateLatexCode = (node) => {
-    let code = '';
-  
+    let code = "";
+
     // Generate code for children first
     let childrenCode = "";
     for (let i = 0; i < node.children.length; i++) {
-        const childLatexCode = generateLatexCode(node.children[i]);
-        childrenCode += childLatexCode;
-        if (i < node.children.length - 1) {
-            childrenCode += " "; // Add a space between codes, but not after the last one
-        }
+      const childLatexCode = generateLatexCode(node.children[i]);
+      childrenCode += childLatexCode;
+      if (i < node.children.length - 1) {
+        childrenCode += " "; // Add a space between codes, but not after the last one
+      }
     }
-    
-  
+
     // Determine the appropriate command based on the number of children
-    let nodeCommand = '';
+    let nodeCommand = "";
     if (node.children.length === 0) {
       nodeCommand = `     \\AxiomC{${node.content}}`;
     } else if (node.children.length === 1) {
@@ -221,19 +182,22 @@ const ProofTree = () => {
       nodeCommand = `    \\BinaryInfC{${node.content}}`;
     } else if (node.children.length === 3) {
       nodeCommand = `     \\TrinaryInfC{${node.content}}`;
+    } else if (node.children.length === 4) {
+      nodeCommand = `     \\QuinaryInfC{${node.content}}`;
+    } else if (node.children.length === 5) {
+      nodeCommand = `     \\QuaternaryInfC{${node.content}}`;
     }
-  
+
     // If the node has a right label, it should come before the node's inference command
     if (node.rightLabel) {
-      code = `${childrenCode} \\RightLabel{${node.rightLabel}} ${nodeCommand}\n`;
+      // code = `${childrenCode} \\RightLabel{${node.rightLabel}} ${nodeCommand}\n`;
+      code = `${childrenCode} \\RightLabel{\\scriptsize{${node.rightLabel}}} ${nodeCommand}\n`;
     } else {
       code = `${childrenCode} ${nodeCommand} \n`;
     }
 
     return code;
   };
-  
-  
 
   const generateBtn = () => {
     const proofTreeCode = generateLatexCode(rootNode);
