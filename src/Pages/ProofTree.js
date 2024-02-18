@@ -14,13 +14,13 @@ const createProofTreeNode = (content = "", children = [], rightLabel = "") => {
   return { id: nodeId++, content, children, rightLabel };
 };
 
-const specialSymbols = {
-  "→": " $\\to$ ",
-  "∧": " $\\land$ ",
-  "∨": " $\\lor$ ",
-  "¬": " $\\neg$ ",
-  // Add more symbols as needed
-};
+// const specialSymbols = {
+//   "→": " $\\to$ ",
+//   "∧": " $\\land$ ",
+//   "∨": " $\\lor$ ",
+//   "¬": " $\\neg$ ",
+//   // Add more symbols as needed
+// };
 
 // ProofTree Component
 const ProofTree = () => {
@@ -28,7 +28,7 @@ const ProofTree = () => {
   const [generatedCode, setGeneratedCode] = useState(
     "Your code will appear here \n after you click on Generate Code button"
   );
-  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  // const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [math_notation, setMathNotation] = useState(false);
 
   const handleOptionChange = (option) => {
@@ -92,30 +92,30 @@ const ProofTree = () => {
     setRootNode({ ...rootNode });
   };
 
-  const insertSymbol = (symbolLatex) => {
-    if (selectedNodeId != null) {
-      // Find the selected node by ID and update its content
-      const updateNodeContent = (node, newSymbol) => {
-        if (node.id === selectedNodeId) {
-          // Append the new symbol to the current content of the node
-          return { ...node, content: node.content + newSymbol };
-        } else if (node.children) {
-          // Recursively update children
-          return {
-            ...node,
-            children: node.children.map((child) =>
-              updateNodeContent(child, newSymbol)
-            ),
-          };
-        }
-        return node;
-      };
+  // const insertSymbol = (symbolLatex) => {
+  //   if (selectedNodeId != null) {
+  //     // Find the selected node by ID and update its content
+  //     const updateNodeContent = (node, newSymbol) => {
+  //       if (node.id === selectedNodeId) {
+  //         // Append the new symbol to the current content of the node
+  //         return { ...node, content: node.content + newSymbol };
+  //       } else if (node.children) {
+  //         // Recursively update children
+  //         return {
+  //           ...node,
+  //           children: node.children.map((child) =>
+  //             updateNodeContent(child, newSymbol)
+  //           ),
+  //         };
+  //       }
+  //       return node;
+  //     };
 
-      // Create a new tree with the updated content
-      const newRoot = updateNodeContent(rootNode, symbolLatex);
-      setRootNode(newRoot);
-    }
-  };
+  //     // Create a new tree with the updated content
+  //     const newRoot = updateNodeContent(rootNode, symbolLatex);
+  //     setRootNode(newRoot);
+  //   }
+  // };
 
   // function to render the tree nodes
   const renderTreeNode = (node) => {
@@ -164,17 +164,17 @@ const ProofTree = () => {
   //             /> */
 
   // Render buttons for each special symbol
-  const renderSymbolButtons = () => {
-    return Object.entries(specialSymbols).map(([symbol, latex]) => (
-      <button
-        className="symbolBtn"
-        key={symbol}
-        onClick={() => insertSymbol(latex)}
-      >
-        {symbol}
-      </button>
-    ));
-  };
+  // const renderSymbolButtons = () => {
+  //   return Object.entries(specialSymbols).map(([symbol, latex]) => (
+  //     <button
+  //       className="symbolBtn"
+  //       key={symbol}
+  //       onClick={() => insertSymbol(latex)}
+  //     >
+  //       {symbol}
+  //     </button>
+  //   ));
+  // };
 
   const generateLatexCode = (node) => {
     let code = "";
@@ -257,20 +257,23 @@ const ProofTree = () => {
   return (
     <div className="proof-tree-container">
       <h1>Proof Tree</h1>
+      <div id="buttonsPT">
       <button
-        id="button0"
+        id="buttonMath"
         onClick={() => handleOptionChange(true)}
-        style={{ backgroundColor: math_notation === true ? "green" : "white" }}
+        style={{ backgroundColor: math_notation === true ? "#7393B3" : "white" }}
       >
         Math
       </button>
       <button
-        id="button1"
+        id="buttonNoMath"
         onClick={() => handleOptionChange(false)}
-        style={{ backgroundColor: math_notation === false ? "green" : "white" }}
+        style={{ backgroundColor: math_notation === false ? "#7393B3" : "white" }}
       >
         No Math
       </button>
+
+      </div>
       {/* <div className="btn-container">{renderSymbolButtons()}</div> */}
       {renderTreeNode(rootNode)}
       <div></div>

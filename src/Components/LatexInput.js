@@ -6,6 +6,14 @@ const LATEX_COMMANDS = [
   '\\to',
   '\\land',
   '\\lor',
+  '\\neg',
+  '\\vdash',
+  '\\models',
+  '\\equiv',
+  '\\forall',
+  '\\exists',
+  '\\bot',
+  '\\top',
   // Add more commands as needed
 ];
 
