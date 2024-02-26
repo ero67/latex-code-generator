@@ -51,7 +51,24 @@ const SyntaxTreeD3 = () => {
            .x((d) => d.y+10)
           .y((d) => d.x)
           
-      );
+      )
+      .on("click", () => handleLinkClick());
+
+      // // Adding labels to the links
+      // svg.selectAll(".link-label")
+      // .data(root.links())
+      // .enter()
+      // .append("text")
+      // .attr("class", "link-label")
+      // .attr("fill", "black") // Set the text color
+      // .attr("transform", function(d) {
+      //     var midX = (d.source.x + d.target.x) / 2;
+      //     var midY = (d.source.y + d.target.y) / 2 + 10; // Adjusted to align with your link's curve
+      //     return "translate(" + midY + "," + midX + ")";
+      // })
+      // .attr("dy", ".35em")
+      // .attr("text-anchor", "middle")
+      // .text("label");
 
       const nodes = svg
       .selectAll("g.node")
@@ -139,6 +156,10 @@ const SyntaxTreeD3 = () => {
     },
     [treeData]
   );
+
+    const handleLinkClick = () =>{
+      console.log("clicked on link");
+    };
 
   const handleOptionChange = (isHorizontal) => {
     setIsHorizontal(isHorizontal);
@@ -247,7 +268,7 @@ const SyntaxTreeD3 = () => {
       <div className="Tree">
         <svg
           ref={svgRef}
-          width={400}
+          width={500}
           height={500}
           onClick={() => setTreeData(null)} // Clear selection when clicking on the background
         />
