@@ -197,7 +197,7 @@ const SyntaxTreeD3 = () => {
     // Prevent the event from bubbling to avoid triggering click events on other elements
     // event.stopPropagation();
 
-    const newLabel = prompt("Enter label for the link:");
+    const newLabel = prompt("Enter label for the edge:");
     if (newLabel !== null && newLabel !== "") {
         const updateLabelInTreeData = (node, sourceId, targetId, newLabel) => {
             if (node.id === sourceId) {
