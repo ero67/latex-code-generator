@@ -255,7 +255,6 @@ const Kmap = () => {
     const [rows, cols] = tableSize.split("x").map(Number);
     const content = getContentOfCells();
     let code = `\\begin{karnaugh-map}[${cols}][${rows}]\n`;
-
     code += "       \\manualterms{";
     // indexes of cells on grid of karnaugh-map package
     let indexes = [
@@ -286,29 +285,18 @@ const Kmap = () => {
         }
       }
     }
-
+    
     code += "}\n";
-
     //generating code for classic implicant
-    //required number of {} in \implicant command is 2 so wa can hardcode it
+    //required number of {} in \implicant command is 2 so we can hardcode it
     if (implicants.length > 0) {
       for (let row = 0; row < implicants.length; row++) {
         if (implicants[row][0] === undefined) {
           continue;
         } else if (implicants[row].length === 1) {
-          code += "       \\implicant{";
-          code += implicants[row][0];
-          code += "}";
-          code += "{";
-          code += implicants[row][0];
-          code += "}\n";
+          code += `       \\implicant{${implicants[row][0]}}{${implicants[row][0]}}\n`;
         } else {
-          code += "       \\implicant{";
-          code += implicants[row][0];
-          code += "}";
-          code += "{";
-          code += implicants[row][1];
-          code += "}\n";
+          code += `       \\implicant{${implicants[row][0]}}{${implicants[row][1]}}\n`;
         }
       }
     }
@@ -324,49 +312,18 @@ const Kmap = () => {
     // if i want to mark only 2 cells i need to put both indexes twice
     for (let row = 0; row < edgeImplicants.length; row++) {
       if (edgeImplicants[row].length === 2) {
-        code += "       \\implicantedge";
-        code += "{";
-        code += edgeImplicants[row][0];
-        code += "}";
-        code += "{";
-        code += edgeImplicants[row][0];
-        code += "}";
-
-        code += "{";
-        code += edgeImplicants[row][1];
-        code += "}";
-        code += "{";
-        code += edgeImplicants[row][1];
-        code += "}\n";
+        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
+        
       } else if (edgeImplicants[row].length === 4) {
-        code += "       \\implicantedge";
-        code += "{";
-        code += edgeImplicants[row][0];
-        code += "}";
-        code += "{";
-        code += edgeImplicants[row][1];
-        code += "}";
-
-        code += "{";
-        code += edgeImplicants[row][2];
-        code += "}";
-        code += "{";
-        code += edgeImplicants[row][3];
-        code += "}\n";
+        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
+        
       } else {
-        // alert("Number of Cells for edge implicant is 2 or 4.Anything else is");
         continue;
       }
     }
 
     code += "\\end{karnaugh-map}";
-    // console.log(code);
-    // alert(code);
     setGeneratedCode(code);
-    console.log("this is implicantCellIndexes");
-    console.log(implicantCellIndexes);
-    console.log("this is edgeimplicantCellIndexes");
-    console.log(edgeimplicantCellIndexes);
   };
   // adding all cell which are supposed to be in chosen implicant
 
@@ -525,17 +482,20 @@ const Kmap = () => {
   // TODO function for sorting edge implicants so they are generated correctly no matter the order of being clicked
 
   const generateTable = () => {
+    // get the number of rows and columns from the tableSize string
     const [rows, cols] = tableSize.split("x").map(Number);
     const table = [];
+
+    //iterate through the rows and columns to create the cells
     for (let row = 0; row < rows; row++) {
       const currentRow = [];
       for (let col = 0; col < cols; col++) {
+
+        // part of the code for coloring implicant cells
         let cellColor = null;
         if (activeImplicantType === "default") {
           implicantCellIndexes.forEach((implicant, index) => {
-            if (
-              implicant.some((cell) => cell.row === row && cell.col === col)
-            ) {
+            if (implicant.some((cell) => cell.row === row && cell.col === col)) {
               cellColor = getColorForImplicant(index);
             }
           });
@@ -548,12 +508,9 @@ const Kmap = () => {
             }
           });
         }
-
+        // part of the code for generating jsx and html code for cells
         currentRow.push(
-          <Cell
-            key={`${row}${col}`}
-            option={option}
-            onClick={handleCellClick}
+          <Cell key={`${row}${col}`} option={option} onClick={handleCellClick}
             row={row}
             col={col}
             disabled={disabled}
@@ -568,7 +525,6 @@ const Kmap = () => {
               null,
               "#f1f38e"
             )}
-            // '#7CFC00'
           />
         );
       }
@@ -581,6 +537,7 @@ const Kmap = () => {
 
     return <div className="karnaugh-map">{table}</div>;
   };
+
   const handleGoBackButton = () => {
     Disable(false);
     setClassicImplicantDisabled(true);

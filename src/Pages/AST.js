@@ -325,7 +325,10 @@ const SyntaxTreeD3 = () => {
           2. Click on the node you want to expand and enter the value of the
           child.
         </p>
-        <p>3. After you are finished, generated the code for created tree.</p>
+        <p>
+          3. If you want to label the edge, click on the edge and enter the label you want.
+        </p>
+        <p>4. After you are finished, generated the code for created tree.</p>
         <p></p>
       </div>
       <div className="settings">

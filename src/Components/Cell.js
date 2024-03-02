@@ -19,8 +19,6 @@ const Cell = ({ option, onClick, row, col, disabled,cellColor}) => {
       else{
         console.log("cellValue===null else statement");
       }
-      // }
-        // Call the onClick callback with row and col information
         onClick(row, col);
        
         console.log("this is row and col of a cell when clicked");

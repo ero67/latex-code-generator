@@ -233,13 +233,13 @@ const ProofTree = () => {
     if (node.rightLabel) {
       // code = `${childrenCode} \\RightLabel{${node.rightLabel}} ${nodeCommand}\n`;
       if(math_notation === false){
-        code = `${childrenCode} \\RightLabel{\\scriptsize{${node.rightLabel}}} ${nodeCommand}\n`;
+        code = `${childrenCode}       \\RightLabel{\\scriptsize{${node.rightLabel}}}\n ${nodeCommand}\n`;
     } else {
-        code = `${childrenCode} \\RightLabel{\\scriptsize{$${node.rightLabel}$}} ${nodeCommand}\n`;
+        code = `${childrenCode}       \\RightLabel{\\scriptsize{$${node.rightLabel}$}}\n ${nodeCommand}\n`;
     }
   }
     else{
-      code = `${childrenCode} ${nodeCommand}\n`;
+      code = `${childrenCode} ${nodeCommand} \n`;
 
     }
   

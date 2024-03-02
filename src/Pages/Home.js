@@ -1,28 +1,54 @@
-import './index.css'
+import { Link } from "react-router-dom";
+import "./index.css";
 
 const Home = () => {
-    return ( 
-        
-        <div className="homeMain">
-        <h1>LaTeX Generator</h1>
-        <div className="home">
-            {/* <p >Vitajte na mojej webovej aplikácii, ktorá vám umožní generovať LaTeX kód pre niektoré z najdôležitejších a najzábavnejších konceptov v matematike a logike. S touto aplikáciou môžete ľahko vytvárať a upravovať Karnaughove mapy, abstraktné syntaktické stromy a dôkazové stromy, ktoré sú nevyhnutné pre pochopenie a riešenie rôznych problémov a úloh.</p>
-            <p style={{marginTop: "1rem"}}>Karnaughove mapy sú grafické metódy na zjednodušovanie booleovských funkcií, ktoré sa používajú v digitálnej elektronike a dizajne obvodov. Abstraktné syntaktické stromy sú spôsoby reprezentácie štruktúry programovacích jazykov, ktoré sa používajú v kompilátoroch a interpretátoroch. Dôkazové stromy sú grafické metódy na ukazovanie platnosti logických argumentov, ktoré sa používajú v matematickej logike a filozofii.</p>
-            <p style={{marginTop: "1rem"}}>S touto aplikáciou môžete zadávať svoje vstupy pomocou jednoduchého a intuitívneho rozhrania, ktoré vám poskytne okamžitú spätnú väzbu a náhľad výsledku. Potom môžete skopírovať a vložiť vygenerovaný LaTeX kód do svojho dokumentu alebo prezentácie, ktoré používajú tento populárny a výkonný formátovací systém.</p>
-            <p style={{marginTop: "1rem"}}>Táto webová aplikácia je určená pre študentov, učiteľov, výskumníkov a nadšencov, ktorí sa zaujímajú o matematiku a logiku, a chcú si uľahčiť a zlepšiť svoju prácu a učenie. Táto aplikácia je zadarmo a nevyžaduje žiadnu registráciu alebo inštaláciu. Skúste ju teraz a uvidíte, ako vám pomôže vytvoriť krásne a profesionálne Karnaughove mapy, abstraktné syntaktické stromy a dôkazové stromy.</p> */}
-            <div className='kmaps' id='kmapsid'>
-                <span>Karnaughove mapy</span>
-            </div>
-            <div className='asts' id='astsid'>
-                <span>AST</span>
-            </div>
-            <div className='prooftrees' id='prooftreesid'>
-                <span>Dokazove stromy</span>
-            </div>
-            </div>
+  return (
+    <div className="homeMain">
+      <h1>LaTeX Generator</h1>
+      <div className="home">
+        <div className="kmaps" id="kmapsid">
+          <span>
+            <h2>Karnaugh Maps</h2>
+          </span>
+          <div>
+            This part of application lets you to build your desired karnaugh
+            map, fill in the values, mark implicants and finally generate LaTeX
+            code for your karnaugh map so you can use it in your document.
+          </div>
+          <Link to="/karnaugh-maps">
+      <button id="homePageButton">Go to Karnaugh Maps</button>
+    </Link>
         </div>
-     );
-}
+        <div className="asts" id="astsid">
+          <span>
+            <h2>Abstract Syntax Trees</h2>
+          </span>
+          <div>
+            This part of the application lets you interactively build tree
+            structure and generating LaTeX code for the same structure so you
+            can use it in your document.
+          </div>
+          <Link to="/ast">
+          <button id="homePageButton">Go to ASTs</button>
+    </Link>
+        </div>
+        <div className="prooftrees" id="prooftreesid">
+          <span>
+            <h2>Proof Trees</h2>
+          </span>
+          <div>
+            This part of the application lets you interactively build a proof
+            tree structure and generate LaTeX code for it . It also allows you
+            to use "\" for specials characters in the values of the nodes.{" "}
+          </div>
+          <Link to="/proof-trees">
+          <button id="homePageButton">Go to Proof Trees</button>
+    </Link>
+        
+        </div>
+      </div>
+    </div>
+  );
+};
 
- 
 export default Home;

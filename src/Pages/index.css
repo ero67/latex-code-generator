@@ -705,8 +705,8 @@ div.containerText #question {
       display: table;
       /* background-color: #39f; */
       /* width: 50rem; */
-      margin-top: 30%;
-      /* width: 100%; */
+      margin-top: 10%;
+       /* width: 100%;  */
     }
 
     .kmaps, .asts, .prooftrees{
@@ -714,12 +714,13 @@ div.containerText #question {
       /* vertical-align: middle; */
       width: 10%;
       text-align: center;
+      height: fit-content;
     }
 
     .homeMain{
       display: table-cell;
       /* vertical-align: middle; */
-      width: 80%;
+      width: 100%;
       text-align: center;
     }
 
@@ -727,6 +728,31 @@ div.containerText #question {
     .homeMain h1{
       font-size: 3rem;
       font-weight: 600;
-      margin-bottom: 2rem;
-      margin-top: 5rem;
+      margin-bottom: 1rem;
+      margin-top: 1rem;
+    }
+    h2{
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      margin-top: 2rem;
+    }
+
+    #homePageButton{
+     
+        place-self: center;
+        width: 160px;
+        height: 40px;
+        background-color: #1c51e6;
+        color: #ffffff;
+        border: 0.3px solid #ffffff;
+        border-radius: 3px;
+        /* font-size: 10px; */
+        font-weight: bold;
+        cursor: pointer; 
+        margin-left: 10px;
+        margin-bottom: 1rem;
+        place-self: bottom;
+        
+      
     }
