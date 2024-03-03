@@ -606,7 +606,7 @@ div.containerText #question {
     
     .proof-tree-content {
       z-index: 1; /* Ensure that node content appears above connecting lines */
-      background: rgb(234, 233, 233); /* Background to cover the connecting lines */
+      background: rgb(230, 229, 229); /* Background to cover the connecting lines */
       border: 1px solid #ccc;
       padding: 5px;
       border-radius: 3px;

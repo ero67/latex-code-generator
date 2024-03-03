@@ -123,14 +123,6 @@ const ProofTree = () => {
       <div className="proof-tree-node">
         {/* render content of current node */}
         <div className="proof-tree-content">
-          {/* <input
-            type="text"
-            value={node.content}
-            onFocus={() => setSelectedNodeId(node.id)}
-            //  onClick={() => setSelectedNodeId(node.id)}
-            onChange={(e) => editNodeContent(node.id, e.target.value)}
-          /> */}
-
           <LatexInput
             value={node.content}
             onChange={(value) => editNodeContent(node.id, value)}

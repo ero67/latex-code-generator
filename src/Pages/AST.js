@@ -193,10 +193,7 @@ const SyntaxTreeD3 = () => {
       [treeData, nodeId]
     );
 
-  const handleLinkClick = useCallback((event, link) => {
-    // Prevent the event from bubbling to avoid triggering click events on other elements
-    // event.stopPropagation();
-
+  const handleLinkClick = useCallback((link) => {
     const newLabel = prompt("Enter label for the edge:");
     if (newLabel !== null && newLabel !== "") {
         const updateLabelInTreeData = (node, sourceId, targetId, newLabel) => {
@@ -212,7 +209,6 @@ const SyntaxTreeD3 = () => {
                 node.children.forEach(child => updateLabelInTreeData(child, sourceId, targetId, newLabel));
             }
         };
-
         // Clone the tree data to ensure changes are detected by React
         const newTreeData = { ...treeData };
         updateLabelInTreeData(newTreeData, link.source.data.id, link.target.data.id, newLabel);
@@ -266,7 +262,6 @@ const SyntaxTreeD3 = () => {
     if (!node) {
       return "";
     }
-  
     // Start the LaTeX code for the current node. Use $ for math mode if isChecked is true.
     let nodeLabel = isChecked ? `$${node.value}$` : node.value;
     let latexCode = "[\n  " + nodeLabel; // Add a new line and indent for readability.
@@ -279,7 +274,7 @@ const SyntaxTreeD3 = () => {
     // If the current node has children, recursively generate their LaTeX code.
     if (node.children && node.children.length > 0) {
       const childStrings = node.children.map((child, index) => {
-        // Create an edge label object with text and position (alternating left/right for simplicity).
+        // Create an edge label object with text and position .
         let childLabel = child.label ? {text: child.label, position: index % 2 === 0 ? "left" : "right"} : "";
         return generateLatexCode(child, childLabel);
       });
