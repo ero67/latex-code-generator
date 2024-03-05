@@ -193,28 +193,32 @@ const SyntaxTreeD3 = () => {
       [treeData, nodeId]
     );
 
-  const handleLinkClick = useCallback((link) => {
-    const newLabel = prompt("Enter label for the edge:");
-    if (newLabel !== null && newLabel !== "") {
-        const updateLabelInTreeData = (node, sourceId, targetId, newLabel) => {
-            if (node.id === sourceId) {
-                node.children = node.children.map(child => {
-                    if (child.id === targetId) {
-                        return { ...child, label: newLabel }; // Update the label
-                    }
-                    return child;
-                });
-            }
-            if (node.children) {
-                node.children.forEach(child => updateLabelInTreeData(child, sourceId, targetId, newLabel));
-            }
-        };
-        // Clone the tree data to ensure changes are detected by React
-        const newTreeData = { ...treeData };
-        updateLabelInTreeData(newTreeData, link.source.data.id, link.target.data.id, newLabel);
-        setTreeData(newTreeData);
-    }
-}, [treeData]);
+    const handleLinkClick = useCallback((event, link) => {
+      // Prevent the event from bubbling to avoid triggering click events on other elements
+      // event.stopPropagation();
+  
+      const newLabel = prompt("Enter label for the edge:");
+      if (newLabel !== null && newLabel !== "") {
+          const updateLabelInTreeData = (node, sourceId, targetId, newLabel) => {
+              if (node.id === sourceId) {
+                  node.children = node.children.map(child => {
+                      if (child.id === targetId) {
+                          return { ...child, label: newLabel }; // Update the label
+                      }
+                      return child;
+                  });
+              }
+              if (node.children) {
+                  node.children.forEach(child => updateLabelInTreeData(child, sourceId, targetId, newLabel));
+              }
+          };
+  
+          // Clone the tree data to ensure changes are detected by React
+          const newTreeData = { ...treeData };
+          updateLabelInTreeData(newTreeData, link.source.data.id, link.target.data.id, newLabel);
+          setTreeData(newTreeData);
+      }
+  }, [treeData]);
 
     
 
