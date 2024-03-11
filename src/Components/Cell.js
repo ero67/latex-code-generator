@@ -12,17 +12,17 @@ const Cell = ({ option, onClick, row, col, disabled,cellColor}) => {
       // if (cellValue === null) {
       if(!disabled){  
         setCellValue(option); 
-        console.log(cellValue)
-        console.log("cellValue===null if statement");
+        // console.log(cellValue)
+        // console.log("cellValue===null if statement");
       }
       
       else{
-        console.log("cellValue===null else statement");
+        // console.log("cellValue===null else statement");
       }
         onClick(row, col);
        
-        console.log("this is row and col of a cell when clicked");
-        console.log(row, col);
+        // console.log("this is row and col of a cell when clicked");
+        // console.log(row, col);
         // console.log("handleClick in Cell compnent");
   };
 

@@ -378,6 +378,15 @@ h1{
   /* width: max-content; */
   width: 100%;
 }
+
+.kmap-wrapper {
+  display: flex;
+  justify-content: center; 
+  align-items: center; 
+  /* height: 50vh;  */
+  position: relative; 
+}
+
 .karnaugh-map {
   display: inline-block;
   border: 1px solid rgb(75, 43, 43);
@@ -548,6 +557,7 @@ p{
 
 div.containerText {
 background-color: #ffffff;
+margin-bottom: 20px;
 
 }
 div.containerText p {
