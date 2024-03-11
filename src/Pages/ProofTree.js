@@ -147,26 +147,7 @@ const ProofTree = () => {
     );
   };
 
-  //  /* <input
-  //               type="text"
-  //               value={node.rightLabel}
-  //               placeholder="Right label"
-  //               // onFocus={() => setSelectedNodeId(node.id)}
-  //               onChange={(e) => editNodeRightLabel(node.id, e.target.value)}
-  //             /> */
-
-  // Render buttons for each special symbol
-  // const renderSymbolButtons = () => {
-  //   return Object.entries(specialSymbols).map(([symbol, latex]) => (
-  //     <button
-  //       className="symbolBtn"
-  //       key={symbol}
-  //       onClick={() => insertSymbol(latex)}
-  //     >
-  //       {symbol}
-  //     </button>
-  //   ));
-  // };
+ 
 
   const generateLatexCode = (node) => {
     let code = "";
@@ -249,8 +230,27 @@ const ProofTree = () => {
   return (
     <div className="proof-tree-container">
       <h1>Proof Tree</h1>
+      <div class="containerText">
+        <p id="question" style={{ fontWeight: "bold" }}>
+          How to use ?
+        </p>
+        {/* <div></div> */}
+        <p>
+          1. Choose if you want to use mathematical font or not by clicking on
+          the checkbox.
+        </p>
+        <p>
+          2. Put the content of the node in the input field.
+        </p>
+        <p>
+          3. If you want to add a child to a node, click on the "Add Child" button
+        </p>
+        <p>4. If you want to put a Right Label between parent and child node fill the bottom input field .</p>
+        <p></p>
+        
+      </div>
       <div id="buttonsPT">
-      <button
+      {/* <button
         id="buttonMath"
         onClick={() => handleOptionChange(true)}
         style={{ backgroundColor: math_notation === true ? "#7393B3" : "white" }}
@@ -263,13 +263,22 @@ const ProofTree = () => {
         style={{ backgroundColor: math_notation === false ? "#7393B3" : "white" }}
       >
         No Math
-      </button>
+      </button> */}
+      <label htmlFor="math" >Mathematical font </label>
+      <input
+        type="checkbox"
+        id="math"
+        name="math"
+        value="math"
+        checked={math_notation}
+        onChange={() => setMathNotation(!math_notation)}
+      />
 
       </div>
       {/* <div className="btn-container">{renderSymbolButtons()}</div> */}
       {renderTreeNode(rootNode)}
       <div></div>
-      <button id="generateBtn" onClick={() => generateBtn()}>
+      <button  id="generateBtn" onClick={() => generateBtn()}>
         Generate code{" "}
       </button>
       <GeneratedCode id="generatedCode" code={generatedCode}></GeneratedCode>
