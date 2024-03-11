@@ -1,7 +1,7 @@
 // TODO: KARNAUGHOE MAPY : pridat to ze sa zakruzkuje/nejakym sposobom oznaci implicant
 // TODO: KARNAUGHOVE MAPY : aby user nemusel klikat presne v danom poradi na cells.... proste nech len klikne hocijak... nech to zoradi indexy aby fungoval LaTeX kod
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./index.css";
 import Cell from "../Components/Cell";
 import GeneratedCode from "../Components/GeneratedCode";
@@ -47,18 +47,9 @@ const Kmap = () => {
   const [generatedCode, setGeneratedCode] = useState(
     "Your code will appear here \n after you click on Generate Code button"
   );
-  // const code='a';
-  const colors = [
-    "red",
-    "green",
-    "blue",
-    "yellow",
-    "purple",
-    "orange",
-    "pink",
-    "cyan",
-    "magenta",
-  ];
+  // drAwing implicants
+  const [mapHeight, setMapHeight] = useState(null); // Store the start point
+  const [mapWidth, setMapWidth] = useState(null); // Store the end point
 
   const [activeImplicantIndex, setActiveImplicantIndex] = useState(null);
   const [activeImplicantType, setActiveImplicantType] = useState(null);
@@ -79,7 +70,7 @@ const Kmap = () => {
     activeColor
   ) {
     // Check if there is an active implicant
-    console.log(activeImplicantType);
+    // console.log(activeImplicantType);
     let activeImplicanCellIndexes = edgeimplicantCellIndexes;
     if (activeImplicantType === "default") {
       activeImplicanCellIndexes = implicantCellIndexes;
@@ -178,11 +169,18 @@ const Kmap = () => {
     }
     setOption(null);
     setOpposite(null);
+
+    const kmapContainer = document.querySelector(".karnaugh-map");
+    const rect = kmapContainer.getBoundingClientRect();
+    console.log(rect.height, rect.width);
+    setMapHeight(rect.height);
+    setMapWidth(rect.width);
   };
 
   // Define a function to fill the cells with the opposite number
   const fillCells = () => {
     // Loop through all the cells in the table
+
     const cells = document.getElementsByClassName("cell");
     for (let cell of cells) {
       // If the cell is empty, set its value to the opposite number
@@ -197,7 +195,7 @@ const Kmap = () => {
     let content = [];
     for (let cell of cells) {
       content.push(cell.textContent);
-      console.log(cell.textContent);
+      // console.log(cell.textContent);
     }
 
     return content;
@@ -224,10 +222,12 @@ const Kmap = () => {
   // };
 
   const addCornerImplicant = () => {
+    console.log("implicant cell indexes");
+    console.log(edgeimplicantCellIndexes);
     // Correctly adding all corner indices in a single update
     const newEdgeImplicant = [...edgeImplicant, 0, 2, 8, 10];
     // addPartOfEdgeImplicant(newEdgeImplicant);
-    console.log(newEdgeImplicant);
+    // console.log(newEdgeImplicant);
 
     const newSingleEdgeImplicantIndexes = [
       { row: 0, col: 0 },
@@ -237,10 +237,10 @@ const Kmap = () => {
     ];
 
     addPartOfSingleEdgeImplicantIndex(newSingleEdgeImplicantIndexes);
-    console.log(newSingleEdgeImplicantIndexes);
+    // console.log(newSingleEdgeImplicantIndexes);
 
     // Final state updates
-    // addEdgeImplicant([...edgeImplicants, newEdgeImplicant]);
+    addEdgeImplicant([...edgeImplicants, newEdgeImplicant]);
     addImplicantCorner(true);
     addEdgeImplicantCellIndexes([
       ...edgeimplicantCellIndexes,
@@ -285,7 +285,7 @@ const Kmap = () => {
         }
       }
     }
-    
+
     code += "}\n";
     //generating code for classic implicant
     //required number of {} in \implicant command is 2 so we can hardcode it
@@ -313,10 +313,8 @@ const Kmap = () => {
     for (let row = 0; row < edgeImplicants.length; row++) {
       if (edgeImplicants[row].length === 2) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
-        
       } else if (edgeImplicants[row].length === 4) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
-        
       } else {
         continue;
       }
@@ -351,8 +349,8 @@ const Kmap = () => {
   const finishImplicant = () => {
     // if(numberOfImplicants>=2){
     if (markingImplicant) {
-      console.log("this is implicant when finished button is pressed");
-      console.log(implicant);
+      // console.log("this is implicant when finished button is pressed");
+      // console.log(implicant);
       //adds implicant to the all implicants list
       if (implicant.length > 0) {
         addImplicant([...implicants, implicant]);
@@ -371,7 +369,7 @@ const Kmap = () => {
           );
         }
         addImplicantCellIndexes([...implicantCellIndexes, singeImplicantIndex]);
-        console.log(singeImplicantIndexes[0], singeImplicantIndexes[1]);
+        // console.log(singeImplicantIndexes[0], singeImplicantIndexes[1]);
       }
       //reseting variables connected with adding implicant
       addPartOfSingleImplicantIndex([]);
@@ -392,7 +390,7 @@ const Kmap = () => {
       addPartOfSingleEdgeImplicantIndex([]);
       setNumberOfEdgeImplicants(0);
       setMarkingEdgeImplicant(false);
-      console.log(edgeImplicants);
+      // console.log(edgeImplicants);
     }
     setfinishImplicantDisabled(true);
     setClassicImplicantDisabled(false);
@@ -400,6 +398,7 @@ const Kmap = () => {
     if (tableSize === "4x4") {
       setCornerImplicantDisabled(false);
     }
+    drawImplicants(implicantCellIndexes);
     // }
   };
   //set up buttons settings and interface when adding deafult implicant
@@ -447,15 +446,15 @@ const Kmap = () => {
     }
 
     //testtesttest
-    console.log(disabled, markingImplicant);
+    // console.log(disabled, markingImplicant);
     // disabled means that we are in the implicant part of this page
     // if am am marking basic implicant
     if (disabled && markingImplicant && implicant.length <= 1) {
       addPartOfImplicant([...implicant, indexes[row][col]]);
       addPartOfSingleImplicantIndex([...singeImplicantIndexes, { row, col }]);
       setNumberOfImplicants(numberOfImplicants + 1);
-      console.log("this is implicant");
-      console.log(implicant);
+      // console.log("this is implicant");
+      // console.log(implicant);
     }
 
     // if i am choosing esge implicant and also disbled is true
@@ -468,13 +467,14 @@ const Kmap = () => {
           { row, col },
         ]);
         setNumberOfEdgeImplicants(numberOfEdgeImplicants + 1);
-        console.log("this is edge implicant");
-        console.log(edgeImplicant);
+        // console.log("this is edge implicant");
+        // console.log(edgeImplicant);
       } else {
         alert("you can only select Cells on edges");
         setMarkingEdgeImplicant(false);
         setfinishImplicantDisabled(true);
         setClassicImplicantDisabled(false);
+        setCornerImplicantDisabled(false);
       }
     }
   };
@@ -490,12 +490,13 @@ const Kmap = () => {
     for (let row = 0; row < rows; row++) {
       const currentRow = [];
       for (let col = 0; col < cols; col++) {
-
         // part of the code for coloring implicant cells
         let cellColor = null;
         if (activeImplicantType === "default") {
           implicantCellIndexes.forEach((implicant, index) => {
-            if (implicant.some((cell) => cell.row === row && cell.col === col)) {
+            if (
+              implicant.some((cell) => cell.row === row && cell.col === col)
+            ) {
               cellColor = getColorForImplicant(index);
             }
           });
@@ -510,7 +511,10 @@ const Kmap = () => {
         }
         // part of the code for generating jsx and html code for cells
         currentRow.push(
-          <Cell key={`${row}${col}`} option={option} onClick={handleCellClick}
+          <Cell
+            key={`${row}${col}`}
+            option={option}
+            onClick={handleCellClick}
             row={row}
             col={col}
             disabled={disabled}
@@ -552,30 +556,6 @@ const Kmap = () => {
     addEdgeImplicantCellIndexes([]);
   };
 
-  // function drawImplicants(ctx, implicants, color) {
-  //   const cellWidth = ctx.canvas.width / 4; // Adjust 'cols' as needed
-  //   const cellHeight = ctx.canvas.height / 4; // Adjust 'rows' as needed
-  
-  //   implicants.forEach(implicant => {
-  //     // Find the min and max rows and columns to determine the bounding box of the implicant
-  //     const minRow = Math.min(...implicant.map(cell => cell.row));
-  //     const maxRow = Math.max(...implicant.map(cell => cell.row));
-  //     const minCol = Math.min(...implicant.map(cell => cell.col));
-  //     const maxCol = Math.max(...implicant.map(cell => cell.col));
-  
-  //     // Calculate the rectangle's position and size
-  //     const x = minCol * cellWidth;
-  //     const y = minRow * cellHeight;
-  //     const width = (maxCol - minCol + 1) * cellWidth;
-  //     const height = (maxRow - minRow + 1) * cellHeight;
-  
-  //     // Draw the rectangle
-  //     ctx.strokeStyle = color;
-  //     ctx.strokeRect(x, y, width, height);
-  //   });
-  // }
-  
-
   // const handleClearButton = () =>{
   //     setOption(0);
   //     setOpposite(1);
@@ -587,6 +567,85 @@ const Kmap = () => {
   //     }
   //     // window.location.reload(false)
   //   }
+
+  // Initialize an empty object to store implicant-to-color mappings
+  const implicantColorMap = {};
+
+  const colors = [
+    "rgba(255, 191, 191, 0.7)", // red
+    "rgba(191, 255, 191, 0.7)", // green
+    "rgba(255, 250, 190, 0.5)", // yellow
+    "rgba(191, 237, 251, 0.5", // blue
+    "rgba(191, 191, 255, 0.5)", // Purple
+    "rgba(254, 203, 229, 0.5)", // Pink
+    // Add more colors as needed
+  ];
+
+  // Function to generate a unique ID for an implicant (simple example)
+  const generateImplicantId = (implicant) => {
+    return implicant.map((cell) => `${cell.row},${cell.col}`).join("-");
+  };
+  const assignColorsToImplicants = (implicants) => {
+    implicants.forEach((implicant) => {
+      const id = generateImplicantId(implicant);
+      if (!implicantColorMap[id]) {
+        // Assign the next available color in the cycle
+        const colorIndex =
+          Object.keys(implicantColorMap).length % colors.length;
+        implicantColorMap[id] = colors[colorIndex];
+      }
+    });
+  };
+
+  useEffect(() => {
+    drawImplicants(implicantCellIndexes);
+  });
+
+  const calculateImplicantBoundaries = (implicant) => {
+    const rows = implicant.map((cell) => cell.row);
+    const cols = implicant.map((cell) => cell.col);
+
+    // Determine the bounding box of the implicant
+    const minRow = Math.min(...rows);
+    const maxRow = Math.max(...rows);
+    const minCol = Math.min(...cols);
+    const maxCol = Math.max(...cols);
+
+    return { minRow, maxRow, minCol, maxCol };
+  };
+
+  const drawImplicants = (implicants) => {
+    // Ensure colors are assigned to new implicants
+    assignColorsToImplicants(implicants);
+
+    const [rows, cols] = tableSize.split("x").map(Number);
+    const canvas = document.getElementById("kmapCanvas");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous drawings
+
+    const cellWidth = canvas.width / cols;
+    const cellHeight = canvas.height / rows;
+
+    implicants.forEach((implicant) => {
+      const id = generateImplicantId(implicant);
+      const color = implicantColorMap[id]; // Retrieve the assigned color
+
+      const { minRow, maxRow, minCol, maxCol } =
+        calculateImplicantBoundaries(implicant);
+
+      const x = minCol * cellWidth;
+      const y = minRow * cellHeight;
+      const width = (maxCol - minCol + 1) * cellWidth - 20;
+      const height = (maxRow - minRow + 1) * cellHeight - 20;
+
+      ctx.beginPath();
+      ctx.rect(x + 10, y + 10, width, height);
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+  };
 
   return (
     // <span>
@@ -680,26 +739,26 @@ const Kmap = () => {
           </button>
         </div>
       </div>
-      {/* <div
-        className="kmap-container"
-        style={{
-          position: "relative",
-          width: "500px",
-          height: "300px",
-        }} */}
-      {/* > */}
-        {generateTable()}
-        {/* <canvas
-          id="kmapCanvas"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-          }}
-        ></canvas>
-      </div> */}
+      <div className="kmap-wrapper">
+        <div style={{ position: "relative" }}>
+          {generateTable()}
+          {disabled && (
+            <canvas
+              id="kmapCanvas"
+              width={mapWidth}
+              height={mapHeight}
+              disabled={!disabled}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                pointerEvents: "none",
+              }}
+            ></canvas>
+          )}
+        </div>
+      </div>
+      {/* {generateTable()} */}
 
       {/* <ImplicantsList id="implicantlist" implicants={implicants}></ImplicantsList> */}
       <ImplicantsList
