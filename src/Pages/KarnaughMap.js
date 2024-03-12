@@ -60,52 +60,53 @@ const Kmap = () => {
     setActiveImplicantType(typeOfImplicant);
   };
   //function for finding out what color should the cell be after hovering over list
-  // function getCellColor(
-  //   row,
-  //   col,
-  //   activeImplicantIndex,
-  //   activeImplicantType,
-  //   implicantCellIndexes,
-  //   edgeimplicantCellIndexes,
-  //   defaultColor,
-  //   activeColor
-  // ) {
-  //   // Check if there is an active implicant
-  //   // console.log(activeImplicantType);
-  //   let activeImplicanCellIndexes = edgeimplicantCellIndexes;
-  //   if (activeImplicantType === "default") {
-  //     activeImplicanCellIndexes = implicantCellIndexes;
-  //   } else if (activeImplicantType === "edge") {
-  //     activeImplicanCellIndexes = edgeimplicantCellIndexes;
-  //   }
+  function getCellColor(
+    row,
+    col,
+    // activeImplicantIndex,
+    activeImplicantType,
+    implicantCellIndexes,
+    edgeimplicantCellIndexes,
+    defaultColor,
+    activeColor
+  ) {
+    // Check if there is an active implicant
+    // console.log(activeImplicantType);
+    let activeImplicanCellIndexes = edgeimplicantCellIndexes;
+    if (activeImplicantType === "default") {
+      activeImplicanCellIndexes = implicantCellIndexes;
+    } else if (activeImplicantType === "edge") {
+      activeImplicanCellIndexes = edgeimplicantCellIndexes;
+    }
 
-  //   if (activeImplicantIndex !== null) {
-  //     const activeImplicant = activeImplicanCellIndexes[activeImplicantIndex];
-  //     if(activeImplicant.length === undefined){return;}
-  //     if (
-  //       activeImplicant.some((cell) => cell.row === row && cell.col === col)
-  //     ) {
-  //       return activeColor; // Color for active implicant cells
-  //     }
-  //   }
+    if (activeImplicantIndex !== null) {
+      const activeImplicant = activeImplicanCellIndexes[activeImplicantIndex];
+      if(activeImplicant === undefined){return;}
+      if (
+        activeImplicant.some((cell) => cell.row === row && cell.col === col)
+      ) {
+        return activeColor; // Color for active implicant cells
+      }
+    }
 
-  //   // Check if the cell belongs to any other implicant
-  //   for (let i = 0; i < activeImplicanCellIndexes.length; i++) {
-  //     if (i !== activeImplicantIndex) {
-  //       const implicant = activeImplicanCellIndexes[i];
-  //       if (implicant.some((cell) => cell.row === row && cell.col === col)) {
-  //         return defaultColor; // Color for non-active implicant cells
-  //       }
-  //     }
-  //   }
+    // Check if the cell belongs to any other implicant
+    if(activeImplicantIndex!==null){
+    for (let i = 0; i < activeImplicanCellIndexes.length; i++) {
+      if (i !== activeImplicantIndex) {
+        const implicant = activeImplicanCellIndexes[i];
+        if (implicant.some((cell) => cell.row === row && cell.col === col)) {
+          return defaultColor; // Color for non-active implicant cells
+        }
+      }
+    }
+  }
+    return null; // No color if the cell is not part of any implicant
+  }
 
-  //   return null; // No color if the cell is not part of any implicant
-  // }
 
 
-
-  function getColorForImplicant(implicantIndex) {
-    return colors[implicantIndex % colors.length];
+  function getColorForImplicant() {
+    return colors[19];
   }
 
   // zmena velkosti tabulky
@@ -275,6 +276,7 @@ const Kmap = () => {
       }
     }
 
+   
     if (implicantCorner && rows === 4 && cols === 4) {
       code += "       \\implicantcorner\n";
     } else if (implicantCorner && (rows !== 4 || cols !== 4)) {
@@ -287,9 +289,13 @@ const Kmap = () => {
     for (let row = 0; row < edgeImplicants.length; row++) {
       if (edgeImplicants[row].length === 2) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
-      } else if (edgeImplicants[row].length === 4) {
+      } else if (edgeImplicants[row].length === 4 ) {
+        const [firstindex,secondindex,thirdindex,fourthindex] = edgeImplicants[row];
+        if(firstindex!==0 && secondindex!==2 && thirdindex!==8 && fourthindex!==10){
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
+        }
       } else {
+        
         continue;
       }
     }
@@ -471,7 +477,7 @@ const Kmap = () => {
             if (
               implicant.some((cell) => cell.row === row && cell.col === col)
             ) {
-              cellColor = getColorForImplicant(index);
+              cellColor = getColorForImplicant();
             }
           });
         } else if (activeImplicantType === "edge") {
@@ -479,7 +485,7 @@ const Kmap = () => {
             if (
               implicant.some((cell) => cell.row === row && cell.col === col)
             ) {
-              cellColor = getColorForImplicant(index);
+              cellColor = getColorForImplicant();
             }
           });
         }
@@ -492,17 +498,17 @@ const Kmap = () => {
             row={row}
             col={col}
             disabled={disabled}
-            cellColor = {cellColor}
-            // cellColor={getCellColor(
-            //   row,
-            //   col,
-            //   activeImplicantIndex,
-            //   activeImplicantType,
-            //   implicantCellIndexes,
-            //   edgeimplicantCellIndexes,
-            //   null,
-            //   "#f1f38e"
-            // )}
+            // cellColor = {cellColor}
+            cellColor={getCellColor(
+              row,
+              col,
+              // activeImplicantIndex,
+              activeImplicantType,
+              implicantCellIndexes,
+              edgeimplicantCellIndexes,
+              null,
+              "#b5b5b5"
+            )}
           />
         );
       }
@@ -554,7 +560,7 @@ const Kmap = () => {
     "rgba(236, 151, 227, 0.5)", // Pink
     "rgba(0, 199, 190, 0.5)", // Turquoise
     "rgba(255, 165, 0, 0.5)", // Orange
-    "rgba(128, 128, 128, 0.5)", // Gray
+    
     "rgba(255, 105, 180, 0.5)", // Hot Pink
     "rgba(75, 0, 130, 0.5)", // Indigo
     "rgba(64, 224, 208, 0.5)", // Turquoise
@@ -566,6 +572,7 @@ const Kmap = () => {
     "rgba(255, 228, 181, 0.5)", // Moccasin
     "rgba(255, 99, 71, 0.5)", // Tomato
     "rgba(176, 224, 230, 0.5)", // Powder Blue
+    "rgba(128, 128, 128, 0.5)", // Gray
   ];
   
 
@@ -755,6 +762,10 @@ const Kmap = () => {
   };
   
   const handleRemoveEdgeImplicant = (index) => {
+    const [firstindex,secondindex,thirdindex,fourthindex] = edgeImplicants[index];
+    if(firstindex===0 && secondindex===2 && thirdindex===8 && fourthindex===10){
+      addImplicantCorner(false);
+    }
     const newEdgeImplicants = edgeImplicants.filter((_, i) => i !== index);
     const newEdgeImplicantsIndexes =edgeimplicantCellIndexes.filter((_, i) => i !== index);
     addEdgeImplicant(newEdgeImplicants);
