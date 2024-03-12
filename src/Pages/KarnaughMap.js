@@ -754,6 +754,12 @@ const Kmap = () => {
     addImplicantCellIndexes(newImplicantsIndexes);
   };
   
+  const handleRemoveEdgeImplicant = (index) => {
+    const newEdgeImplicants = edgeImplicants.filter((_, i) => i !== index);
+    const newEdgeImplicantsIndexes =edgeimplicantCellIndexes.filter((_, i) => i !== index);
+    addEdgeImplicant(newEdgeImplicants);
+    addEdgeImplicantCellIndexes(newEdgeImplicantsIndexes);
+  };
 
   return (
   
@@ -875,6 +881,7 @@ const Kmap = () => {
         id="implicantlist"
         edgeImplicants={edgeImplicants}
         onImplicantClick={handleImplicantClick}
+        onRemoveEdgeImplicant={handleRemoveEdgeImplicant}
       ></EdgeImplicantList>
 
       <button
