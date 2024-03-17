@@ -33,6 +33,8 @@ const Kmap = () => {
   const [markingImplicant, setMarkingImplicant] = useState(false);
   const [numberOfImplicants, setNumberOfImplicants] = useState(0);
   const [implicant, addPartOfImplicant] = useState([]);
+  const [indexesOfImplicant, addIndexOfImplicant]= useState([]);
+
 
   //useStates for coloring implicants
   const [singeImplicantIndexes, addPartOfSingleImplicantIndex] = useState([]);
@@ -147,7 +149,7 @@ const Kmap = () => {
 
     const kmapContainer = document.querySelector(".karnaugh-map");
     const rect = kmapContainer.getBoundingClientRect();
-    console.log(rect.height, rect.width);
+    // console.log(rect.height, rect.width);
     setMapHeight(rect.height);
     setMapWidth(rect.width);
   };
@@ -176,29 +178,10 @@ const Kmap = () => {
     return content;
   };
 
-  // const addCornerImplicant = () =>{
-  //   addImplicantCorner(true);
-  //   addPartOfEdgeImplicant([...edgeImplicant,0]);
-  //   addPartOfEdgeImplicant([...edgeImplicant,2]);
-  //   addPartOfEdgeImplicant([...edgeImplicant,8]);
-  //   addPartOfEdgeImplicant([...edgeImplicant,10]);
-  //   console.log(edgeImplicant);
-  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{'0'',0'}]);
-  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{'0','3'}]);
-  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{3,0}]);
-  //   // addPartOfSingleEdgeImplicantIndex([...singeEdgeImplicantIndexes,{3,3}]);
-  //   console.log(singeEdgeImplicantIndexes);
-  //   addEdgeImplicant([...edgeImplicants,edgeImplicant]);
-  //   addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes,singeEdgeImplicantIndexes]);
-  //   addPartOfEdgeImplicant([]);
-  //   addPartOfSingleEdgeImplicantIndex([]);
-  //   setNumberOfEdgeImplicants(0);
-
-  // };
+ 
 
   const addCornerImplicant = () => {
-    console.log("implicant cell indexes");
-    console.log(edgeimplicantCellIndexes);
+
     // Correctly adding all corner indices in a single update
     const newEdgeImplicant = [...edgeImplicant, 0, 2, 8, 10];
     // addPartOfEdgeImplicant(newEdgeImplicant);
@@ -306,6 +289,20 @@ const Kmap = () => {
   // adding all cell which are supposed to be in chosen implicant
 
   function calculateImplicantIndices(startPoint, endPoint) {
+   //if iser clicks the start and end of the implicant in other way around
+    if((endPoint.row+endPoint.col) < (startPoint.row+startPoint.col)){
+      let temp = endPoint;
+      endPoint = startPoint;
+      startPoint = temp;
+      let temp2 = implicant[0];
+      implicant[0] = implicant[1];
+      implicant[1] = temp2;
+
+    }
+    addImplicant([...implicants, implicant]);
+
+
+
     const implicantIndices = [];
     if (endPoint === null) {
       endPoint = startPoint;
@@ -333,8 +330,9 @@ const Kmap = () => {
       // console.log(implicant);
       //adds implicant to the all implicants list
       if (implicant.length > 0) {
-        addImplicant([...implicants, implicant]);
-
+      
+        // addImplicant([...implicants, implicant]); // addind implicant in calulateImplicantIndices
+    
         //logic for addding indexes of all cells which are part of the implicant to the another array
         let singeImplicantIndex = [];
         if (singeImplicantIndexes[1] === undefined) {
@@ -348,6 +346,7 @@ const Kmap = () => {
             singeImplicantIndexes[1]
           );
         }
+
         addImplicantCellIndexes([...implicantCellIndexes, singeImplicantIndex]);
         // console.log(singeImplicantIndexes[0], singeImplicantIndexes[1]);
       }
@@ -364,13 +363,17 @@ const Kmap = () => {
           ...edgeimplicantCellIndexes,
           singeEdgeImplicantIndexes,
         ]);
+        console.log("simple edge implicant index");
+        console.log(singeEdgeImplicantIndexes);
+        console.log(edgeimplicantCellIndexes);
       }
+      ////// CLEARING DATA FOR EDGE IMPLICANT AFTER ADDING IT TO HE FINAL ARRAY
       // addEdgeImplicant([...edgeImplicants,edgeImplicant]);
       addPartOfEdgeImplicant([]);
       addPartOfSingleEdgeImplicantIndex([]);
       setNumberOfEdgeImplicants(0);
       setMarkingEdgeImplicant(false);
-      // console.log(edgeImplicants);
+
     }
     setfinishImplicantDisabled(true);
     setClassicImplicantDisabled(false);
@@ -673,10 +676,22 @@ const Kmap = () => {
           isEdge=true;
       }
       else{
+        if(edgeImplicant[0].row === edgeImplicant[1].row){
+          firstPartofEdgeImplicant.push(edgeImplicant[0]);
+          firstPartofEdgeImplicant.push(edgeImplicant[1]);
+          secondPartofEdgeImplicant.push(edgeImplicant[2]);
+          secondPartofEdgeImplicant.push(edgeImplicant[3]);
+
+        }
+        
         firstPartofEdgeImplicant.push(edgeImplicant[0]);
         firstPartofEdgeImplicant.push(edgeImplicant[1]);
         secondPartofEdgeImplicant.push(edgeImplicant[2]);
         secondPartofEdgeImplicant.push(edgeImplicant[3]);
+        console.log(`first part of edge implicant: ${firstPartofEdgeImplicant}`);
+        console.log(firstPartofEdgeImplicant);
+        console.log(`second part of edge implicant: ${secondPartofEdgeImplicant}`);
+        console.log(secondPartofEdgeImplicant)
       }
     }
     return [firstPartofEdgeImplicant, secondPartofEdgeImplicant,thirdPartofEdgeImplicant,fourthPartofEdgeImplicant,isEdge];
@@ -719,13 +734,13 @@ const Kmap = () => {
 
   //function for drawing one implicant part
   const drawImplicantPart = (implicantPart, color, ctx, cellWidth, cellHeight) => {
-    console.log(`Drawing with color: ${color}`);
+
     const { minRow, maxRow, minCol, maxCol } = calculateImplicantBoundaries(implicantPart);
 
     let x;
     let y;
-    console.log(implicantPart);
-    console.log(implicantPart[0].col);
+    // console.log(implicantPart);
+    // console.log(implicantPart[0].col);
     if(implicantPart[0].col === 0){
       x = minCol * cellWidth - 10;
     }
