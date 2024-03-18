@@ -8,7 +8,7 @@ import GeneratedCode from "../Components/GeneratedCode";
 import ImplicantsList from "../Components/ImplicantsList";
 import EdgeImplicantList from "../Components/EdgeImplicantList";
 import Instructions from "../Components/Instructions";
-import { active } from "d3";
+// import { active } from "d3";
 
 const Kmap = () => {
   const [tableSize, setTableSize] = useState("0x0");
@@ -272,15 +272,16 @@ const Kmap = () => {
     for (let row = 0; row < edgeImplicants.length; row++) {
       if (edgeImplicants[row].length === 2) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
-      } else if (edgeImplicants[row].length === 4 ) {
+      } else if (edgeImplicants[row].length === 4 || edgeImplicants[row].length === 6 || edgeImplicants[row].length === 8) {
         const [firstindex,secondindex,thirdindex,fourthindex] = edgeImplicants[row];
-        if(firstindex!==0 && secondindex!==2 && thirdindex!==8 && fourthindex!==10){
-        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
+        if((firstindex===0 && secondindex===2 && thirdindex===8 && fourthindex===10)){
+          
+          continue;
         }
-      } else {
+       else {
+        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
         
-        continue;
-      }
+      }}
     }
 
     code += "\\end{karnaugh-map}";
@@ -356,7 +357,9 @@ const Kmap = () => {
       setNumberOfImplicants(0);
       setMarkingImplicant(false);
     } else if (markingEdgeImplicant) {
-      if (edgeImplicant.length > 1) {
+      console.log(edgeImplicant.length);
+      console.log(edgeImplicant);
+      if (edgeImplicant.length > 1 && (edgeImplicant.length===2 || edgeImplicant.length===4 || edgeImplicant.length===6 || edgeImplicant.length===8)) {
         addEdgeImplicant([...edgeImplicants, edgeImplicant]);
         // addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndexes])
         addEdgeImplicantCellIndexes([
@@ -741,6 +744,10 @@ const Kmap = () => {
     let y;
     // console.log(implicantPart);
     // console.log(implicantPart[0].col);
+    if(implicantPart[0]===undefined){
+      return;
+    }
+
     if(implicantPart[0].col === 0){
       x = minCol * cellWidth - 10;
     }
