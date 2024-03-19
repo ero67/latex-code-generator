@@ -274,7 +274,7 @@ const Kmap = () => {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
       } else if (edgeImplicants[row].length === 4 || edgeImplicants[row].length === 6 || edgeImplicants[row].length === 8) {
         const [firstindex,secondindex,thirdindex,fourthindex] = edgeImplicants[row];
-        if((firstindex===0 && secondindex===2 && thirdindex===8 && fourthindex===10)){
+        if((firstindex===0 && secondindex===2 && thirdindex===8 && fourthindex===10)&&implicantCorner){
           
           continue;
         }
@@ -323,6 +323,25 @@ const Kmap = () => {
     return implicantIndices;
   }
 
+  const sortVerticalEdgeImplicants = (implicants) => {
+    // Sort implicants based on the 'col' value first, then 'row' value
+    return implicants.sort((a, b) => {
+      // Group by edge: left (0) comes before right (3) for a 4x4 Karnaugh map
+      if (a.col < b.col) return -1;
+      if (a.col > b.col) return 1;
+  
+      // Then, within each group, sort from top (row 0) to bottom (max row)
+      return a.row - b.row;
+    });
+  };
+  
+  
+  
+  
+  // Now, 'sortedImplicants' should be in the correct order for generating LaTeX code
+  
+
+
   //handle logic of finish implicant button and all things that this button press triggers
   const finishImplicant = () => {
     // if(numberOfImplicants>=2){
@@ -357,18 +376,23 @@ const Kmap = () => {
       setNumberOfImplicants(0);
       setMarkingImplicant(false);
     } else if (markingEdgeImplicant) {
-      console.log(edgeImplicant.length);
-      console.log(edgeImplicant);
+      // console.log(edgeImplicant.length);
+      // console.log(edgeImplicant);
       if (edgeImplicant.length > 1 && (edgeImplicant.length===2 || edgeImplicant.length===4 || edgeImplicant.length===6 || edgeImplicant.length===8)) {
+        console.log("this is the test fir estge implicant indexes");
+        console.log(edgeImplicant) ;
         addEdgeImplicant([...edgeImplicants, edgeImplicant]);
         // addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndexes])
         addEdgeImplicantCellIndexes([
           ...edgeimplicantCellIndexes,
           singeEdgeImplicantIndexes,
         ]);
-        console.log("simple edge implicant index");
-        console.log(singeEdgeImplicantIndexes);
-        console.log(edgeimplicantCellIndexes);
+
+        // console.log(singeEdgeImplicantIndexes);
+        // console.log("after sorting");
+        // const sortedImplicants = sortVerticalEdgeImplicants(singeEdgeImplicantIndexes);
+        // console.log(sortedImplicants);
+        // console.log(edgeimplicantCellIndexes);
       }
       ////// CLEARING DATA FOR EDGE IMPLICANT AFTER ADDING IT TO HE FINAL ARRAY
       // addEdgeImplicant([...edgeImplicants,edgeImplicant]);
@@ -670,8 +694,9 @@ const Kmap = () => {
     }
     else if(edgeImplicant.length === 4){
       // check if edgeimplicant is corner implicant
-      if((edgeImplicant[0].row===0 && edgeImplicant[0].col===0)&&(edgeImplicant[1].row===0 && edgeImplicant[1].col===3)&&(edgeImplicant[2].row===3 && edgeImplicant[2].col===0)
-      &&(edgeImplicant[3].row===3 && edgeImplicant[3].col===3)){
+      if(((edgeImplicant[0].row===0 && edgeImplicant[0].col===0)&&(edgeImplicant[1].row===0 && edgeImplicant[1].col===3)&&(edgeImplicant[2].row===3 && edgeImplicant[2].col===0)
+      &&(edgeImplicant[3].row===3 && edgeImplicant[3].col===3))){
+      // &&(edgeImplicant[3].row===3 && edgeImplicant[3].col===3))&& implicantCorner){
           firstPartofEdgeImplicant.push(edgeImplicant[0]);
           secondPartofEdgeImplicant.push(edgeImplicant[1]);
           thirdPartofEdgeImplicant.push(edgeImplicant[2]);
