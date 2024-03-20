@@ -249,6 +249,8 @@ h1{
   margin-bottom: 1rem;
 }
 
+
+
 #addImplicant{
   width: 100px;
   height: 30px;
@@ -409,7 +411,7 @@ h1{
 }
 
 .cell:hover {
-  background-color: rgb(235, 233, 233);
+  background-color: rgb(206, 205, 205);
   color: rgb(0, 0, 0);
 }
 

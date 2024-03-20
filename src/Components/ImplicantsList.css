@@ -9,11 +9,30 @@
     list-style-type: none;
     padding: 0;
   }
+  .implicant-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+    padding: 5px; 
+  }
+  
+  .remove-implicant-btn{
+    width: 100px;
+    height: 30px;
+    background-color: #d11a2a;
+    color: #fffdfd;
+    border: none; /* Updated for a cleaner look, adjust as necessary */
+    border-radius: 3px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 10px; /* Adjust or remove as necessary */
+    /* margin-bottom: 1rem; Removed to avoid pushing down anything below */
+  }
   
   .implicant-item {
     cursor: pointer;
     padding: 5px;
-    border: 1px solid #ddd;
+    border: 1px solid #837e7e;
     border-radius: 5px;
     margin-bottom: 5px;
     transition: background-color 0.3s;
