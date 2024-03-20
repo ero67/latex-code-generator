@@ -272,6 +272,7 @@ const Kmap = () => {
     for (let row = 0; row < edgeImplicants.length; row++) {
       if (edgeImplicants[row].length === 2) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
+        // code += `       \\implicantedge{${indexes[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
       } else if (edgeImplicants[row].length === 4 || edgeImplicants[row].length === 6 || edgeImplicants[row].length === 8) {
         const [firstindex,secondindex,thirdindex,fourthindex] = edgeImplicants[row];
         if((firstindex===0 && secondindex===2 && thirdindex===8 && fourthindex===10)&&implicantCorner){
@@ -322,18 +323,56 @@ const Kmap = () => {
 
     return implicantIndices;
   }
+// sorting edge implicant so user can click in any order and it will be generated correctly
+  const sortVerticalEdgeImplicants = (combinedArray) => {
+    const [rows, cols] = tableSize.split("x").map(Number);
+    // let isHorizoontalEdge = false;
+    // if(implicants[0].row===0)
 
-  const sortVerticalEdgeImplicants = (implicants) => {
-    // Sort implicants based on the 'col' value first, then 'row' value
-    return implicants.sort((a, b) => {
-      // Group by edge: left (0) comes before right (3) for a 4x4 Karnaugh map
-      if (a.col < b.col) return -1;
-      if (a.col > b.col) return 1;
+    // return implicants.sort((a, b) => {
+    //   if (a.col < b.col) return -1;
+    //   if (a.col > b.col) return 1;
+    //   return a.row - b.row;
+    // });
+
+     // Check for horizontal or vertical alignment based on user clicks
+  let allHorizontalEdges = combinedArray.every(item => item.row === 0 || item.row === rows - 1);
+  let allVerticalEdges = combinedArray.every(item => item.col === 0 || item.col === cols - 1);
+
   
-      // Then, within each group, sort from top (row 0) to bottom (max row)
+  // Decide on the primary sorting criterion based on the edge alignment
+  let prioritizeRow = allHorizontalEdges && !allVerticalEdges;
+  if(combinedArray[0].row === combinedArray[1].row){
+    // allVerticalEdges = true;
+    prioritizeRow = true;
+  }
+  return combinedArray.sort((a, b) => {
+    // Apply sorting based on the determined priority
+    if (prioritizeRow) {
+      if (a.row !== b.row) return a.row - b.row;
+      return a.col - b.col;
+    } else { // Default to prioritizing column for vertical edges or general case
+      if (a.col !== b.col) return a.col - b.col;
       return a.row - b.row;
-    });
+    }
+  });
+
   };
+
+  const combineArrays = (implicants, indexes) => {
+    return implicants.map((implicant, i) => ({
+      ...implicant,
+      index: indexes[i]
+    }));
+  };
+
+  const separateArrays = (sortedCombinedArray) => {
+    const sortedImplicants = sortedCombinedArray.map(item => ({ row: item.row, col: item.col }));
+    const sortedIndexes = sortedCombinedArray.map(item => item.index);
+    return [sortedImplicants, sortedIndexes];
+  };
+  
+  
   
   
   
@@ -381,16 +420,21 @@ const Kmap = () => {
       if (edgeImplicant.length > 1 && (edgeImplicant.length===2 || edgeImplicant.length===4 || edgeImplicant.length===6 || edgeImplicant.length===8)) {
         console.log("this is the test fir estge implicant indexes");
         console.log(edgeImplicant) ;
-        addEdgeImplicant([...edgeImplicants, edgeImplicant]);
+        const combinedArray = combineArrays(singeEdgeImplicantIndexes,edgeImplicant);
+        const sortedImplicants = sortVerticalEdgeImplicants(combinedArray);
+        const [sorted,sortedindexesEdgeImplicant] = separateArrays(sortedImplicants);
+        addEdgeImplicant([...edgeImplicants, sortedindexesEdgeImplicant]);
+        // addEdgeImplicant([...edgeImplicants, edgeImplicant]);
         // addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndexes])
         addEdgeImplicantCellIndexes([
           ...edgeimplicantCellIndexes,
           singeEdgeImplicantIndexes,
         ]);
-
+        console.log("testttttttttttttttttttttttttttt");
         // console.log(singeEdgeImplicantIndexes);
-        // console.log("after sorting");
-        // const sortedImplicants = sortVerticalEdgeImplicants(singeEdgeImplicantIndexes);
+        
+        // console.log(sorted);
+        // console.log(sortedindexesEdgeImplicant);
         // console.log(sortedImplicants);
         // console.log(edgeimplicantCellIndexes);
       }
@@ -476,6 +520,7 @@ const Kmap = () => {
           ...singeEdgeImplicantIndexes,
           { row, col },
         ]);
+     
         setNumberOfEdgeImplicants(numberOfEdgeImplicants + 1);
         // console.log("this is edge implicant");
         // console.log(edgeImplicant);
@@ -676,7 +721,17 @@ const Kmap = () => {
       ctx.fillStyle = color;
       ctx.fill();
     });
-    drawEdgeImplicants(edgeimplicantCellIndexes);
+    // if(edgeimplicantCellIndexes.length>0){
+    //   const sortedImplicantEdgeCellIndexes = sortVerticalEdgeImplicants(edgeimplicantCellIndexes);
+    //   drawEdgeImplicants(sortedImplicantEdgeCellIndexes);
+  
+    // }
+    // else{
+      drawEdgeImplicants(edgeimplicantCellIndexes);
+    // }
+    console.log("edge implicant cell indexeeeeeeeeesseseses");
+    console.log(edgeimplicantCellIndexes);
+    
   };
   
 
@@ -716,10 +771,10 @@ const Kmap = () => {
         firstPartofEdgeImplicant.push(edgeImplicant[1]);
         secondPartofEdgeImplicant.push(edgeImplicant[2]);
         secondPartofEdgeImplicant.push(edgeImplicant[3]);
-        console.log(`first part of edge implicant: ${firstPartofEdgeImplicant}`);
-        console.log(firstPartofEdgeImplicant);
-        console.log(`second part of edge implicant: ${secondPartofEdgeImplicant}`);
-        console.log(secondPartofEdgeImplicant)
+        // console.log(`first part of edge implicant: ${firstPartofEdgeImplicant}`);
+        // console.log(firstPartofEdgeImplicant);
+        // console.log(`second part of edge implicant: ${secondPartofEdgeImplicant}`);
+        // console.log(secondPartofEdgeImplicant)
       }
     }
     return [firstPartofEdgeImplicant, secondPartofEdgeImplicant,thirdPartofEdgeImplicant,fourthPartofEdgeImplicant,isEdge];
