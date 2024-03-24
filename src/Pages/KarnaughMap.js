@@ -292,7 +292,8 @@ const Kmap = () => {
 
   function calculateImplicantIndices(startPoint, endPoint) {
    //if iser clicks the start and end of the implicant in other way around
-    if((endPoint.row+endPoint.col) < (startPoint.row+startPoint.col)){
+    if(((endPoint.row+endPoint.col) < (startPoint.row+startPoint.col))){
+      console.log("treba zoradit");
       let temp = endPoint;
       endPoint = startPoint;
       startPoint = temp;
@@ -323,6 +324,8 @@ const Kmap = () => {
 
     return implicantIndices;
   }
+
+
 // sorting edge implicant so user can click in any order and it will be generated correctly
   const sortVerticalEdgeImplicants = (combinedArray) => {
     const [rows, cols] = tableSize.split("x").map(Number);
@@ -452,9 +455,12 @@ const Kmap = () => {
     if (tableSize === "4x4") {
       setCornerImplicantDisabled(false);
     }
+    console.log("toto su sususususususdusaddasdsadasdasdasdasd")
+    console.log(implicantCellIndexes) ;
     drawImplicants(implicantCellIndexes);
     // }
   };
+
   //set up buttons settings and interface when adding deafult implicant
   const addingimplicant = () => {
     setMarkingImplicant(!markingImplicant);
@@ -473,7 +479,15 @@ const Kmap = () => {
     setEdgeImplicantDisabled(false);
     setCornerImplicantDisabled(true);
   };
+
+
+  // useEffect(() => {
+  //   addClick(numberOfClicks+1);
+  // },[implicant,edgeImplicant]);
+
+  // const [numberOfClicks, addClick] = useState(0);
   const handleCellClick = (row, col) => {
+
     let indexes = [];
     let rows = 0;
     let cols = 0;
@@ -531,8 +545,29 @@ const Kmap = () => {
         setClassicImplicantDisabled(false);
         setCornerImplicantDisabled(false);
       }
+
     }
+    
+    // console.log(implicant.length);
+    // console.log(implicant);
+
+    //   addClick(numberOfClicks+1);
+    // // console.log(numberOfClicks);
+    // if(numberOfClicks===3){
+    //   finishImplicant();
+    //   addClick(0);
+    // }
   };
+
+  useEffect(() => {
+    console.log(implicant.length);
+    console.log(implicant);
+    if(implicant.length===2){
+      finishImplicant();
+    };
+    // Additional actions here based on the updated 'implicant' state
+  }, [implicant]); // This effect runs whenever 'implicant' changes
+  
 
   // TODO function for sorting edge implicants so they are generated correctly no matter the order of being clicked
 
@@ -729,8 +764,8 @@ const Kmap = () => {
     // else{
       drawEdgeImplicants(edgeimplicantCellIndexes);
     // }
-    console.log("edge implicant cell indexeeeeeeeeesseseses");
-    console.log(edgeimplicantCellIndexes);
+    // console.log("edge implicant cell indexeee/eeeeeesseseses");
+    // console.log(edgeimplicantCellIndexes);
     
   };
   
