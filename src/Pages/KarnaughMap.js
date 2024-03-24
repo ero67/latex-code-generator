@@ -290,40 +290,98 @@ const Kmap = () => {
   };
   // adding all cell which are supposed to be in chosen implicant
 
-  function calculateImplicantIndices(startPoint, endPoint) {
-   //if iser clicks the start and end of the implicant in other way around
-    if(((endPoint.row+endPoint.col) < (startPoint.row+startPoint.col))){
-      console.log("treba zoradit");
-      let temp = endPoint;
-      endPoint = startPoint;
-      startPoint = temp;
-      let temp2 = implicant[0];
-      implicant[0] = implicant[1];
-      implicant[1] = temp2;
+  // function calculateImplicantIndices(startPoint, endPoint) {
+  //  //if iser clicks the start and end of the implicant in other way around
+  //   if(((endPoint.row+endPoint.col) < (startPoint.row+startPoint.col))){
+  //     console.log("treba zoradit");
+  //     let temp = endPoint;
+  //     endPoint = startPoint;
+  //     startPoint = temp;
+  //     let temp2 = implicant[0];
+  //     implicant[0] = implicant[1];
+  //     implicant[1] = temp2;
 
+  //   }
+  //   addImplicant([...implicants, implicant]);
+
+
+
+  //   const implicantIndices = [];
+  //   if (endPoint === null) {
+  //     endPoint = startPoint;
+  //   }
+  //   // check if its a single cell selection
+  //   if (startPoint.row === endPoint.row && startPoint.col === endPoint.col) {
+  //     return [startPoint];
+  //   }
+
+  //   // Otherwise, calculate indices for rectangular or linear implicants
+  //   for (let r = startPoint.row; r <= endPoint.row; r++) {
+  //     for (let c = startPoint.col; c <= endPoint.col; c++) {
+  //       implicantIndices.push({ row: r, col: c });
+  //     }
+  //   }
+
+  //   return implicantIndices;
+  // }
+
+  function calculateImplicantIndices(startPoint, endPoint) {
+    // Initialize implicantIndices array for storing the result
+    const implicantIndices = [];
+    const [rows, cols] = tableSize.split("x").map(Number);
+
+    let indexes = [
+      [0, 1, 3, 2],
+      [4, 5, 7, 6],
+      [12, 13, 15, 14],
+      [8, 9, 11, 10],
+    ];
+
+    let indexes_2_x_2 = [
+      [0, 1],
+      [2, 3],
+    ];
+    // Ensure both startPoint and endPoint are defined
+    if (!endPoint) endPoint = startPoint;
+
+    // Identify the top-left and bottom-right corners of the selection
+    const topLeft = {
+        row: Math.min(startPoint.row, endPoint.row),
+        col: Math.min(startPoint.col, endPoint.col),
+    };
+    const bottomRight = {
+        row: Math.max(startPoint.row, endPoint.row),
+        col: Math.max(startPoint.col, endPoint.col),
+    };
+console.log(topLeft, bottomRight)
+    // Check if it's a single cell selection
+    // if (topLeft.row === bottomRight.row && topLeft.col === bottomRight.col) {
+    //     // If single cell, directly add to implicants and return the single cell in an array
+    //     addImplicant([...implicants, [topLeft]]);
+    //     return [topLeft];
+    // }
+
+    // Calculate indices for rectangular or linear implicants based on corrected corners
+    for (let r = topLeft.row; r <= bottomRight.row; r++) {
+        for (let c = topLeft.col; c <= bottomRight.col; c++) {
+            implicantIndices.push({ row: r, col: c });
+        }
     }
+    if(rows===2 && cols===2){
+      implicant[0]=indexes_2_x_2[topLeft.row][topLeft.col];
+      implicant[1]=indexes_2_x_2[bottomRight.row][bottomRight.col];
+    }
+    else{
+      implicant[0]=indexes[topLeft.row][topLeft.col];
+      implicant[1]=indexes[bottomRight.row][bottomRight.col];
+    }
+
+    // Add the newly calculated implicant to the list of implicants
     addImplicant([...implicants, implicant]);
 
-
-
-    const implicantIndices = [];
-    if (endPoint === null) {
-      endPoint = startPoint;
-    }
-    // check if its a single cell selection
-    if (startPoint.row === endPoint.row && startPoint.col === endPoint.col) {
-      return [startPoint];
-    }
-
-    // Otherwise, calculate indices for rectangular or linear implicants
-    for (let r = startPoint.row; r <= endPoint.row; r++) {
-      for (let c = startPoint.col; c <= endPoint.col; c++) {
-        implicantIndices.push({ row: r, col: c });
-      }
-    }
-
+    // Return the indices of the cells forming the implicant
     return implicantIndices;
-  }
+}
 
 
 // sorting edge implicant so user can click in any order and it will be generated correctly
@@ -455,8 +513,8 @@ const Kmap = () => {
     if (tableSize === "4x4") {
       setCornerImplicantDisabled(false);
     }
-    console.log("toto su sususususususdusaddasdsadasdasdasdasd")
-    console.log(implicantCellIndexes) ;
+    // console.log("toto su sususususususdusaddasdsadasdasdasdasd")
+    // console.log(implicantCellIndexes) ;
     drawImplicants(implicantCellIndexes);
     // }
   };
