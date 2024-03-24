@@ -1,6 +1,4 @@
-// TODO: KARNAUGHOE MAPY : pridat to ze sa zakruzkuje/nejakym sposobom oznaci implicant
-// TODO: KARNAUGHOVE MAPY : aby user nemusel klikat presne v danom poradi na cells.... proste nech len klikne hocijak... nech to zoradi indexy aby fungoval LaTeX kod
-
+// TODO: ak ma edge implicant 6/8 cells pridat to do generovania kodu
 import React, { useState, useEffect } from "react";
 import "./index.css";
 import Cell from "../Components/Cell";
@@ -272,7 +270,6 @@ const Kmap = () => {
     for (let row = 0; row < edgeImplicants.length; row++) {
       if (edgeImplicants[row].length === 2) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
-        // code += `       \\implicantedge{${indexes[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
       } else if (edgeImplicants[row].length === 4 || edgeImplicants[row].length === 6 || edgeImplicants[row].length === 8) {
         const [firstindex,secondindex,thirdindex,fourthindex] = edgeImplicants[row];
         if((firstindex===0 && secondindex===2 && thirdindex===8 && fourthindex===10)&&implicantCorner){
@@ -353,13 +350,6 @@ const Kmap = () => {
         row: Math.max(startPoint.row, endPoint.row),
         col: Math.max(startPoint.col, endPoint.col),
     };
-console.log(topLeft, bottomRight)
-    // Check if it's a single cell selection
-    // if (topLeft.row === bottomRight.row && topLeft.col === bottomRight.col) {
-    //     // If single cell, directly add to implicants and return the single cell in an array
-    //     addImplicant([...implicants, [topLeft]]);
-    //     return [topLeft];
-    // }
 
     // Calculate indices for rectangular or linear implicants based on corrected corners
     for (let r = topLeft.row; r <= bottomRight.row; r++) {
@@ -407,6 +397,8 @@ console.log(topLeft, bottomRight)
     // allVerticalEdges = true;
     prioritizeRow = true;
   }
+
+  console.log(`is row ? = ${prioritizeRow}`);
   return combinedArray.sort((a, b) => {
     // Apply sorting based on the determined priority
     if (prioritizeRow) {
@@ -434,16 +426,107 @@ console.log(topLeft, bottomRight)
   };
   
   
+  // const processEdgeImplicantClicks = (edgeImplicantArray, rows, cols) => {
+
+  //   // Direct return if clicks are in the same row or column (linear edge implicants)
+  //   if (edgeImplicantArray[0].row === edgeImplicantArray[1].row || edgeImplicantArray[0].col === edgeImplicantArray[1].col) {
+  //     return edgeImplicantArray;
+  //   } else {
+  //     // For corner to corner selections, we need to calculate the intermediate cells.
+  //     let fullImplicant = [];
   
+  //     // Determine the rows and cols involved in the implicant
+  //     const startRow = Math.min(edgeImplicantArray[0].row, edgeImplicantArray[1].row);
+  //     const endRow = Math.max(edgeImplicantArray[0].row, edgeImplicantArray[1].row);
+  //     const startCol = Math.min(edgeImplicantArray[0].col, edgeImplicantArray[1].col);
+  //     const endCol = Math.max(edgeImplicantArray[0].col, edgeImplicantArray[1].col);
   
+  //     // Handle edge implicants that wrap around the map horizontally or vertically
+  //     if (startCol === 0 && endCol === cols - 1) {
+  //       // Horizontal edge wrapping
+  //       for (let row = startRow; row <= endRow; row++) {
+  //         fullImplicant.push({ row, col: 0 });
+  //         fullImplicant.push({ row, col: cols - 1 });
+  //       }
+  //     } else if (startRow === 0 && endRow === rows - 1) {
+  //       // Vertical edge wrapping
+  //       for (let col = startCol; col <= endCol; col++) {
+  //         fullImplicant.push({ row: 0, col });
+  //         fullImplicant.push({ row: rows - 1, col });
+  //       }
+  //     }
   
+  //     fullImplicant.sort((a, b) => {
+  //       if (a.col !== b.col) {
+  //         return a.col - b.col; // Prioritize column 0 over column 3
+  //       }
+  //       return a.row - b.row; // Within the same column, sort from top to bottom
+  //     });
+
+
+  //     return fullImplicant;
+  //   }
+  // };
+
+  const processEdgeImplicantClicks = (edgeImplicantArray, rows, cols) => {
+
+    // Direct return if clicks are in the same row or column (linear edge implicants)
+    if (edgeImplicantArray[0].row === edgeImplicantArray[1].row || edgeImplicantArray[0].col === edgeImplicantArray[1].col) {
+      return edgeImplicantArray;
+    } else {
+      // For corner to corner selections, we need to calculate the intermediate cells.
+      let fullImplicant = [];
   
-  // Now, 'sortedImplicants' should be in the correct order for generating LaTeX code
+      // Determine the rows and cols involved in the implicant
+      const startRow = Math.min(edgeImplicantArray[0].row, edgeImplicantArray[1].row);
+      const endRow = Math.max(edgeImplicantArray[0].row, edgeImplicantArray[1].row);
+      const startCol = Math.min(edgeImplicantArray[0].col, edgeImplicantArray[1].col);
+      const endCol = Math.max(edgeImplicantArray[0].col, edgeImplicantArray[1].col);
   
+      // Handle edge implicants that wrap around the map horizontally or vertically
+      if (startCol === 0 && endCol === cols - 1) {
+        // Horizontal edge wrapping
+        for (let row = startRow; row <= endRow; row++) {
+          fullImplicant.push({ row, col: 0 });
+          fullImplicant.push({ row, col: cols - 1 });
+        }
+      } else if (startRow === 0 && endRow === rows - 1) {
+        // Vertical edge wrapping
+        for (let col = startCol; col <= endCol; col++) {
+          fullImplicant.push({ row: 0, col });
+          fullImplicant.push({ row: rows - 1, col });
+        }
+      }
+  
+      fullImplicant.sort((a, b) => {
+        if (a.col !== b.col) {
+          return a.col - b.col; // Prioritize column 0 over column 3
+        }
+        return a.row - b.row; // Within the same column, sort from top to bottom
+      });
+
+
+ 
+  return fullImplicant;
+};
+  };
 
 
   //handle logic of finish implicant button and all things that this button press triggers
   const finishImplicant = () => {
+    const [rows, cols] = tableSize.split("x").map(Number);
+    let indexes = [
+      [0, 1, 3, 2],
+      [4, 5, 7, 6],
+      [12, 13, 15, 14],
+      [8, 9, 11, 10],
+    ];
+
+    let indexes_2_x_2 = [
+      [0, 1],
+      [2, 3],
+    ];
+
     // if(numberOfImplicants>=2){
     if (markingImplicant) {
       // console.log("this is implicant when finished button is pressed");
@@ -481,23 +564,34 @@ console.log(topLeft, bottomRight)
       if (edgeImplicant.length > 1 && (edgeImplicant.length===2 || edgeImplicant.length===4 || edgeImplicant.length===6 || edgeImplicant.length===8)) {
         console.log("this is the test fir estge implicant indexes");
         console.log(edgeImplicant) ;
+        
         const combinedArray = combineArrays(singeEdgeImplicantIndexes,edgeImplicant);
         const sortedImplicants = sortVerticalEdgeImplicants(combinedArray);
         const [sorted,sortedindexesEdgeImplicant] = separateArrays(sortedImplicants);
-        addEdgeImplicant([...edgeImplicants, sortedindexesEdgeImplicant]);
-        // addEdgeImplicant([...edgeImplicants, edgeImplicant]);
-        // addImplicantCellIndexes([...implicantCellIndexes,singeImplicantIndexes])
-        addEdgeImplicantCellIndexes([
-          ...edgeimplicantCellIndexes,
-          singeEdgeImplicantIndexes,
-        ]);
-        console.log("testttttttttttttttttttttttttttt");
-        // console.log(singeEdgeImplicantIndexes);
-        
-        // console.log(sorted);
-        // console.log(sortedindexesEdgeImplicant);
-        // console.log(sortedImplicants);
-        // console.log(edgeimplicantCellIndexes);
+        console.log("sortededgeimplicant indexes");
+        console.log(sortedImplicants);
+
+        const fullimplicant = processEdgeImplicantClicks(sortedImplicants, rows, cols);
+        const sortedFullImplicant = sortVerticalEdgeImplicants(fullimplicant);
+
+
+        let fullEdgeImplicant = [];
+        for(let i=0; i<sortedFullImplicant.length;i++){
+          if(rows===2 && cols===2){
+            fullEdgeImplicant[i] = indexes_2_x_2[fullimplicant[i].row][fullimplicant[i].col];
+          }
+          else{
+            fullEdgeImplicant[i] = indexes[fullimplicant[i].row][fullimplicant[i].col];
+
+          }
+          
+        }
+
+        // addEdgeImplicant([...edgeImplicants, sortedindexesEdgeImplicant]);
+        addEdgeImplicant([...edgeImplicants, fullEdgeImplicant]);
+     
+        addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes,fullimplicant]);
+
       }
       ////// CLEARING DATA FOR EDGE IMPLICANT AFTER ADDING IT TO HE FINAL ARRAY
       // addEdgeImplicant([...edgeImplicants,edgeImplicant]);
@@ -620,11 +714,11 @@ console.log(topLeft, bottomRight)
   useEffect(() => {
     console.log(implicant.length);
     console.log(implicant);
-    if(implicant.length===2){
+    if(implicant.length===2 || edgeImplicant.length===2){
       finishImplicant();
     };
     // Additional actions here based on the updated 'implicant' state
-  }, [implicant]); // This effect runs whenever 'implicant' changes
+  }, [implicant,edgeImplicant]); // This effect runs whenever 'implicant' changes
   
 
   // TODO function for sorting edge implicants so they are generated correctly no matter the order of being clicked
