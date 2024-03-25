@@ -6,7 +6,6 @@ import GeneratedCode from "../Components/GeneratedCode";
 import ImplicantsList from "../Components/ImplicantsList";
 import EdgeImplicantList from "../Components/EdgeImplicantList";
 import Instructions from "../Components/Instructions";
-// import { active } from "d3";
 
 const Kmap = () => {
   const [tableSize, setTableSize] = useState("0x0");
@@ -31,8 +30,7 @@ const Kmap = () => {
   const [markingImplicant, setMarkingImplicant] = useState(false);
   const [numberOfImplicants, setNumberOfImplicants] = useState(0);
   const [implicant, addPartOfImplicant] = useState([]);
-  const [indexesOfImplicant, addIndexOfImplicant]= useState([]);
-
+  // const [indexesOfImplicant, addIndexOfImplicant] = useState([]);
 
   //useStates for coloring implicants
   const [singeImplicantIndexes, addPartOfSingleImplicantIndex] = useState([]);
@@ -81,7 +79,9 @@ const Kmap = () => {
 
     if (activeImplicantIndex !== null) {
       const activeImplicant = activeImplicanCellIndexes[activeImplicantIndex];
-      if(activeImplicant === undefined){return;}
+      if (activeImplicant === undefined) {
+        return;
+      }
       if (
         activeImplicant.some((cell) => cell.row === row && cell.col === col)
       ) {
@@ -90,20 +90,18 @@ const Kmap = () => {
     }
 
     // Check if the cell belongs to any other implicant
-    if(activeImplicantIndex!==null){
-    for (let i = 0; i < activeImplicanCellIndexes.length; i++) {
-      if (i !== activeImplicantIndex) {
-        const implicant = activeImplicanCellIndexes[i];
-        if (implicant.some((cell) => cell.row === row && cell.col === col)) {
-          return defaultColor; // Color for non-active implicant cells
+    if (activeImplicantIndex !== null) {
+      for (let i = 0; i < activeImplicanCellIndexes.length; i++) {
+        if (i !== activeImplicantIndex) {
+          const implicant = activeImplicanCellIndexes[i];
+          if (implicant.some((cell) => cell.row === row && cell.col === col)) {
+            return defaultColor; // Color for non-active implicant cells
+          }
         }
       }
     }
-  }
     return null; // No color if the cell is not part of any implicant
   }
-
-
 
   function getColorForImplicant() {
     return colors[19];
@@ -122,20 +120,10 @@ const Kmap = () => {
     } else {
       setOpposite(1);
     }
-    //console.log(value);
   };
 
   // handling initail state of buttons shown
   const handleDisable = () => {
-    // const cells = document.getElementsByClassName("cell");
-    // for (let cell of cells) {
-    //   // If the cell is empty, set its value to the opposite number
-    //   if (!cell.textContent) {
-    //     alert("fill all the cells");
-    //     return;
-    //   }
-    // }
-
     Disable(true);
     setClassicImplicantDisabled(false);
     setEdgeImplicantDisabled(false);
@@ -147,7 +135,6 @@ const Kmap = () => {
 
     const kmapContainer = document.querySelector(".karnaugh-map");
     const rect = kmapContainer.getBoundingClientRect();
-    // console.log(rect.height, rect.width);
     setMapHeight(rect.height);
     setMapWidth(rect.width);
   };
@@ -170,20 +157,14 @@ const Kmap = () => {
     let content = [];
     for (let cell of cells) {
       content.push(cell.textContent);
-      // console.log(cell.textContent);
     }
 
     return content;
   };
 
- 
-
   const addCornerImplicant = () => {
-
     // Correctly adding all corner indices in a single update
     const newEdgeImplicant = [...edgeImplicant, 0, 2, 8, 10];
-    // addPartOfEdgeImplicant(newEdgeImplicant);
-    // console.log(newEdgeImplicant);
 
     const newSingleEdgeImplicantIndexes = [
       { row: 0, col: 0 },
@@ -257,7 +238,6 @@ const Kmap = () => {
       }
     }
 
-   
     if (implicantCorner && rows === 4 && cols === 4) {
       code += "       \\implicantcorner\n";
     } else if (implicantCorner && (rows !== 4 || cols !== 4)) {
@@ -270,16 +250,25 @@ const Kmap = () => {
     for (let row = 0; row < edgeImplicants.length; row++) {
       if (edgeImplicants[row].length === 2) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
-      } else if (edgeImplicants[row].length === 4 || edgeImplicants[row].length === 6 || edgeImplicants[row].length === 8) {
-        const [firstindex,secondindex,thirdindex,fourthindex] = edgeImplicants[row];
-        if((firstindex===0 && secondindex===2 && thirdindex===8 && fourthindex===10)&&implicantCorner){
-          
+      } else if (
+        edgeImplicants[row].length === 4 ||
+        edgeImplicants[row].length === 6 ||
+        edgeImplicants[row].length === 8
+      ) {
+        const [firstindex, secondindex, thirdindex, fourthindex] =
+          edgeImplicants[row];
+        if (
+          firstindex === 0 &&
+          secondindex === 2 &&
+          thirdindex === 8 &&
+          fourthindex === 10 &&
+          implicantCorner
+        ) {
           continue;
+        } else {
+          code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
         }
-       else {
-        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
-        
-      }}
+      }
     }
 
     code += "\\end{karnaugh-map}";
@@ -300,8 +289,6 @@ const Kmap = () => {
 
   //   }
   //   addImplicant([...implicants, implicant]);
-
-
 
   //   const implicantIndices = [];
   //   if (endPoint === null) {
@@ -343,27 +330,26 @@ const Kmap = () => {
 
     // Identify the top-left and bottom-right corners of the selection
     const topLeft = {
-        row: Math.min(startPoint.row, endPoint.row),
-        col: Math.min(startPoint.col, endPoint.col),
+      row: Math.min(startPoint.row, endPoint.row),
+      col: Math.min(startPoint.col, endPoint.col),
     };
     const bottomRight = {
-        row: Math.max(startPoint.row, endPoint.row),
-        col: Math.max(startPoint.col, endPoint.col),
+      row: Math.max(startPoint.row, endPoint.row),
+      col: Math.max(startPoint.col, endPoint.col),
     };
 
     // Calculate indices for rectangular or linear implicants based on corrected corners
     for (let r = topLeft.row; r <= bottomRight.row; r++) {
-        for (let c = topLeft.col; c <= bottomRight.col; c++) {
-            implicantIndices.push({ row: r, col: c });
-        }
+      for (let c = topLeft.col; c <= bottomRight.col; c++) {
+        implicantIndices.push({ row: r, col: c });
+      }
     }
-    if(rows===2 && cols===2){
-      implicant[0]=indexes_2_x_2[topLeft.row][topLeft.col];
-      implicant[1]=indexes_2_x_2[bottomRight.row][bottomRight.col];
-    }
-    else{
-      implicant[0]=indexes[topLeft.row][topLeft.col];
-      implicant[1]=indexes[bottomRight.row][bottomRight.col];
+    if (rows === 2 && cols === 2) {
+      implicant[0] = indexes_2_x_2[topLeft.row][topLeft.col];
+      implicant[1] = indexes_2_x_2[bottomRight.row][bottomRight.col];
+    } else {
+      implicant[0] = indexes[topLeft.row][topLeft.col];
+      implicant[1] = indexes[bottomRight.row][bottomRight.col];
     }
 
     // Add the newly calculated implicant to the list of implicants
@@ -371,118 +357,90 @@ const Kmap = () => {
 
     // Return the indices of the cells forming the implicant
     return implicantIndices;
-}
-
-
-// sorting edge implicant so user can click in any order and it will be generated correctly
-  const sortVerticalEdgeImplicants = (combinedArray) => {
-    const [rows, cols] = tableSize.split("x").map(Number);
-    // let isHorizoontalEdge = false;
-    // if(implicants[0].row===0)
-
-    // return implicants.sort((a, b) => {
-    //   if (a.col < b.col) return -1;
-    //   if (a.col > b.col) return 1;
-    //   return a.row - b.row;
-    // });
-
-     // Check for horizontal or vertical alignment based on user clicks
-  let allHorizontalEdges = combinedArray.every(item => item.row === 0 || item.row === rows - 1);
-  let allVerticalEdges = combinedArray.every(item => item.col === 0 || item.col === cols - 1);
-
-  
-  // Decide on the primary sorting criterion based on the edge alignment
-  let prioritizeRow = allHorizontalEdges && !allVerticalEdges;
-  if(combinedArray[0].row === combinedArray[1].row){
-    // allVerticalEdges = true;
-    prioritizeRow = true;
   }
 
-  console.log(`is row ? = ${prioritizeRow}`);
-  return combinedArray.sort((a, b) => {
-    // Apply sorting based on the determined priority
-    if (prioritizeRow) {
-      if (a.row !== b.row) return a.row - b.row;
-      return a.col - b.col;
-    } else { // Default to prioritizing column for vertical edges or general case
-      if (a.col !== b.col) return a.col - b.col;
-      return a.row - b.row;
-    }
-  });
+  // sorting edge implicant so user can click in any order and it will be generated correctly
+  const sortVerticalEdgeImplicants = (combinedArray) => {
+    const [rows, cols] = tableSize.split("x").map(Number);
 
+    // Check for horizontal or vertical alignment based on user clicks
+    let allHorizontalEdges = combinedArray.every(
+      (item) => item.row === 0 || item.row === rows - 1
+    );
+    let allVerticalEdges = combinedArray.every(
+      (item) => item.col === 0 || item.col === cols - 1
+    );
+
+    // Decide on the primary sorting criterion based on the edge alignment
+    let prioritizeRow = allHorizontalEdges && !allVerticalEdges;
+    if (combinedArray[0].row === combinedArray[1].row) {
+      // allVerticalEdges = true;
+      prioritizeRow = true;
+    }
+
+    console.log(`is row ? = ${prioritizeRow}`);
+    return combinedArray.sort((a, b) => {
+      // Apply sorting based on the determined priority
+      if (prioritizeRow) {
+        if (a.row !== b.row) return a.row - b.row;
+        return a.col - b.col;
+      } else {
+        // Default to prioritizing column for vertical edges or general case
+        if (a.col !== b.col) return a.col - b.col;
+        return a.row - b.row;
+      }
+    });
   };
 
+
+// combines arrays of the cell real indexse and indexes of the cells in the kmap package
   const combineArrays = (implicants, indexes) => {
     return implicants.map((implicant, i) => ({
       ...implicant,
-      index: indexes[i]
+      index: indexes[i],
     }));
   };
 
+  //separates combined arrays after sorting them acording to rules of kmap package
   const separateArrays = (sortedCombinedArray) => {
-    const sortedImplicants = sortedCombinedArray.map(item => ({ row: item.row, col: item.col }));
-    const sortedIndexes = sortedCombinedArray.map(item => item.index);
+    const sortedImplicants = sortedCombinedArray.map((item) => ({
+      row: item.row,
+      col: item.col,
+    }));
+    const sortedIndexes = sortedCombinedArray.map((item) => item.index);
     return [sortedImplicants, sortedIndexes];
   };
-  
-  
-  // const processEdgeImplicantClicks = (edgeImplicantArray, rows, cols) => {
 
-  //   // Direct return if clicks are in the same row or column (linear edge implicants)
-  //   if (edgeImplicantArray[0].row === edgeImplicantArray[1].row || edgeImplicantArray[0].col === edgeImplicantArray[1].col) {
-  //     return edgeImplicantArray;
-  //   } else {
-  //     // For corner to corner selections, we need to calculate the intermediate cells.
-  //     let fullImplicant = [];
-  
-  //     // Determine the rows and cols involved in the implicant
-  //     const startRow = Math.min(edgeImplicantArray[0].row, edgeImplicantArray[1].row);
-  //     const endRow = Math.max(edgeImplicantArray[0].row, edgeImplicantArray[1].row);
-  //     const startCol = Math.min(edgeImplicantArray[0].col, edgeImplicantArray[1].col);
-  //     const endCol = Math.max(edgeImplicantArray[0].col, edgeImplicantArray[1].col);
-  
-  //     // Handle edge implicants that wrap around the map horizontally or vertically
-  //     if (startCol === 0 && endCol === cols - 1) {
-  //       // Horizontal edge wrapping
-  //       for (let row = startRow; row <= endRow; row++) {
-  //         fullImplicant.push({ row, col: 0 });
-  //         fullImplicant.push({ row, col: cols - 1 });
-  //       }
-  //     } else if (startRow === 0 && endRow === rows - 1) {
-  //       // Vertical edge wrapping
-  //       for (let col = startCol; col <= endCol; col++) {
-  //         fullImplicant.push({ row: 0, col });
-  //         fullImplicant.push({ row: rows - 1, col });
-  //       }
-  //     }
-  
-  //     fullImplicant.sort((a, b) => {
-  //       if (a.col !== b.col) {
-  //         return a.col - b.col; // Prioritize column 0 over column 3
-  //       }
-  //       return a.row - b.row; // Within the same column, sort from top to bottom
-  //     });
-
-
-  //     return fullImplicant;
-  //   }
-  // };
-
+  //function which processes the edge implicant selection, meaning it calculates the cells which are part of the implicant based on 2 cells that were selected by clicks
+  //(added for functionality of selecting implicants with 2 clicks)
   const processEdgeImplicantClicks = (edgeImplicantArray, rows, cols) => {
-
     // Direct return if clicks are in the same row or column (linear edge implicants)
-    if (edgeImplicantArray[0].row === edgeImplicantArray[1].row || edgeImplicantArray[0].col === edgeImplicantArray[1].col) {
+    if (
+      edgeImplicantArray[0].row === edgeImplicantArray[1].row ||
+      edgeImplicantArray[0].col === edgeImplicantArray[1].col
+    ) {
       return edgeImplicantArray;
     } else {
-      // For corner to corner selections, we need to calculate the intermediate cells.
       let fullImplicant = [];
-  
+
       // Determine the rows and cols involved in the implicant
-      const startRow = Math.min(edgeImplicantArray[0].row, edgeImplicantArray[1].row);
-      const endRow = Math.max(edgeImplicantArray[0].row, edgeImplicantArray[1].row);
-      const startCol = Math.min(edgeImplicantArray[0].col, edgeImplicantArray[1].col);
-      const endCol = Math.max(edgeImplicantArray[0].col, edgeImplicantArray[1].col);
-  
+      const startRow = Math.min(
+        edgeImplicantArray[0].row,
+        edgeImplicantArray[1].row
+      );
+      const endRow = Math.max(
+        edgeImplicantArray[0].row,
+        edgeImplicantArray[1].row
+      );
+      const startCol = Math.min(
+        edgeImplicantArray[0].col,
+        edgeImplicantArray[1].col
+      );
+      const endCol = Math.max(
+        edgeImplicantArray[0].col,
+        edgeImplicantArray[1].col
+      );
+
       // Handle edge implicants that wrap around the map horizontally or vertically
       if (startCol === 0 && endCol === cols - 1) {
         // Horizontal edge wrapping
@@ -497,7 +455,7 @@ const Kmap = () => {
           fullImplicant.push({ row: rows - 1, col });
         }
       }
-  
+
       fullImplicant.sort((a, b) => {
         if (a.col !== b.col) {
           return a.col - b.col; // Prioritize column 0 over column 3
@@ -505,12 +463,9 @@ const Kmap = () => {
         return a.row - b.row; // Within the same column, sort from top to bottom
       });
 
-
- 
-  return fullImplicant;
-};
+      return fullImplicant;
+    }
   };
-
 
   //handle logic of finish implicant button and all things that this button press triggers
   const finishImplicant = () => {
@@ -526,16 +481,10 @@ const Kmap = () => {
       [0, 1],
       [2, 3],
     ];
-
-    // if(numberOfImplicants>=2){
+// logic for processing default implicant after user is done selecting cells of the implicant
     if (markingImplicant) {
-      // console.log("this is implicant when finished button is pressed");
-      // console.log(implicant);
       //adds implicant to the all implicants list
       if (implicant.length > 0) {
-      
-        // addImplicant([...implicants, implicant]); // addind implicant in calulateImplicantIndices
-    
         //logic for addding indexes of all cells which are part of the implicant to the another array
         let singeImplicantIndex = [];
         if (singeImplicantIndexes[1] === undefined) {
@@ -551,55 +500,59 @@ const Kmap = () => {
         }
 
         addImplicantCellIndexes([...implicantCellIndexes, singeImplicantIndex]);
-        // console.log(singeImplicantIndexes[0], singeImplicantIndexes[1]);
       }
       //reseting variables connected with adding implicant
       addPartOfSingleImplicantIndex([]);
       addPartOfImplicant([]);
       setNumberOfImplicants(0);
       setMarkingImplicant(false);
-    } else if (markingEdgeImplicant) {
-      // console.log(edgeImplicant.length);
-      // console.log(edgeImplicant);
-      if (edgeImplicant.length > 1 && (edgeImplicant.length===2 || edgeImplicant.length===4 || edgeImplicant.length===6 || edgeImplicant.length===8)) {
-        console.log("this is the test fir estge implicant indexes");
-        console.log(edgeImplicant) ;
-        
-        const combinedArray = combineArrays(singeEdgeImplicantIndexes,edgeImplicant);
+    } 
+    // LOGIC FOR PROCESSING EDGE IMPLICANT AFTER USER IS DONE SELECTING CELLS OF THE IMPLICANT
+    else if (markingEdgeImplicant) {
+      if (
+        edgeImplicant.length > 1 &&
+        (edgeImplicant.length === 2 ||
+          edgeImplicant.length === 4 ||
+          edgeImplicant.length === 6 ||
+          edgeImplicant.length === 8)
+      ) {
+        const combinedArray = combineArrays(
+          singeEdgeImplicantIndexes,
+          edgeImplicant
+        );
         const sortedImplicants = sortVerticalEdgeImplicants(combinedArray);
-        const [sorted,sortedindexesEdgeImplicant] = separateArrays(sortedImplicants);
-        console.log("sortededgeimplicant indexes");
-        console.log(sortedImplicants);
 
-        const fullimplicant = processEdgeImplicantClicks(sortedImplicants, rows, cols);
+        const fullimplicant = processEdgeImplicantClicks(
+          sortedImplicants,
+          rows,
+          cols
+        );
         const sortedFullImplicant = sortVerticalEdgeImplicants(fullimplicant);
 
-
+        // adding the kmap package indexes of the cells which are part of the implicant
         let fullEdgeImplicant = [];
-        for(let i=0; i<sortedFullImplicant.length;i++){
-          if(rows===2 && cols===2){
-            fullEdgeImplicant[i] = indexes_2_x_2[fullimplicant[i].row][fullimplicant[i].col];
+        for (let i = 0; i < sortedFullImplicant.length; i++) {
+          if (rows === 2 && cols === 2) {
+            fullEdgeImplicant[i] =
+              indexes_2_x_2[fullimplicant[i].row][fullimplicant[i].col];
+          } else {
+            fullEdgeImplicant[i] =
+              indexes[fullimplicant[i].row][fullimplicant[i].col];
           }
-          else{
-            fullEdgeImplicant[i] = indexes[fullimplicant[i].row][fullimplicant[i].col];
-
-          }
-          
         }
 
-        // addEdgeImplicant([...edgeImplicants, sortedindexesEdgeImplicant]);
         addEdgeImplicant([...edgeImplicants, fullEdgeImplicant]);
-     
-        addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes,fullimplicant]);
 
+        addEdgeImplicantCellIndexes([
+          ...edgeimplicantCellIndexes,
+          fullimplicant,
+        ]);
       }
       ////// CLEARING DATA FOR EDGE IMPLICANT AFTER ADDING IT TO HE FINAL ARRAY
-      // addEdgeImplicant([...edgeImplicants,edgeImplicant]);
       addPartOfEdgeImplicant([]);
       addPartOfSingleEdgeImplicantIndex([]);
       setNumberOfEdgeImplicants(0);
       setMarkingEdgeImplicant(false);
-
     }
     setfinishImplicantDisabled(true);
     setClassicImplicantDisabled(false);
@@ -607,10 +560,7 @@ const Kmap = () => {
     if (tableSize === "4x4") {
       setCornerImplicantDisabled(false);
     }
-    // console.log("toto su sususususususdusaddasdsadasdasdasdasd")
-    // console.log(implicantCellIndexes) ;
     drawImplicants(implicantCellIndexes);
-    // }
   };
 
   //set up buttons settings and interface when adding deafult implicant
@@ -632,14 +582,7 @@ const Kmap = () => {
     setCornerImplicantDisabled(true);
   };
 
-
-  // useEffect(() => {
-  //   addClick(numberOfClicks+1);
-  // },[implicant,edgeImplicant]);
-
-  // const [numberOfClicks, addClick] = useState(0);
   const handleCellClick = (row, col) => {
-
     let indexes = [];
     let rows = 0;
     let cols = 0;
@@ -665,16 +608,12 @@ const Kmap = () => {
       cols = 4;
     }
 
-    //testtesttest
-    // console.log(disabled, markingImplicant);
     // disabled means that we are in the implicant part of this page
     // if am am marking basic implicant
     if (disabled && markingImplicant && implicant.length <= 1) {
       addPartOfImplicant([...implicant, indexes[row][col]]);
       addPartOfSingleImplicantIndex([...singeImplicantIndexes, { row, col }]);
       setNumberOfImplicants(numberOfImplicants + 1);
-      // console.log("this is implicant");
-      // console.log(implicant);
     }
 
     // if i am choosing esge implicant and also disbled is true
@@ -686,10 +625,8 @@ const Kmap = () => {
           ...singeEdgeImplicantIndexes,
           { row, col },
         ]);
-     
+
         setNumberOfEdgeImplicants(numberOfEdgeImplicants + 1);
-        // console.log("this is edge implicant");
-        // console.log(edgeImplicant);
       } else {
         alert("you can only select Cells on edges");
         setMarkingEdgeImplicant(false);
@@ -697,29 +634,17 @@ const Kmap = () => {
         setClassicImplicantDisabled(false);
         setCornerImplicantDisabled(false);
       }
-
     }
-    
-    // console.log(implicant.length);
-    // console.log(implicant);
-
-    //   addClick(numberOfClicks+1);
-    // // console.log(numberOfClicks);
-    // if(numberOfClicks===3){
-    //   finishImplicant();
-    //   addClick(0);
-    // }
   };
 
   useEffect(() => {
     console.log(implicant.length);
     console.log(implicant);
-    if(implicant.length===2 || edgeImplicant.length===2){
+    if (implicant.length === 2 || edgeImplicant.length === 2) {
       finishImplicant();
-    };
+    }
     // Additional actions here based on the updated 'implicant' state
-  }, [implicant,edgeImplicant]); // This effect runs whenever 'implicant' changes
-  
+  }, [implicant, edgeImplicant]); // This effect runs whenever 'implicant' changes
 
   // TODO function for sorting edge implicants so they are generated correctly no matter the order of being clicked
 
@@ -732,25 +657,6 @@ const Kmap = () => {
     for (let row = 0; row < rows; row++) {
       const currentRow = [];
       for (let col = 0; col < cols; col++) {
-        // part of the code for coloring implicant cells
-        let cellColor = null;
-        if (activeImplicantType === "default") {
-          implicantCellIndexes.forEach((implicant, index) => {
-            if (
-              implicant.some((cell) => cell.row === row && cell.col === col)
-            ) {
-              cellColor = getColorForImplicant();
-            }
-          });
-        } else if (activeImplicantType === "edge") {
-          edgeimplicantCellIndexes.forEach((implicant, index) => {
-            if (
-              implicant.some((cell) => cell.row === row && cell.col === col)
-            ) {
-              cellColor = getColorForImplicant();
-            }
-          });
-        }
         // part of the code for generating jsx and html code for cells
         currentRow.push(
           <Cell
@@ -810,6 +716,10 @@ const Kmap = () => {
   //     // window.location.reload(false)
   //   }
 
+
+//----------FUNCTIONS FOR DRAWING IMPLICANTS ON KMAP CANVAS----------------
+
+
   // Initialize an empty object to store implicant-to-color mappings
   const implicantColorMap = {};
 
@@ -822,7 +732,7 @@ const Kmap = () => {
     "rgba(236, 151, 227, 0.5)", // Pink
     "rgba(0, 199, 190, 0.5)", // Turquoise
     "rgba(255, 165, 0, 0.5)", // Orange
-    
+
     "rgba(255, 105, 180, 0.5)", // Hot Pink
     "rgba(75, 0, 130, 0.5)", // Indigo
     "rgba(64, 224, 208, 0.5)", // Turquoise
@@ -836,11 +746,8 @@ const Kmap = () => {
     "rgba(176, 224, 230, 0.5)", // Powder Blue
     "rgba(128, 128, 128, 0.5)", // Gray
   ];
-  
 
-
-
-  // Function to generate a unique ID for an implicant 
+  // Function to generate a unique ID for an implicant
   const generateImplicantId = (implicant) => {
     return implicant.map((cell) => `${cell.row},${cell.col}`).join("-");
   };
@@ -908,63 +815,59 @@ const Kmap = () => {
       ctx.fillStyle = color;
       ctx.fill();
     });
-    // if(edgeimplicantCellIndexes.length>0){
-    //   const sortedImplicantEdgeCellIndexes = sortVerticalEdgeImplicants(edgeimplicantCellIndexes);
-    //   drawEdgeImplicants(sortedImplicantEdgeCellIndexes);
-  
-    // }
-    // else{
-      drawEdgeImplicants(edgeimplicantCellIndexes);
-    // }
-    // console.log("edge implicant cell indexeee/eeeeeesseseses");
-    // console.log(edgeimplicantCellIndexes);
-    
-  };
-  
 
-//function for diving edge implicants into parts since the edge implicants are constructed from multiple rectangles for one implicant
+    drawEdgeImplicants(edgeimplicantCellIndexes);
+  };
+
+  //function for diving edge implicants into parts since the edge implicants are constructed from multiple rectangles for one implicant
   const divideEdgeImplicantsIntoTwo = (edgeImplicant) => {
     let firstPartofEdgeImplicant = [];
     let secondPartofEdgeImplicant = [];
     let thirdPartofEdgeImplicant = [];
     let fourthPartofEdgeImplicant = [];
-    let isEdge=false;
+    let isEdge = false;
 
-    if(edgeImplicant.length === 2){
+    if (edgeImplicant.length === 2) {
       firstPartofEdgeImplicant.push(edgeImplicant[0]);
       secondPartofEdgeImplicant.push(edgeImplicant[1]);
-    }
-    else if(edgeImplicant.length === 4){
+    } else if (edgeImplicant.length === 4) {
       // check if edgeimplicant is corner implicant
-      if(((edgeImplicant[0].row===0 && edgeImplicant[0].col===0)&&(edgeImplicant[1].row===0 && edgeImplicant[1].col===3)&&(edgeImplicant[2].row===3 && edgeImplicant[2].col===0)
-      &&(edgeImplicant[3].row===3 && edgeImplicant[3].col===3))){
-      // &&(edgeImplicant[3].row===3 && edgeImplicant[3].col===3))&& implicantCorner){
-          firstPartofEdgeImplicant.push(edgeImplicant[0]);
-          secondPartofEdgeImplicant.push(edgeImplicant[1]);
-          thirdPartofEdgeImplicant.push(edgeImplicant[2]);
-          fourthPartofEdgeImplicant.push(edgeImplicant[3]);
-          isEdge=true;
-      }
-      else{
-        if(edgeImplicant[0].row === edgeImplicant[1].row){
+      if (
+        edgeImplicant[0].row === 0 &&
+        edgeImplicant[0].col === 0 &&
+        edgeImplicant[1].row === 0 &&
+        edgeImplicant[1].col === 3 &&
+        edgeImplicant[2].row === 3 &&
+        edgeImplicant[2].col === 0 &&
+        edgeImplicant[3].row === 3 &&
+        edgeImplicant[3].col === 3
+      ) {
+        firstPartofEdgeImplicant.push(edgeImplicant[0]);
+        secondPartofEdgeImplicant.push(edgeImplicant[1]);
+        thirdPartofEdgeImplicant.push(edgeImplicant[2]);
+        fourthPartofEdgeImplicant.push(edgeImplicant[3]);
+        isEdge = true;
+      } else {
+        if (edgeImplicant[0].row === edgeImplicant[1].row) {
           firstPartofEdgeImplicant.push(edgeImplicant[0]);
           firstPartofEdgeImplicant.push(edgeImplicant[1]);
           secondPartofEdgeImplicant.push(edgeImplicant[2]);
           secondPartofEdgeImplicant.push(edgeImplicant[3]);
-
         }
-        
+
         firstPartofEdgeImplicant.push(edgeImplicant[0]);
         firstPartofEdgeImplicant.push(edgeImplicant[1]);
         secondPartofEdgeImplicant.push(edgeImplicant[2]);
         secondPartofEdgeImplicant.push(edgeImplicant[3]);
-        // console.log(`first part of edge implicant: ${firstPartofEdgeImplicant}`);
-        // console.log(firstPartofEdgeImplicant);
-        // console.log(`second part of edge implicant: ${secondPartofEdgeImplicant}`);
-        // console.log(secondPartofEdgeImplicant)
       }
     }
-    return [firstPartofEdgeImplicant, secondPartofEdgeImplicant,thirdPartofEdgeImplicant,fourthPartofEdgeImplicant,isEdge];
+    return [
+      firstPartofEdgeImplicant,
+      secondPartofEdgeImplicant,
+      thirdPartofEdgeImplicant,
+      fourthPartofEdgeImplicant,
+      isEdge,
+    ];
   };
 
   // function which draws all needed parts of edge implicant
@@ -976,7 +879,6 @@ const Kmap = () => {
     assignColorsToImplicants(edgeImplicants);
 
     const ctx = canvas.getContext("2d");
-    // ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous drawings
 
     const cellWidth = canvas.width / cols;
     const cellHeight = canvas.height / rows;
@@ -984,85 +886,95 @@ const Kmap = () => {
     edgeImplicants.forEach((implicant) => {
       const id = generateImplicantId(implicant);
       const color = implicantColorMap[id]; // Retrieve the assigned color
-    
-      const [firstPart, secondPart,thirdPart, fourthPart, isEdge] = divideEdgeImplicantsIntoTwo(implicant);
-      if(isEdge){
+
+      const [firstPart, secondPart, thirdPart, fourthPart, isEdge] =
+        divideEdgeImplicantsIntoTwo(implicant);
+      if (isEdge) {
         drawImplicantPart(firstPart, color, ctx, cellWidth, cellHeight);
         drawImplicantPart(secondPart, color, ctx, cellWidth, cellHeight);
         drawImplicantPart(thirdPart, color, ctx, cellWidth, cellHeight);
         drawImplicantPart(fourthPart, color, ctx, cellWidth, cellHeight);
-      }
-      else{
-      // Draw first part
-      drawImplicantPart(firstPart, color, ctx, cellWidth, cellHeight);
-    
-      // Draw second part
-      drawImplicantPart(secondPart, color, ctx, cellWidth, cellHeight);
+      } else {
+        // Draw first part
+        drawImplicantPart(firstPart, color, ctx, cellWidth, cellHeight);
+
+        // Draw second part
+        drawImplicantPart(secondPart, color, ctx, cellWidth, cellHeight);
       }
     });
   };
 
   //function for drawing one implicant part
-  const drawImplicantPart = (implicantPart, color, ctx, cellWidth, cellHeight) => {
-
-    const { minRow, maxRow, minCol, maxCol } = calculateImplicantBoundaries(implicantPart);
+  const drawImplicantPart = (
+    implicantPart,
+    color,
+    ctx,
+    cellWidth,
+    cellHeight
+  ) => {
+    const { minRow, maxRow, minCol, maxCol } =
+      calculateImplicantBoundaries(implicantPart);
 
     let x;
     let y;
-    // console.log(implicantPart);
-    // console.log(implicantPart[0].col);
-    if(implicantPart[0]===undefined){
+    if (implicantPart[0] === undefined) {
       return;
     }
 
-    if(implicantPart[0].col === 0){
+    if (implicantPart[0].col === 0) {
       x = minCol * cellWidth - 10;
-    }
-    else if(implicantPart[0].col === 3){
+    } else if (implicantPart[0].col === 3) {
       x = minCol * cellWidth + 10;
-    }
-    else{
+    } else {
       x = minCol * cellWidth;
     }
-    if(implicantPart[0].row === 0){
+    if (implicantPart[0].row === 0) {
       y = minRow * cellHeight - 5;
-    }
-    else if(implicantPart[0].row === 3){
+    } else if (implicantPart[0].row === 3) {
       y = minRow * cellHeight + 5;
-    }
-    else{
+    } else {
       y = minRow * cellHeight;
     }
-    
+
     const width = (maxCol - minCol + 1) * cellWidth - 0; // Adjusted for padding
     const height = (maxRow - minRow + 1) * cellHeight - 5; // Adjusted for padding
-  
+
     ctx.beginPath();
     ctx.rect(x, y, width, height);
     ctx.fillStyle = color;
     ctx.fill();
   };
+  //---------------------------------------------------------------------------------------------------------------------------
 
   const handleRemoveImplicant = (index) => {
     const newImplicants = implicants.filter((_, i) => i !== index);
-    const newImplicantsIndexes =implicantCellIndexes.filter((_, i) => i !== index);
+    const newImplicantsIndexes = implicantCellIndexes.filter(
+      (_, i) => i !== index
+    );
     addImplicant(newImplicants);
     addImplicantCellIndexes(newImplicantsIndexes);
   };
-  
+
   const handleRemoveEdgeImplicant = (index) => {
-    const [firstindex,secondindex,thirdindex,fourthindex] = edgeImplicants[index];
-    if(firstindex===0 && secondindex===2 && thirdindex===8 && fourthindex===10){
+    const [firstindex, secondindex, thirdindex, fourthindex] =
+      edgeImplicants[index];
+    if (
+      firstindex === 0 &&
+      secondindex === 2 &&
+      thirdindex === 8 &&
+      fourthindex === 10
+    ) {
       addImplicantCorner(false);
     }
     const newEdgeImplicants = edgeImplicants.filter((_, i) => i !== index);
-    const newEdgeImplicantsIndexes =edgeimplicantCellIndexes.filter((_, i) => i !== index);
+    const newEdgeImplicantsIndexes = edgeimplicantCellIndexes.filter(
+      (_, i) => i !== index
+    );
     addEdgeImplicant(newEdgeImplicants);
     addEdgeImplicantCellIndexes(newEdgeImplicantsIndexes);
   };
 
   return (
-  
     <div className="Kmap">
       <h1>Karnaugh maps</h1>
       <Instructions></Instructions>
@@ -1112,7 +1024,6 @@ const Kmap = () => {
           <button id="goback" disabled={!disabled} onClick={handleGoBackButton}>
             Go back
           </button>
-          {/* {/* <but id="submitBtn" onClick={()=>generateCodeLaTeX()} disabled={!disabled}>Generate code </but */}
           <button
             id="addImplicant"
             disabled={classicImplicantDisabled}
@@ -1168,9 +1079,7 @@ const Kmap = () => {
           )}
         </div>
       </div>
-      {/* {generateTable()} */}
 
-      {/* <ImplicantsList id="implicantlist" implicants={implicants}></ImplicantsList> */}
       <ImplicantsList
         implicants={implicants}
         // implicants={implicants}
