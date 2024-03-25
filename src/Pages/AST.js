@@ -262,34 +262,60 @@ const SyntaxTreeD3 = () => {
   //   return latexCode;
   // };
 
+  // const generateLatexCode = (node, parentLabel = "") => {
+  //   if (!node) {
+  //     return "";
+  //   }
+  //   // Start the LaTeX code for the current node. Use $ for math mode if isChecked is true.
+  //   let nodeLabel = isChecked ? `$${node.value}$` : node.value;
+  //   let latexCode = "[\n  " + nodeLabel; // Add a new line and indent for readability.
+  
+  //   // If there is a parent label, add the edge label to the current node in LaTeX format.
+  //   if (parentLabel) {
+  //     latexCode += `, edge label={node[midway,${parentLabel.position},font=\\scriptsize]{${parentLabel.text}}}`;
+  //   }
+  
+  //   // If the current node has children, recursively generate their LaTeX code.
+  //   if (node.children && node.children.length > 0) {
+  //     const childStrings = node.children.map((child, index) => {
+  //       // Create an edge label object with text and position .
+  //       let childLabel = child.label ? {text: child.label, position: index % 2 === 0 ? "left" : "right"} : "";
+  //       return generateLatexCode(child, childLabel);
+  //     });
+  //     // Join all children LaTeX code with new lines for readability and indentations.
+  //     latexCode += childStrings.join("\n").replace(/^/gm, '  '); // Add indentation to each line of child code.
+  //   }
+  
+  //   latexCode += "\n]"; // Close the current node's LaTeX code block.
+  
+  //   return latexCode;
+  // };
+
   const generateLatexCode = (node, parentLabel = "") => {
     if (!node) {
       return "";
     }
-    // Start the LaTeX code for the current node. Use $ for math mode if isChecked is true.
     let nodeLabel = isChecked ? `$${node.value}$` : node.value;
-    let latexCode = "[\n  " + nodeLabel; // Add a new line and indent for readability.
-  
-    // If there is a parent label, add the edge label to the current node in LaTeX format.
+    let latexCode = "[\n  " + nodeLabel;
+
     if (parentLabel) {
-      latexCode += `, edge label={node[midway,${parentLabel.position},font=\\scriptsize]{${parentLabel.text}}}`;
+      latexCode += `, edge label={node[midway,right,font=\\scriptsize,inner sep=1pt]{${parentLabel.text}}}`;
     }
-  
-    // If the current node has children, recursively generate their LaTeX code.
+
     if (node.children && node.children.length > 0) {
-      const childStrings = node.children.map((child, index) => {
-        // Create an edge label object with text and position .
-        let childLabel = child.label ? {text: child.label, position: index % 2 === 0 ? "left" : "right"} : "";
+      const childStrings = node.children.map((child) => {
+        let childLabel = child.label ? {text: child.label, position: "right"} : "";
         return generateLatexCode(child, childLabel);
       });
-      // Join all children LaTeX code with new lines for readability and indentations.
-      latexCode += childStrings.join("\n").replace(/^/gm, '  '); // Add indentation to each line of child code.
+      latexCode += childStrings.join("\n").replace(/^/gm, '  ');
     }
-  
-    latexCode += "\n]"; // Close the current node's LaTeX code block.
-  
+
+    latexCode += "\n]";
+
     return latexCode;
-  };
+};
+
+
   
   
 
