@@ -1,4 +1,6 @@
 // TODO: ak ma edge implicant 6/8 cells pridat to do generovania kodu
+// TODO: ak user chce pridat edge implicant na hornu a dolnu hranu ktory obsahuje cely riadok s indexom 0 a riadok s indexom 3... treba vymysliet nejaky sposob ako to robit
+//kedze momemntalne to vkuse da na vertikalnu hranu
 import React, { useState, useEffect } from "react";
 import "./index.css";
 import Cell from "../Components/Cell";
@@ -52,6 +54,8 @@ const Kmap = () => {
 
   const [activeImplicantIndex, setActiveImplicantIndex] = useState(null);
   const [activeImplicantType, setActiveImplicantType] = useState(null);
+
+  const [edgePositionHorizontal, setEdgePositionHorizontal] = useState(false);
 
   const handleImplicantClick = (index, typeOfImplicant) => {
     setActiveImplicantIndex(index);
@@ -243,17 +247,19 @@ const Kmap = () => {
     } else if (implicantCorner && (rows !== 4 || cols !== 4)) {
       alert("Implicant na rohy sa dá zaznačiť len na poliach rozmeru 4x4");
     }
-
+    console.log(edgeImplicants);
     // logic for generating code for edge implicant
     // required number of {} for \implicantedge command is 4
     // if i want to mark only 2 cells i need to put both indexes twice
     for (let row = 0; row < edgeImplicants.length; row++) {
+      // console.log(edgeImplicants[row].length);
       if (edgeImplicants[row].length === 2) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
       } else if (
-        edgeImplicants[row].length === 4 ||
-        edgeImplicants[row].length === 6 ||
-        edgeImplicants[row].length === 8
+        edgeImplicants[row].length === 4 
+        // ||
+        // edgeImplicants[row].length === 6 ||
+        // edgeImplicants[row].length === 8
       ) {
         const [firstindex, secondindex, thirdindex, fourthindex] =
           edgeImplicants[row];
@@ -269,8 +275,13 @@ const Kmap = () => {
           code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
         }
       }
+   else if (edgeImplicants[row].length === 6) {
+        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}{${edgeImplicants[row][5]}}\n`;
+  }
+  else if (edgeImplicants[row].length === 8) {
+    code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][3]}}{${edgeImplicants[row][4]}}{${edgeImplicants[row][7]}}\n`;
+  }
     }
-
     code += "\\end{karnaugh-map}";
     setGeneratedCode(code);
   };
@@ -378,13 +389,14 @@ const Kmap = () => {
       prioritizeRow = true;
     }
 
-    console.log(`is row ? = ${prioritizeRow}`);
+    // console.log(`is row ? = ${prioritizeRow}`);
     return combinedArray.sort((a, b) => {
       // Apply sorting based on the determined priority
       if (prioritizeRow) {
         if (a.row !== b.row) return a.row - b.row;
         return a.col - b.col;
       } else {
+        console.log("is horizontal");
         // Default to prioritizing column for vertical edges or general case
         if (a.col !== b.col) return a.col - b.col;
         return a.row - b.row;
@@ -638,8 +650,8 @@ const Kmap = () => {
   };
 
   useEffect(() => {
-    console.log(implicant.length);
-    console.log(implicant);
+    // console.log(implicant.length);
+    // console.log(implicant);
     if (implicant.length === 2 || edgeImplicant.length === 2) {
       finishImplicant();
     }
@@ -832,22 +844,17 @@ const Kmap = () => {
       secondPartofEdgeImplicant.push(edgeImplicant[1]);
     } else if (edgeImplicant.length === 4) {
       // check if edgeimplicant is corner implicant
-      if (
-        edgeImplicant[0].row === 0 &&
-        edgeImplicant[0].col === 0 &&
-        edgeImplicant[1].row === 0 &&
-        edgeImplicant[1].col === 3 &&
-        edgeImplicant[2].row === 3 &&
-        edgeImplicant[2].col === 0 &&
-        edgeImplicant[3].row === 3 &&
-        edgeImplicant[3].col === 3
-      ) {
+      if (edgeImplicant[0].row === 0 && edgeImplicant[0].col === 0 && edgeImplicant[1].row === 0 && edgeImplicant[1].col === 3 &&
+        edgeImplicant[2].row === 3 && edgeImplicant[2].col === 0 && edgeImplicant[3].row === 3 && edgeImplicant[3].col === 3) {
+        console.log("presla prva podmienka");
         firstPartofEdgeImplicant.push(edgeImplicant[0]);
         secondPartofEdgeImplicant.push(edgeImplicant[1]);
         thirdPartofEdgeImplicant.push(edgeImplicant[2]);
         fourthPartofEdgeImplicant.push(edgeImplicant[3]);
         isEdge = true;
       } else {
+        console.log("testtesteteetetetete");
+        console.log(edgeImplicant);
         if (edgeImplicant[0].row === edgeImplicant[1].row) {
           firstPartofEdgeImplicant.push(edgeImplicant[0]);
           firstPartofEdgeImplicant.push(edgeImplicant[1]);
@@ -861,6 +868,28 @@ const Kmap = () => {
         secondPartofEdgeImplicant.push(edgeImplicant[3]);
       }
     }
+    else if (edgeImplicant.length===6){
+      //hardcoded edge indexes of edge implicants since the edge implicant is already sorted so its always the same
+      firstPartofEdgeImplicant.push(edgeImplicant[0]);
+      firstPartofEdgeImplicant.push(edgeImplicant[2]);
+      secondPartofEdgeImplicant.push(edgeImplicant[3]);
+      secondPartofEdgeImplicant.push(edgeImplicant[5]);
+    }
+    else if (edgeImplicant.length===8){
+      //hardcoded edge indexes of edge implicants since the edge implicant is already sorted so its always the same
+      firstPartofEdgeImplicant.push(edgeImplicant[0]);
+      firstPartofEdgeImplicant.push(edgeImplicant[3]);
+      secondPartofEdgeImplicant.push(edgeImplicant[4]);
+      secondPartofEdgeImplicant.push(edgeImplicant[7]);
+    }
+    console.log("sem to preslo");
+    console.log(edgeImplicant);
+    console.log(firstPartofEdgeImplicant);
+    console.log(secondPartofEdgeImplicant);
+    console.log(thirdPartofEdgeImplicant);
+    console.log(fourthPartofEdgeImplicant);
+    console.log(isEdge);
+
     return [
       firstPartofEdgeImplicant,
       secondPartofEdgeImplicant,
@@ -1051,13 +1080,21 @@ const Kmap = () => {
           >
             + Corner impl
           </button>
-          <button
+          {/* <button
             id="finishImplicant"
             disabled={finishImplicantDisabled}
             onClick={() => finishImplicant()}
           >
             Finish Implicant
-          </button>
+          </button> */}
+          <button
+  id="finishImplicant"
+  disabled={finishImplicantDisabled}
+  onClick={() => setEdgePositionHorizontal(!edgePositionHorizontal)}
+>
+  {edgePositionHorizontal ? "Set Vertical" : "Set Horizontal"}
+</button>
+
         </div>
       </div>
       <div className="kmap-wrapper">
