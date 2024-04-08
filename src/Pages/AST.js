@@ -16,8 +16,11 @@ const SyntaxTreeD3 = () => {
   const [generatedCode, setGeneratedCode] = useState(
     "Your code will appear here \n after you click on Generate Code button"
   );
+  const [orientation, setTreeOrientation] = useState("top-down");
 
   const [nodeId, setNodeId] = useState(0);
+
+  const [indexOfOrientation, setIndexOfOrientation] = useState(0);
 
   useEffect(() => {
     if (!treeData) return;
@@ -39,7 +42,8 @@ const SyntaxTreeD3 = () => {
     const svg = d3.select(svgRef.current);
 
 //Create initial links and nodes for horizontal tree
-    if(isHorizontal){
+    // if(isHorizontal){
+      if(indexOfOrientation===1){
       svg
         .selectAll("path.link")
         .data(root.links())
@@ -58,8 +62,6 @@ const SyntaxTreeD3 = () => {
             
         )
         .on("click", (event, d) => handleLinkClick(event, d)); // Pass both event and link data
-  
-        
   
   
         const nodes = svg
@@ -87,7 +89,8 @@ const SyntaxTreeD3 = () => {
       }
 
       //Create initial links and nodes for vertical tree
-      else{
+      else if  (indexOfOrientation===0){
+        ////////////////////////////topdown
         svg
         .selectAll("path.link")
         .data(root.links())
@@ -131,8 +134,87 @@ const SyntaxTreeD3 = () => {
         .attr("dy", 5)
         .attr("text-anchor", "middle")
         .text((d) => d.data.value);
+//////////////////////////////////topdown
       }
+      else if(indexOfOrientation===2){
+//////////////////////////////////bottom up
+      const svgHeight = 300; // Assuming your SVG has a fixed height of 500
 
+      // Adjusting links for bottom-up orientation
+      svg.selectAll("path.link")
+        .data(root.links())
+        .enter()
+        .append("path")
+        .attr("class", "link")
+        .attr("fill", "none")
+        .attr("stroke", "#ADADAD")
+        .attr("stroke-width", "4px")
+        .attr("d", d3.linkVertical()
+              .x(d => d.x) // x-coordinates stay the same
+              .y(d => svgHeight - (d.y + 5))) // Invert y-coordinates for bottom-up
+        .on("click", (event, d) => handleLinkClick(event, d)); // Pass both event and link data
+      
+      // Adjusting nodes for bottom-up orientation
+      const nodes = svg.selectAll("g.node")
+        .data(root.descendants())
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${d.x},${svgHeight - (d.y + 20)})`) // Invert y-coordinates for bottom-up
+        .on("click", (event, d) => handleNodeClick(event, d));
+      
+      nodes.append("circle")
+        .attr("r", 15)
+        .attr("stroke", "black")
+        .attr("fill", "white");
+      
+      nodes.append("text")
+        .attr("x", 0)
+        .attr("dy", 5)
+        .attr("text-anchor", "middle")
+        .text(d => d.data.value);
+/////////////////////////////////bottom up
+      }
+      else if(indexOfOrientation===3){
+        const svgWidth = 400;
+          svg
+            .selectAll("path.link")
+            .data(root.links())
+            .enter()
+            .append("path")
+            .attr("class", "link")
+            .attr("fill", "none")
+            .attr("stroke", "#ADADAD")
+            .attr("stroke-width", "4px")
+            .attr("d", d3.linkHorizontal()
+                 .x((d) => svgWidth - (d.y + 5)) // Invert x-coordinate for right-to-left
+                 .y((d) => d.x))
+            .on("click", (event, d) => handleLinkClick(event, d)); // Pass both event and link data
+        
+          const nodes = svg
+            .selectAll("g.node")
+            .data(root.descendants())
+            .enter()
+            .append("g")
+            .attr("class", "node")
+            .attr("transform", (d) => `translate(${svgWidth - (d.y + 20)},${d.x})`) // Invert x-coordinate for right-to-left
+            .on("click", (event, d) => handleNodeClick(event, d));
+        
+          nodes
+            .append("circle")
+            .attr("r", 15)
+            .attr("stroke", "black")
+            .attr("fill", "white");
+        
+          nodes
+            .append("text")
+            .attr("x", 0)
+            .attr("dy", 5)
+            .attr("text-anchor", "middle")
+            .text((d) => d.data.value);
+        
+      }
+//////////////////////////////// for everything
       svg.selectAll(".link-label")
         .data(root.links())
         .enter()
@@ -144,7 +226,7 @@ const SyntaxTreeD3 = () => {
         .each(function(d) {
           var midX=null;
           var midY=null;
-          if(isHorizontal){
+          if(indexOfOrientation===1){
             // Calculate the midpoint for each link
              midX = (d.source.x + d.target.x) / 2;
              midY = (d.source.y + d.target.y) / 2;
@@ -153,7 +235,10 @@ const SyntaxTreeD3 = () => {
               .attr("x", midY + 10) 
               .attr("y", midX);
           }
-          else{
+//////////////////////////////for everything
+          else if (indexOfOrientation===0){
+
+            ///////////////////////////top down
             // Calculate the midpoint for each link in a vertical layout
              midY = (d.source.y + d.target.y) / 2 + 10; // Midpoint's X position (horizontal)
              midX = (d.source.x + d.target.x) / 2; // Midpoint's Y position (vertical)
@@ -161,6 +246,30 @@ const SyntaxTreeD3 = () => {
             d3.select(this)
               .attr("x", midX)
               .attr("y", midY);
+            ///////////////////////////top down
+          }
+          else if(indexOfOrientation===2){
+                      ////////////////////botom up
+            const svgHeight=300;
+            midX = (d.source.x + d.target.x) / 2;
+            // Midpoint's Y position needs to be inverted for bottom-up layout
+            // Adjusted to place labels correctly along the inverted y-axis
+            const midYInverted = svgHeight - ((d.source.y + d.target.y) / 2 + 10);
+        
+            // Position the label at the inverted midpoint
+            d3.select(this)
+              .attr("x", midX)
+              .attr("y", midYInverted);
+            ///////////////////////bottom up
+          }
+          else if(indexOfOrientation===3){
+            const svgWidth = 500;
+            const midX = (d.source.x + d.target.x) / 2;
+    const midY = (d.source.y + d.target.y) / 2;
+    // Adjust label positioning for right-to-left by inverting the x-position (midY in this case)
+    d3.select(this)
+      .attr("x", svgWidth - midY - 10) // Subtract midY from svgWidth and adjust by the same offset used before
+      .attr("y", midX); // midX remains the same as it's along the y-axis, which isn't inverted
           }
               console.log("this is the source");
               console.log(d.source);
@@ -192,6 +301,23 @@ const SyntaxTreeD3 = () => {
       },
       [treeData, nodeId]
     );
+
+    const handleOrientationClick=()=>{
+      if(indexOfOrientation===0){
+        setIndexOfOrientation(1);
+      }
+      else if(indexOfOrientation===1){
+        setIndexOfOrientation(2);
+      }
+      else if(indexOfOrientation===2){
+        setIndexOfOrientation(3);
+      }
+      else if(indexOfOrientation===3){
+        setIndexOfOrientation(0);
+      }
+    }
+
+
 
     const handleLinkClick = useCallback((event, link) => {
       // Prevent the event from bubbling to avoid triggering click events on other elements
@@ -233,63 +359,7 @@ const SyntaxTreeD3 = () => {
     }
   };
 
-  // const generateLatexCode = (node) => {
-  //   // Recursively build the LaTeX code for the tree
-  //   if (!node) {
-  //     return "";
-  //   }
 
-  //   // let latexCode = ` [${node.value}`; // Assume node value is directly accessible
-  //   // let latexCode =  '\\begin{forest}\n'
-  //   let latexCode = "[";
-  //   if (isChecked) {
-  //     latexCode += `$${node.value}$`;
-  //   } else {
-  //     latexCode += node.value;
-  //   }
-  //   // latexCode += node.value;
-
-  //   if (node.children) {
-  //     latexCode += node.children
-  //       .map((child) => generateLatexCode(child))
-  //       .join("");
-  //   }
-
-  //   latexCode += `,edge label={node[midway,left,font=\\scriptsize]{Label 1}}]`;
-
-  //   // latexCode += '\n\\end{forest}'
-
-  //   return latexCode;
-  // };
-
-  // const generateLatexCode = (node, parentLabel = "") => {
-  //   if (!node) {
-  //     return "";
-  //   }
-  //   // Start the LaTeX code for the current node. Use $ for math mode if isChecked is true.
-  //   let nodeLabel = isChecked ? `$${node.value}$` : node.value;
-  //   let latexCode = "[\n  " + nodeLabel; // Add a new line and indent for readability.
-  
-  //   // If there is a parent label, add the edge label to the current node in LaTeX format.
-  //   if (parentLabel) {
-  //     latexCode += `, edge label={node[midway,${parentLabel.position},font=\\scriptsize]{${parentLabel.text}}}`;
-  //   }
-  
-  //   // If the current node has children, recursively generate their LaTeX code.
-  //   if (node.children && node.children.length > 0) {
-  //     const childStrings = node.children.map((child, index) => {
-  //       // Create an edge label object with text and position .
-  //       let childLabel = child.label ? {text: child.label, position: index % 2 === 0 ? "left" : "right"} : "";
-  //       return generateLatexCode(child, childLabel);
-  //     });
-  //     // Join all children LaTeX code with new lines for readability and indentations.
-  //     latexCode += childStrings.join("\n").replace(/^/gm, '  '); // Add indentation to each line of child code.
-  //   }
-  
-  //   latexCode += "\n]"; // Close the current node's LaTeX code block.
-  
-  //   return latexCode;
-  // };
 
   const generateLatexCode = (node, parentLabel = "") => {
     if (!node) {
@@ -321,13 +391,25 @@ const SyntaxTreeD3 = () => {
 
   const handleGenerateLatex = () => {
     let latexCode = "";
-    if(!isHorizontal){
+    if(indexOfOrientation===0){
       latexCode = `\\begin{forest}\n${generateLatexCode(treeData)}\n\\end{forest}`;
     }
-    else{
+    else if(indexOfOrientation===1){
       latexCode = `\\begin{forest}
       for tree ={grow'= 0,}
       ${generateLatexCode(treeData)}\n\\end{forest}`;
+    }
+    else if(indexOfOrientation===2){
+      latexCode = `\\begin{forest}
+      for tree ={grow'= 90,}
+      ${generateLatexCode(treeData)}\n\\end{forest}`;
+    }
+    else if(indexOfOrientation===3){
+      latexCode = `\\begin{forest}
+      for tree={grow'=180,} 
+      ${generateLatexCode(treeData)}
+\\end{forest}`;
+
     }
     setGeneratedCode(latexCode);
     // console.log(latexCode);
@@ -368,18 +450,22 @@ const SyntaxTreeD3 = () => {
       />
       <button
         id="buttonMath"
-        onClick={() => handleOptionChange(false)}
+        // onClick={() => handleOptionChange(false)}
+        onClick={handleOrientationClick}
+        // onClick={() => setTreeOrientation("top-down")}
         style={{ backgroundColor: isHorizontal === false ? "#7393B3" : "white" }}
       >
-        Vertical
+        Turn Left
       </button>
-      <button
+      {/* <button
         id="buttonNoMath"
         onClick={() => handleOptionChange(true)}
         style={{ backgroundColor: isHorizontal === true ? "#7393B3" : "white" }}
       >
         Horizontal
-      </button>
+      </button> */}
+      
+     
     </div>
       <div className="settings">
         <button id="createTree" onClick={handleCreateTree}>
