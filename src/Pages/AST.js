@@ -11,17 +11,21 @@ import GeneratedCode from "../Components/GeneratedCode";
 const SyntaxTreeD3 = () => {
   const [treeData, setTreeData] = useState(null);
   const [isChecked, setIsChecked] = useState(false);
-  const [isHorizontal, setIsHorizontal] = useState(false);
+  // const [isHorizontal, setIsHorizontal] = useState(false);
   const svgRef = useRef();
   const [generatedCode, setGeneratedCode] = useState(
     "Your code will appear here \n after you click on Generate Code button"
   );
-  const [orientation, setTreeOrientation] = useState("top-down");
+
 
   const [nodeId, setNodeId] = useState(0);
 
   const [indexOfOrientation, setIndexOfOrientation] = useState(0);
 
+  const [height, setHeight] = useState(100);
+
+  const [svgHeight, setSvgHeight] = useState(100);
+  // const [width, setWidth] = useState(100);
   useEffect(() => {
     if (!treeData) return;
 
@@ -29,8 +33,8 @@ const SyntaxTreeD3 = () => {
     d3.select(svgRef.current).selectAll("*").remove();
 
     // Create a tree layout
-    const tree = d3.tree().size([400, 200]);
-    console.log(treeData);
+    const tree = d3.tree().size([400, height]);
+    // console.log(treeData);
 
     // Create a root hierarchy from the data
     const root = d3.hierarchy(treeData);
@@ -138,7 +142,7 @@ const SyntaxTreeD3 = () => {
       }
       else if(indexOfOrientation===2){
 //////////////////////////////////bottom up
-      const svgHeight = 300; // Assuming your SVG has a fixed height of 500
+      const svgHeight = height+50; // Assuming your SVG has a fixed height of 500
 
       // Adjusting links for bottom-up orientation
       svg.selectAll("path.link")
@@ -176,7 +180,7 @@ const SyntaxTreeD3 = () => {
 /////////////////////////////////bottom up
       }
       else if(indexOfOrientation===3){
-        const svgWidth = 400;
+        const svgWidth = 600;
           svg
             .selectAll("path.link")
             .data(root.links())
@@ -254,32 +258,37 @@ const SyntaxTreeD3 = () => {
             midX = (d.source.x + d.target.x) / 2;
             // Midpoint's Y position needs to be inverted for bottom-up layout
             // Adjusted to place labels correctly along the inverted y-axis
-            const midYInverted = svgHeight - ((d.source.y + d.target.y) / 2 + 10);
+            const midYInverted = svgHeight - ((d.source.y + d.target.y) / 2);
         
             // Position the label at the inverted midpoint
             d3.select(this)
               .attr("x", midX)
-              .attr("y", midYInverted);
+              .attr("y", midYInverted+140);
             ///////////////////////bottom up
           }
           else if(indexOfOrientation===3){
-            const svgWidth = 500;
+            const svgWidth = 600;
             const midX = (d.source.x + d.target.x) / 2;
     const midY = (d.source.y + d.target.y) / 2;
-    // Adjust label positioning for right-to-left by inverting the x-position (midY in this case)
     d3.select(this)
-      .attr("x", svgWidth - midY - 10) // Subtract midY from svgWidth and adjust by the same offset used before
+      .attr("x", svgWidth - midY - 20) // Subtract midY from svgWidth and adjust by the same offset used before
       .attr("y", midX); // midX remains the same as it's along the y-axis, which isn't inverted
           }
-              console.log("this is the source");
-              console.log(d.source);
-              console.log("this is the target");
-              console.log(d.target);
+              // console.log("this is the source");
+              // console.log(d.source);
+              // console.log("this is the target");
+              // console.log(d.target);
         })
         .text(d => d.target.data.label || ''); // Use the label from the target node data
     });
 
-   
+    function calculateDepth(node, currentDepth = 0) {
+      if (!node || !node.children || node.children.length === 0) {
+        return currentDepth;
+      }
+      return Math.max(...node.children.map(child => calculateDepth(child, currentDepth + 1)));
+    }
+    
 
     const handleNodeClick = useCallback(
       (event, node) => {
@@ -288,36 +297,86 @@ const SyntaxTreeD3 = () => {
         if (childValue !== null) {
           const newNode = { id: nodeId ,value: childValue, children: [], label: ""};
           setNodeId(nodeId + 1);
+          const currentDepth = calculateDepth(treeData);
+          const currentWidth=calculateMaxWidth(treeData);
           if (!node.data.children) {
             // If the clicked node doesn't have children array, create one
             node.data.children = [newNode];
+            console.log("first if");
+            // setHeight(height + 50);
           } else {
+            console.log("second if");
             // Add the new node to the children array
             node.data.children.push(newNode);
+            
+            if(indexOfOrientation===0 || indexOfOrientation===2){
+              const newDepth = calculateDepth({ ...treeData });
+              if (newDepth > currentDepth) {
+                setHeight(height + newDepth*15);
+                setSvgHeight(height + newDepth*15); 
+                    }
+            }
           }
   
           setTreeData({ ...treeData });
         }
       },
-      [treeData, nodeId]
+      [treeData, nodeId, height]
     );
 
     const handleOrientationClick=()=>{
       if(indexOfOrientation===0){
+        const newWidth = calculateMaxWidth({ ...treeData });
+        // console.log(newWidth);
+        //  console.log(svgHeight);
+        if(svgHeight<newWidth*45){
+          setSvgHeight(newWidth*65);
+          console.log("som tu ");
+         } // Adjust this value based on your needs
         setIndexOfOrientation(1);
       }
       else if(indexOfOrientation===1){
+        setSvgHeight(height);
         setIndexOfOrientation(2);
       }
       else if(indexOfOrientation===2){
+        const newWidth = calculateMaxWidth({ ...treeData });
+        if(svgHeight<newWidth*45){
+          setSvgHeight(newWidth*65);
+         } // Adjust this value based on your needs
         setIndexOfOrientation(3);
       }
       else if(indexOfOrientation===3){
         setIndexOfOrientation(0);
+        setSvgHeight(height);
       }
     }
 
-
+    function calculateMaxWidth(node) {
+      if (!node) return 0;
+    
+      let maxWidth = 0;
+      const queue = [node]; // Initialize a queue with the root node
+    
+      while (queue.length > 0) {
+        const levelSize = queue.length; // Number of elements at the current level
+        maxWidth = Math.max(maxWidth, levelSize); // Update maxWidth if the current level is wider
+    
+        for (let i = 0; i < levelSize; i++) {
+          const currentNode = queue.shift(); // Remove the current node from the queue
+    
+          // Add the children of the current node to the queue for the next level
+          if (currentNode.children) {
+            for (let child of currentNode.children) {
+              queue.push(child);
+            }
+          }
+        }
+      }
+    
+      return maxWidth;
+    }
+    
 
     const handleLinkClick = useCallback((event, link) => {
       // Prevent the event from bubbling to avoid triggering click events on other elements
@@ -348,11 +407,12 @@ const SyntaxTreeD3 = () => {
 
     
 
-  const handleOptionChange = (isHorizontal) => {
-    setIsHorizontal(isHorizontal);
-  };
+  // const handleOptionChange = (isHorizontal) => {
+  //   setIsHorizontal(isHorizontal);
+  // };
 
   const handleCreateTree = () => {
+    setHeight(100);
     const rootValue = prompt("Enter value for the root node:");
     if (rootValue !== null) {
       setTreeData({ value: rootValue, children: [], label: ""});
@@ -413,7 +473,7 @@ const SyntaxTreeD3 = () => {
     }
     setGeneratedCode(latexCode);
     // console.log(latexCode);
-    console.log(isChecked);
+    // console.log(isChecked);
   };
 
   return (
@@ -453,7 +513,7 @@ const SyntaxTreeD3 = () => {
         // onClick={() => handleOptionChange(false)}
         onClick={handleOrientationClick}
         // onClick={() => setTreeOrientation("top-down")}
-        style={{ backgroundColor: isHorizontal === false ? "#7393B3" : "white" }}
+        style={{ backgroundColor:  "#7393B3" }}
       >
         Turn Left
       </button>
@@ -475,8 +535,9 @@ const SyntaxTreeD3 = () => {
       <div className="Tree">
         <svg
           ref={svgRef}
-          width={500}
-          height={500}
+          width={600}
+          height={svgHeight+80}
+          // height={1000}
           onClick={() => setTreeData(null)} // Clear selection when clicking on the background
         />
       </div>
