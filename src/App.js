@@ -10,8 +10,6 @@ import Kmap from './Pages/KarnaughMap'
 import ProofTree from './Pages/ProofTree';
 import {Route, Routes} from 'react-router-dom';
 import SyntaxTreeD3 from './Pages/AST';
-// import { BrowserRouter as Router } from 'react-router-dom';
-// import "bootstrap/dist/css/bootstrap.min.css";
 
 
 
