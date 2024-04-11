@@ -412,9 +412,10 @@ const SyntaxTreeD3 = () => {
   // };
 
   const handleCreateTree = () => {
-    setHeight(100);
+    
     const rootValue = prompt("Enter value for the root node:");
     if (rootValue !== null) {
+      setHeight(100);
       setTreeData({ value: rootValue, children: [], label: ""});
     }
   };
