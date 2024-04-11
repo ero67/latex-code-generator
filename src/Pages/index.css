@@ -607,23 +607,30 @@ div.containerText #question {
       display: flex;
       flex-direction: column;
       align-items: center;
+      /* max-width: 90%; */
     }
     
     .proof-tree-node {
       display: flex;
       flex-direction: column-reverse;
       align-items: center;
-      margin-bottom: 30px; /* Spacing between parent and children nodes */
+      margin-bottom: 20px; /* Spacing between parent and children nodes */
+      transform-origin: top left; /* Ensures scaling happens from the top left corner */
+      font-size: 0.8rem;
+      /* background-color: #e7f5ff; */
+  /* transform: scale(0.8); */
+      /* width: 200px; */
     }
     
     .proof-tree-content {
       z-index: 1; /* Ensure that node content appears above connecting lines */
-      background: rgb(230, 229, 229); /* Background to cover the connecting lines */
+      background-color: #d5d9d9; /* Background to cover the connecting lines */
       border: 1px solid #ccc;
       padding: 5px;
       border-radius: 3px;
       margin-top: 20px; /* This creates space for the connecting line */
-      margin-left: 10px;
+      margin-left: 5px;
+      width: 150px;
     }
     
     .proof-tree-children {
@@ -650,17 +657,54 @@ div.containerText #question {
       margin: 5px;
       border-radius: 3px;
     }
-    
-    .proof-tree-node button {
+    .proof-tree-node input{
+      width: 130px;
+    }
+    /* .proof-tree-node button {
       border: none;
       background-color: #4CAF50;
       color: white;
       cursor: pointer;
+    } */
+    
+    /* .proof-tree-node button:hover {
+      background-color: #45a049;
+    } */
+
+    .node-action-buttons {
+      display: flex;
+      justify-content: left;
+      gap: 10px; /* Space between buttons */
+      margin-top: 10px;
     }
     
-    .proof-tree-node button:hover {
-      background-color: #45a049;
+    .add-child-btn, .remove-child-btn {
+      background-color: #007bff; /* A pleasant blue */
+      color: white;
+      border: none;
+      border-radius: 50%; /* Circular buttons */
+      width: 25px; /* Equal width and height make the button circular */
+      height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.3s; /* Smooth background transition */
     }
+    
+    .add-child-btn:hover, .remove-child-btn:hover {
+      background-color: #0056b3; /* Darker shade on hover */
+    }
+    
+    .remove-child-btn {
+      background-color: #dc3545; /* A different color for the remove button, e.g., red */
+    }
+    
+    .remove-child-btn:hover {
+      background-color: #c82333; /* Darker red on hover */
+    }
+    
+    
 
     .btn-container {
       display: flex;

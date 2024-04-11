@@ -14,13 +14,6 @@ const createProofTreeNode = (content = "", children = [], rightLabel = "") => {
   return { id: nodeId++, content, children, rightLabel };
 };
 
-// const specialSymbols = {
-//   "→": " $\\to$ ",
-//   "∧": " $\\land$ ",
-//   "∨": " $\\lor$ ",
-//   "¬": " $\\neg$ ",
-//   // Add more symbols as needed
-// };
 
 // ProofTree Component
 const ProofTree = () => {
@@ -56,6 +49,32 @@ const ProofTree = () => {
       console.log("Parent node not found.");
     }
   };
+
+  const removeNode = (nodeIdToRemove) => {
+    const removeNodeRecursive = (currentNode, nodeIdToRemove) => {
+      for (let i = 0; i < currentNode.children.length; i++) {
+        if (currentNode.children[i].id === nodeIdToRemove) {
+          currentNode.children.splice(i, 1); // Remove the node
+          return true; // Node found and removed
+        }
+  
+        // Recurse into children
+        if (removeNodeRecursive(currentNode.children[i], nodeIdToRemove)) {
+          return true; // Node found and removed in deeper level
+        }
+      }
+      return false; // Node not found in this branch
+    };
+  
+    // Start the recursive removal process
+    if (!removeNodeRecursive(rootNode, nodeIdToRemove)) {
+      console.log("Node not found.");
+    } else {
+      setRootNode({ ...rootNode }); // Update state to trigger re-render
+    }
+  };
+  
+  
 
   // function to edit the content of a node based on its ID
   const editNodeContent = (nodeId, newContent) => {
@@ -118,35 +137,100 @@ const ProofTree = () => {
   // };
 
   // function to render the tree nodes
-  const renderTreeNode = (node) => {
+  // const renderTreeNode = (node) => {
+  //   return (
+  //     <div className="proof-tree-node">
+  //       {/* render content of current node */}
+  //       <div className="proof-tree-content">
+  //         <LatexInput
+  //           value={node.content}
+  //           onChange={(value) => editNodeContent(node.id, value)}
+  //           mathNotation={math_notation}
+  //         />
+
+  //         {/* Conditionally render the right label input only if this is a child node */}
+  //         {node.children.length > 0 && (
+  //           <LatexInput
+  //             value={node.rightLabel}
+  //             onChange={(value) => editNodeRightLabel(node.id, value)}
+  //             mathNotation={math_notation}
+  //           />
+  //         )}
+
+  //         <button onClick={() => addNode(node.id)}>Add Child</button>
+  //       </div>
+  //       <div className="proof-tree-children">
+  //         {node.children.map((child) => renderTreeNode(child, true))}
+  //       </div>
+  //     </div>
+  //   );
+  // };
+
+
+  const renderTreeNode = (node, isRoot = true) => {
     return (
       <div className="proof-tree-node">
-        {/* render content of current node */}
         <div className="proof-tree-content">
-          <LatexInput
-            value={node.content}
-            onChange={(value) => editNodeContent(node.id, value)}
-            mathNotation={math_notation}
-          />
-
-          {/* Conditionally render the right label input only if this is a child node */}
-          {node.children.length > 0 && (
+          <div className="node-input-group">
+            <label htmlFor={`node-content-${node.id}`}>Node Content</label>
             <LatexInput
-              value={node.rightLabel}
-              onChange={(value) => editNodeRightLabel(node.id, value)}
+              id={`node-content-${node.id}`}
+              value={node.content}
+              onChange={(value) => editNodeContent(node.id, value)}
               mathNotation={math_notation}
             />
+          </div>
+  
+          {node.children.length > 0 && (
+            <div className="node-input-group">
+              <label htmlFor={`node-right-label-${node.id}`}>Right Label</label>
+              <LatexInput
+                id={`node-right-label-${node.id}`}
+                value={node.rightLabel}
+                onChange={(value) => editNodeRightLabel(node.id, value)}
+                mathNotation={math_notation}
+              />
+            </div>
           )}
-
-          <button onClick={() => addNode(node.id)}>Add Child</button>
+          <div className="node-action-buttons">
+          <button className="add-child-btn" onClick={() => addNode(node.id)}>+</button>
+          {!isRoot && ( // Conditionally show the Remove Node button
+            <button className="remove-child-btn" onClick={() => removeNode(node.id)}>
+              <b>-</b>
+            </button>
+          )}
+          </div>
         </div>
+  
         <div className="proof-tree-children">
-          {node.children.map((child) => renderTreeNode(child, true))}
+          {node.children.map(child => renderTreeNode(child, false))} {/* Mark children as non-root */}
         </div>
       </div>
     );
   };
+  
 
+// const renderTreeNode = (node, parentId = null) => {
+//   return (
+//     <div className="proof-tree-node">
+//       {/* Node content and controls */}
+//       <div className="proof-tree-content">
+//         {/* Existing inputs and Add Child button */}
+
+//         {/* Conditionally render the Remove Child button only for non-root nodes */}
+      
+//       </div>
+
+//       {/* Render children nodes */}
+//       <div className="proof-tree-children">
+//         {node.children.map(child => renderTreeNode(child, node.id))}
+//       </div>
+//     </div>
+//   );
+// };
+
+
+  
  
 
   const generateLatexCode = (node) => {
