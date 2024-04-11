@@ -674,7 +674,7 @@ div.containerText #question {
     .node-action-buttons {
       display: flex;
       justify-content: left;
-      gap: 10px; /* Space between buttons */
+      gap: 5px; /* Space between buttons */
       margin-top: 10px;
     }
     
@@ -683,7 +683,7 @@ div.containerText #question {
       color: white;
       border: none;
       border-radius: 50%; /* Circular buttons */
-      width: 25px; /* Equal width and height make the button circular */
+      width: 50px; /* Equal width and height make the button circular */
       height: 25px;
       display: flex;
       align-items: center;

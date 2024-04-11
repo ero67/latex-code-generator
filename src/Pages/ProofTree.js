@@ -10,8 +10,12 @@ import LatexInput from "../Components/LatexInput";
 
 // ProofTreeNode Data Structure
 let nodeId = 0;
-const createProofTreeNode = (content = "", children = [], rightLabel = "") => {
-  return { id: nodeId++, content, children, rightLabel };
+// const createProofTreeNode = (content = "", children = [], rightLabel = "") => {
+//   return { id: nodeId++, content, children, rightLabel };
+// };
+
+const createProofTreeNode = (content = "", children = [], rightLabel = "", mathMode = false) => {
+  return { id: nodeId++, content, children, rightLabel, mathMode };
 };
 
 
@@ -26,6 +30,36 @@ const ProofTree = () => {
 
   const handleOptionChange = (option) => {
     setMathNotation(option);
+  };
+
+  const toggleMathModeForAllNodes = (node, mathMode) => {
+    node.mathMode = mathMode; // Set mathMode for the current node
+    node.children.forEach(child => toggleMathModeForAllNodes(child, mathMode)); // Recursively set for children
+  };
+  
+  const handleMathNotationChange = () => {
+    const newMathMode = !math_notation;
+    setMathNotation(newMathMode);
+  
+    // Create a deep copy of rootNode to ensure immutability
+    const rootNodeCopy = JSON.parse(JSON.stringify(rootNode));
+    toggleMathModeForAllNodes(rootNodeCopy, newMathMode);
+    setRootNode(rootNodeCopy); // Update the rootNode with new mathMode settings
+  };
+  
+
+
+  const toggleMathMode = (nodeId, isMathMode) => {
+    // Logic to update the specific node's mathMode property
+    const updateMathMode = (node) => {
+      if (node.id === nodeId) {
+        node.mathMode = isMathMode;
+      } else {
+        node.children.forEach(updateMathMode);
+      }
+    };
+    updateMathMode(rootNode);
+    setRootNode({...rootNode});
   };
   const addNode = (parentId) => {
     const stack = [rootNode];
@@ -179,6 +213,8 @@ const ProofTree = () => {
               onChange={(value) => editNodeContent(node.id, value)}
               mathNotation={math_notation}
             />
+            {/* Checkbox for Math Mode */}
+        
           </div>
   
           {node.children.length > 0 && (
@@ -199,6 +235,16 @@ const ProofTree = () => {
               <b>-</b>
             </button>
           )}
+
+          {/* <div> */}
+          <input
+            type="checkbox"
+            checked={node.mathMode}
+            onChange={(e) => toggleMathMode(node.id, e.target.checked)}
+            id={`math-mode-${node.id}`}
+          />
+          {/* <label htmlFor={`math-mode-${node.id}`}>Math Mode</label> */}
+        {/* </div> */}
           </div>
         </div>
   
@@ -233,76 +279,186 @@ const ProofTree = () => {
   
  
 
-  const generateLatexCode = (node) => {
-    let code = "";
+  // const generateLatexCode = (node) => {
+  //   let code = "";
 
-    // Generate code for children first
-    let childrenCode = "";
-    for (let i = 0; i < node.children.length; i++) {
-      const childLatexCode = generateLatexCode(node.children[i]);
-      childrenCode += childLatexCode;
-      if (i < node.children.length - 1) {
-        childrenCode += " "; // Add a space between codes, but not after the last one
-      }
-    }
+  //   // Generate code for children first
+  //   let childrenCode = "";
+  //   for (let i = 0; i < node.children.length; i++) {
+  //     const childLatexCode = generateLatexCode(node.children[i]);
+  //     childrenCode += childLatexCode;
+  //     if (i < node.children.length - 1) {
+  //       childrenCode += " "; // Add a space between codes, but not after the last one
+  //     }
+  //   }
 
-    // Determine the appropriate command based on the number of children
-    let nodeCommand = "";
-    if (node.children.length === 0) {
-      if (math_notation === false) {
-        nodeCommand = `     \\AxiomC{${node.content}}`;
-      } else {
-        nodeCommand = `     \\AxiomC{$${node.content}$}`;
-      }
-    } else if (node.children.length === 1) {
-      if (math_notation === false) {
-        nodeCommand = `     \\UnaryInfC{${node.content}}`;
-      } else {
-        nodeCommand = `     \\UnaryInfC{$${node.content}$}`;
-      }
-    } else if (node.children.length === 2) {
-      if (math_notation === false) {
-        nodeCommand = `    \\BinaryInfC{${node.content}}`;
-      } else {
-        nodeCommand = `    \\BinaryInfC{$${node.content}$}`;
-      }
-    } else if (node.children.length === 3) {
-      if (math_notation === false) {
-        nodeCommand = `     \\TrinaryInfC{${node.content}}`;
-      } else {
-        nodeCommand = `     \\TrinaryInfC{$${node.content}$}`;
-      }
-    } else if (node.children.length === 4) {
-      if (math_notation === false) {
-        nodeCommand = `     \\QuinaryInfC{${node.content}}`;
-      } else {
-        nodeCommand = `     \\QuinaryInfC{$${node.content}$}`;
-      }
-    } else if (node.children.length === 5) {
-      if (math_notation === false) {
-        nodeCommand = `     \\QuaternaryInfC{${node.content}}`;
-      } else {
-        nodeCommand = `     \\QuaternaryInfC{$${node.content}$}`;
-      }
-    }
+  //   // Determine the appropriate command based on the number of children
+  //   let nodeCommand = "";
+  //   if (node.children.length === 0) {
+  //     if (math_notation === false) {
+  //       nodeCommand = `     \\AxiomC{${node.content}}`;
+  //     } else {
+  //       nodeCommand = `     \\AxiomC{$${node.content}$}`;
+  //     }
+  //   } else if (node.children.length === 1) {
+  //     if (math_notation === false) {
+  //       nodeCommand = `     \\UnaryInfC{${node.content}}`;
+  //     } else {
+  //       nodeCommand = `     \\UnaryInfC{$${node.content}$}`;
+  //     }
+  //   } else if (node.children.length === 2) {
+  //     if (math_notation === false) {
+  //       nodeCommand = `    \\BinaryInfC{${node.content}}`;
+  //     } else {
+  //       nodeCommand = `    \\BinaryInfC{$${node.content}$}`;
+  //     }
+  //   } else if (node.children.length === 3) {
+  //     if (math_notation === false) {
+  //       nodeCommand = `     \\TrinaryInfC{${node.content}}`;
+  //     } else {
+  //       nodeCommand = `     \\TrinaryInfC{$${node.content}$}`;
+  //     }
+  //   } else if (node.children.length === 4) {
+  //     if (math_notation === false) {
+  //       nodeCommand = `     \\QuinaryInfC{${node.content}}`;
+  //     } else {
+  //       nodeCommand = `     \\QuinaryInfC{$${node.content}$}`;
+  //     }
+  //   } else if (node.children.length === 5) {
+  //     if (math_notation === false) {
+  //       nodeCommand = `     \\QuaternaryInfC{${node.content}}`;
+  //     } else {
+  //       nodeCommand = `     \\QuaternaryInfC{$${node.content}$}`;
+  //     }
+  //   }
 
-    // If the node has a right label, it should come before the node's inference command
-    if (node.rightLabel) {
-      // code = `${childrenCode} \\RightLabel{${node.rightLabel}} ${nodeCommand}\n`;
-      if(math_notation === false){
-        code = `${childrenCode}       \\RightLabel{\\scriptsize{${node.rightLabel}}}\n ${nodeCommand}\n`;
-    } else {
-        code = `${childrenCode}       \\RightLabel{\\scriptsize{$${node.rightLabel}$}}\n ${nodeCommand}\n`;
-    }
-  }
-    else{
-      code = `${childrenCode} ${nodeCommand} \n`;
+  //   // If the node has a right label, it should come before the node's inference command
+  //   if (node.rightLabel) {
+  //     // code = `${childrenCode} \\RightLabel{${node.rightLabel}} ${nodeCommand}\n`;
+  //     if(math_notation === false){
+  //       code = `${childrenCode}       \\RightLabel{\\scriptsize{${node.rightLabel}}}\n ${nodeCommand}\n`;
+  //   } else {
+  //       code = `${childrenCode}       \\RightLabel{\\scriptsize{$${node.rightLabel}$}}\n ${nodeCommand}\n`;
+  //   }
+  // }
+  //   else{
+  //     code = `${childrenCode} ${nodeCommand} \n`;
 
-    }
+  //   }
   
 
-    return code;
+  //   return code;
+  // };
+
+//   const generateLatexCode = (node) => {
+//     let code = "";
+
+//     // Function to conditionally wrap content in math mode
+//     const formatContent = (content, mathMode) => mathMode ? `$${content}$` : content;
+
+//     // Generate code for children first
+//     let childrenCode = node.children.map(child => generateLatexCode(child)).join(' ');
+
+//     // Determine the appropriate command based on the number of children
+//     let nodeCommand = "";
+//     const contentInMathMode = formatContent(node.content, node.mathMode); // Apply math mode if needed
+
+//     switch(node.children.length) {
+//         case 0:
+//             nodeCommand = `\\AxiomC{${contentInMathMode}}`;
+//             break;
+//         case 1:
+//             nodeCommand = `\\UnaryInfC{${contentInMathMode}}`;
+//             break;
+//         case 2:
+//             nodeCommand = `\\BinaryInfC{${contentInMathMode}}`;
+//             break;
+//         case 3:
+//             nodeCommand = `\\TrinaryInfC{${contentInMathMode}}`;
+//             break;
+//         case 4:
+//             nodeCommand = `\\QuaternaryInfC{${contentInMathMode}}`; // Note: Corrected from \\QuinaryInfC to \\QuaternaryInfC for four children
+//             break;
+//         case 5:
+//             nodeCommand = `\\QuinaryInfC{${contentInMathMode}}`; // For five children
+//             break;
+//         default:
+//             console.log("Unsupported number of children");
+//             break;
+//     }
+
+//     // If the node has a right label, it should come before the node's inference command
+//     // Apply math mode to right label if global math_notation is true
+//     if (node.rightLabel) {
+//         const rightLabelInMathMode = formatContent(node.rightLabel, math_notation); // Global math mode applies to right label
+//         code = `${childrenCode} \\RightLabel{\\scriptsize{${rightLabelInMathMode}}}\n${nodeCommand}\n`;
+//     } else {
+//         code = `${childrenCode} ${nodeCommand}\n`;
+//     }
+
+//     return code;
+// };
+
+const generateLatexCode = (node) => {
+  let code = "";
+
+  // Improved function to conditionally wrap content in math mode
+  // and ensure LaTeX commands are always correctly formatted
+  const formatContent = (content, mathMode) => {
+      // This regular expression finds LaTeX commands
+      const regex = /(\\[a-zA-Z]+){1}(\{[^}]*\})?/g; // Match commands, possibly followed by their arguments in {}
+      let formattedContent = content.replace(regex, (match) => `$${match}$`); // Wrap each found command with $...$
+      if (mathMode) {
+          // If the entire content is in math mode, wrap everything once instead of individual components
+          formattedContent = `$${formattedContent.replace(/\$/g, '')}$`; // Remove inner $ signs and wrap the whole content
+      }
+      return formattedContent;
   };
+
+  // Generate code for children first
+  let childrenCode = node.children.map(child => generateLatexCode(child)).join(' ');
+
+  // Determine the appropriate command based on the number of children
+  let nodeCommand = "";
+  const contentInMathMode = formatContent(node.content, node.mathMode); // Apply math mode if needed
+
+  switch(node.children.length) {
+      case 0:
+          nodeCommand = `\\AxiomC{${contentInMathMode}}`;
+          break;
+      case 1:
+          nodeCommand = `\\UnaryInfC{${contentInMathMode}}`;
+          break;
+      case 2:
+          nodeCommand = `\\BinaryInfC{${contentInMathMode}}`;
+          break;
+      case 3:
+          nodeCommand = `\\TrinaryInfC{${contentInMathMode}}`;
+          break;
+      case 4:
+          nodeCommand = `\\QuaternaryInfC{${contentInMathMode}}`;
+          break;
+      case 5:
+          nodeCommand = `\\QuinaryInfC{${contentInMathMode}}`;
+          break;
+      default:
+          console.log("Unsupported number of children");
+          break;
+  }
+
+  // If the node has a right label, adjust for math mode
+  if (node.rightLabel) {
+      const rightLabelInMathMode = formatContent(node.rightLabel, node.mathMode); // Apply node's math mode to right label
+      code = `${childrenCode} \\RightLabel{\\scriptsize{${rightLabelInMathMode}}}\n${nodeCommand}\n`;
+  } else {
+      code = `${childrenCode} ${nodeCommand}\n`;
+  }
+
+  return code;
+};
+
+
+
 
   const generateBtn = () => {
     const proofTreeCode = generateLatexCode(rootNode);
@@ -355,7 +511,8 @@ const ProofTree = () => {
         name="math"
         value="math"
         checked={math_notation}
-        onChange={() => setMathNotation(!math_notation)}
+        // onChange={() => setMathNotation(!math_notation)}
+        onChange={handleMathNotationChange}
       />
 
       </div>
