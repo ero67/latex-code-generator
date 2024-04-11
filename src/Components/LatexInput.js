@@ -76,15 +76,18 @@ const LatexInput = ({ value, onChange,mathNotation }) => {
     // Vytvor novú hodnotu s príkazom obaleným znakmi '$'
     // Odstráň jeden znak '\' z príkazu a obaľ ho znakmi '$'
     let newValue = "";
-    if(mathNotation === false){
-       newValue = lastBackslashIndex !== -1
-      ? `${value.substring(0, lastBackslashIndex)}$${command}$`
-      : `${value}$${command}$`;
-    }else{
-       newValue = lastBackslashIndex !== -1
-      ? `${value.substring(0, lastBackslashIndex)}${command}`
-      : `${value}${command}`;
-    }
+    newValue = lastBackslashIndex !== -1
+    ? `${value.substring(0, lastBackslashIndex)}${command}`
+    : `${value}${command}`;
+    // if(mathNotation === false){
+    //    newValue = lastBackslashIndex !== -1
+    //   ? `${value.substring(0, lastBackslashIndex)}$${command}$`
+    //   : `${value}$${command}$`;
+    // }else{
+    //    newValue = lastBackslashIndex !== -1
+    //   ? `${value.substring(0, lastBackslashIndex)}${command}`
+    //   : `${value}${command}`;
+    // }
     onChange(newValue); // Aktualizuj hodnotu vstupného poľa s novým výberom
     setShowSuggestions(false); // Skry návrhy
     setFocusIndex(-1); // Resetuj index fokusu
