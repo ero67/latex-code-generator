@@ -548,6 +548,8 @@ p{
  .Tree{
   display: grid;
   justify-content: center;
+  /* margin-top: 50px; */
+  /* margin-bottom: 50px; */
  }
 
  svg{
