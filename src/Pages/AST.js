@@ -179,9 +179,50 @@ const SyntaxTreeD3 = () => {
         .text(d => d.data.value);
 /////////////////////////////////bottom up
       }
-      else if(indexOfOrientation===3){
+      // else if(indexOfOrientation===3){
+      //   const svgWidth = 600;
+      //     svg
+      //       .selectAll("path.link")
+      //       .data(root.links())
+      //       .enter()
+      //       .append("path")
+      //       .attr("class", "link")
+      //       .attr("fill", "none")
+      //       .attr("stroke", "#ADADAD")
+      //       .attr("stroke-width", "4px")
+      //       .attr("d", d3.linkHorizontal()
+      //            .x((d) => svgWidth - (d.y + 5)) // Invert x-coordinate for right-to-left
+      //            .y((d) => d.x))
+      //       .on("click", (event, d) => handleLinkClick(event, d)); // Pass both event and link data
+        
+      //     const nodes = svg
+      //       .selectAll("g.node")
+      //       .data(root.descendants())
+      //       .enter()
+      //       .append("g")
+      //       .attr("class", "node")
+      //       .attr("transform", (d) => `translate(${svgWidth - (d.y + 20)},${d.x})`) // Invert x-coordinate for right-to-left
+      //       .on("click", (event, d) => handleNodeClick(event, d));
+        
+      //     nodes
+      //       .append("circle")
+      //       .attr("r", 15)
+      //       .attr("stroke", "black")
+      //       .attr("fill", "white");
+        
+      //     nodes
+      //       .append("text")
+      //       .attr("x", 0)
+      //       .attr("dy", 5)
+      //       .attr("text-anchor", "middle")
+      //       .text((d) => d.data.value);
+        
+      // }
+      else if (indexOfOrientation === 3) {
         const svgWidth = 600;
-          svg
+        const svgHeight = 400; // Define the SVG height based on your SVG dimensions
+    
+        svg
             .selectAll("path.link")
             .data(root.links())
             .enter()
@@ -192,32 +233,32 @@ const SyntaxTreeD3 = () => {
             .attr("stroke-width", "4px")
             .attr("d", d3.linkHorizontal()
                  .x((d) => svgWidth - (d.y + 5)) // Invert x-coordinate for right-to-left
-                 .y((d) => d.x))
-            .on("click", (event, d) => handleLinkClick(event, d)); // Pass both event and link data
-        
-          const nodes = svg
+                 .y((d) => svgHeight - d.x)) // Invert y-coordinate to flip vertically
+            .on("click", (event, d) => handleLinkClick(event, d));
+    
+        const nodes = svg
             .selectAll("g.node")
             .data(root.descendants())
             .enter()
             .append("g")
             .attr("class", "node")
-            .attr("transform", (d) => `translate(${svgWidth - (d.y + 20)},${d.x})`) // Invert x-coordinate for right-to-left
+            .attr("transform", (d) => `translate(${svgWidth - (d.y + 20)},${svgHeight - d.x})`) // Invert both x and y coordinates
             .on("click", (event, d) => handleNodeClick(event, d));
-        
-          nodes
+    
+        nodes
             .append("circle")
             .attr("r", 15)
             .attr("stroke", "black")
             .attr("fill", "white");
-        
-          nodes
+    
+        nodes
             .append("text")
             .attr("x", 0)
             .attr("dy", 5)
             .attr("text-anchor", "middle")
             .text((d) => d.data.value);
-        
-      }
+    }
+    
 //////////////////////////////// for everything
       svg.selectAll(".link-label")
         .data(root.links())
@@ -266,18 +307,21 @@ const SyntaxTreeD3 = () => {
               .attr("y", midYInverted+140);
             ///////////////////////bottom up
           }
-          else if(indexOfOrientation===3){
+          else if (indexOfOrientation === 3) {
             const svgWidth = 600;
+            const svgHeight = 400; // Assume some SVG height, adjust according to your SVG
+          
+            // Calculating the midpoints, these stay the same
             const midX = (d.source.x + d.target.x) / 2;
-    const midY = (d.source.y + d.target.y) / 2;
-    d3.select(this)
-      .attr("x", svgWidth - midY - 20) // Subtract midY from svgWidth and adjust by the same offset used before
-      .attr("y", midX); // midX remains the same as it's along the y-axis, which isn't inverted
+            const midY = (d.source.y + d.target.y) / 2;
+          
+            // Adjust label positions to match the inverted tree
+            d3.select(this)
+              .attr("x", svgWidth - midY - 20) // Invert x-coordinate as before, adjusting offset
+              .attr("y", svgHeight - midX); // Now also inverting the y-coordinate
           }
-              // console.log("this is the source");
-              // console.log(d.source);
-              // console.log("this is the target");
-              // console.log(d.target);
+          
+        
         })
         .text(d => d.target.data.label || ''); // Use the label from the target node data
     });
@@ -329,10 +373,10 @@ const SyntaxTreeD3 = () => {
         const newWidth = calculateMaxWidth({ ...treeData });
         // console.log(newWidth);
         //  console.log(svgHeight);
-        if(svgHeight<newWidth*45){
-          setSvgHeight(newWidth*65);
-          console.log("som tu ");
-         } // Adjust this value based on your needs
+        // if(svgHeight<newWidth*45){
+          setSvgHeight(newWidth*75);
+          // console.log("som tu ");
+        //  } // Adjust this value based on your needs
         setIndexOfOrientation(1);
       }
       else if(indexOfOrientation===1){
@@ -341,9 +385,9 @@ const SyntaxTreeD3 = () => {
       }
       else if(indexOfOrientation===2){
         const newWidth = calculateMaxWidth({ ...treeData });
-        if(svgHeight<newWidth*45){
-          setSvgHeight(newWidth*65);
-         } // Adjust this value based on your needs
+        // if(svgHeight<newWidth*45){
+          setSvgHeight(newWidth*75);
+        //  } // Adjust this value based on your needs
         setIndexOfOrientation(3);
       }
       else if(indexOfOrientation===3){
