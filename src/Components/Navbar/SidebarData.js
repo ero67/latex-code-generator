@@ -16,19 +16,19 @@ export const SidebarData = [
   },
   {
     title: 'Karnaugh maps',
-    path: '/karnaugh-maps',
+    path: '/latex-code-generator/karnaugh-maps',
     icon: <FaTableCells/>,
     cName: 'nav-text'
   },
   {
     title: 'Abstract syntax trees',
-    path: '/ast',
+    path: '/latex-code-generator/ast',
     icon: <BsTreeFill />,
     cName: 'nav-text'
   },
   {
     title: 'Proof trees',
-    path: '/proof-trees',
+    path: '/latex-code-generator/proof-trees',
     icon: <BsTree />,
     cName: 'nav-text'
   }
