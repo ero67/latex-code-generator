@@ -20,7 +20,7 @@ function App() {
       <Navbar></Navbar>
       <div className="content">
           <Routes>
-            <Route path='/' element={<Home></Home>}/>
+            <Route path='/latex-code-generator' element={<Home></Home>}/>
             <Route path='/karnaugh-maps' element={<Kmap></Kmap>}/>
             {/* <Route path= '/ast' element={<Tree></Tree>}></Route> */}
             <Route path= '/ast' element={<SyntaxTreeD3></SyntaxTreeD3>}></Route>
