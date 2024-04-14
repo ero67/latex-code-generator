@@ -219,7 +219,7 @@ h1{
   
 }
 
-#generateBtn {
+/* #generateBtn {
   place-self: center;
   width: 100px;
   height: 30px;
@@ -227,12 +227,24 @@ h1{
   color: #fffdfd;
   border: 1px solid #000000;
   border-radius: 3px;
-  /* font-size: 10px; */
+  /* font-size: 10px; 
   font-weight: bold;
   cursor: pointer; 
   margin-left: 10px;
   margin-bottom: 1rem;
   
+} */
+
+#generateBtn{
+  place-self: center;
+  background-color: #4CAF50; /* Green background for the button */
+  color: white; /* White text */
+  border: none; /* No border */
+  padding: 10px 20px; /* Padding inside the button */
+  border-radius: 5px; /* Rounded corners for the button */
+  cursor: pointer; /* Pointer cursor on hover */
+  margin-top: 20px; /* Space above the button */
+  margin-bottom: 20px; /* Space below the button */
 }
 #createTree{
   place-self: center;
@@ -558,10 +570,36 @@ p{
  }
 
 
+ .settingsLatex {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f4f4f4;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: flex; /* Sets the div to be a flex container */
+  flex-wrap: wrap; /* Allows items to wrap to the next line as needed */
+  align-items: center; /* Align items vertically in the center */
+  gap: 20px; /* Adds a gap between each child element */
+}
+
+.settingsLatex label {
+  display: flex; /* Makes label also a flex container */
+  align-items: center; /* Aligns the checkbox and label text vertically */
+  color: #333;
+  font-size: 16px;
+}
+
+.settingsLatex input[type="checkbox"] {
+  margin-right: 10px; /* Space between checkbox and label text */
+}
+
 
 div.containerText {
-background-color: #ffffff;
+background-color: #f4f4f4;
 margin-bottom: 20px;
+box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+border-radius: 8px; /* Rounded corners for the block */
+;
 
 }
 div.containerText p {

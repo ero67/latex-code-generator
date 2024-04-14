@@ -32,6 +32,9 @@ const ProofTree = () => {
     setMathNotation(option);
   };
 
+  const [includePreamble, setIncludePreamble] = useState(false);
+  const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
+
   const toggleMathModeForAllNodes = (node, mathMode) => {
     node.mathMode = mathMode; // Set mathMode for the current node
     node.children.forEach(child => toggleMathModeForAllNodes(child, mathMode)); // Recursively set for children
@@ -256,148 +259,7 @@ const ProofTree = () => {
   };
   
 
-// const renderTreeNode = (node, parentId = null) => {
-//   return (
-//     <div className="proof-tree-node">
-//       {/* Node content and controls */}
-//       <div className="proof-tree-content">
-//         {/* Existing inputs and Add Child button */}
 
-//         {/* Conditionally render the Remove Child button only for non-root nodes */}
-      
-//       </div>
-
-//       {/* Render children nodes */}
-//       <div className="proof-tree-children">
-//         {node.children.map(child => renderTreeNode(child, node.id))}
-//       </div>
-//     </div>
-//   );
-// };
-
-
-  
- 
-
-  // const generateLatexCode = (node) => {
-  //   let code = "";
-
-  //   // Generate code for children first
-  //   let childrenCode = "";
-  //   for (let i = 0; i < node.children.length; i++) {
-  //     const childLatexCode = generateLatexCode(node.children[i]);
-  //     childrenCode += childLatexCode;
-  //     if (i < node.children.length - 1) {
-  //       childrenCode += " "; // Add a space between codes, but not after the last one
-  //     }
-  //   }
-
-  //   // Determine the appropriate command based on the number of children
-  //   let nodeCommand = "";
-  //   if (node.children.length === 0) {
-  //     if (math_notation === false) {
-  //       nodeCommand = `     \\AxiomC{${node.content}}`;
-  //     } else {
-  //       nodeCommand = `     \\AxiomC{$${node.content}$}`;
-  //     }
-  //   } else if (node.children.length === 1) {
-  //     if (math_notation === false) {
-  //       nodeCommand = `     \\UnaryInfC{${node.content}}`;
-  //     } else {
-  //       nodeCommand = `     \\UnaryInfC{$${node.content}$}`;
-  //     }
-  //   } else if (node.children.length === 2) {
-  //     if (math_notation === false) {
-  //       nodeCommand = `    \\BinaryInfC{${node.content}}`;
-  //     } else {
-  //       nodeCommand = `    \\BinaryInfC{$${node.content}$}`;
-  //     }
-  //   } else if (node.children.length === 3) {
-  //     if (math_notation === false) {
-  //       nodeCommand = `     \\TrinaryInfC{${node.content}}`;
-  //     } else {
-  //       nodeCommand = `     \\TrinaryInfC{$${node.content}$}`;
-  //     }
-  //   } else if (node.children.length === 4) {
-  //     if (math_notation === false) {
-  //       nodeCommand = `     \\QuinaryInfC{${node.content}}`;
-  //     } else {
-  //       nodeCommand = `     \\QuinaryInfC{$${node.content}$}`;
-  //     }
-  //   } else if (node.children.length === 5) {
-  //     if (math_notation === false) {
-  //       nodeCommand = `     \\QuaternaryInfC{${node.content}}`;
-  //     } else {
-  //       nodeCommand = `     \\QuaternaryInfC{$${node.content}$}`;
-  //     }
-  //   }
-
-  //   // If the node has a right label, it should come before the node's inference command
-  //   if (node.rightLabel) {
-  //     // code = `${childrenCode} \\RightLabel{${node.rightLabel}} ${nodeCommand}\n`;
-  //     if(math_notation === false){
-  //       code = `${childrenCode}       \\RightLabel{\\scriptsize{${node.rightLabel}}}\n ${nodeCommand}\n`;
-  //   } else {
-  //       code = `${childrenCode}       \\RightLabel{\\scriptsize{$${node.rightLabel}$}}\n ${nodeCommand}\n`;
-  //   }
-  // }
-  //   else{
-  //     code = `${childrenCode} ${nodeCommand} \n`;
-
-  //   }
-  
-
-  //   return code;
-  // };
-
-//   const generateLatexCode = (node) => {
-//     let code = "";
-
-//     // Function to conditionally wrap content in math mode
-//     const formatContent = (content, mathMode) => mathMode ? `$${content}$` : content;
-
-//     // Generate code for children first
-//     let childrenCode = node.children.map(child => generateLatexCode(child)).join(' ');
-
-//     // Determine the appropriate command based on the number of children
-//     let nodeCommand = "";
-//     const contentInMathMode = formatContent(node.content, node.mathMode); // Apply math mode if needed
-
-//     switch(node.children.length) {
-//         case 0:
-//             nodeCommand = `\\AxiomC{${contentInMathMode}}`;
-//             break;
-//         case 1:
-//             nodeCommand = `\\UnaryInfC{${contentInMathMode}}`;
-//             break;
-//         case 2:
-//             nodeCommand = `\\BinaryInfC{${contentInMathMode}}`;
-//             break;
-//         case 3:
-//             nodeCommand = `\\TrinaryInfC{${contentInMathMode}}`;
-//             break;
-//         case 4:
-//             nodeCommand = `\\QuaternaryInfC{${contentInMathMode}}`; // Note: Corrected from \\QuinaryInfC to \\QuaternaryInfC for four children
-//             break;
-//         case 5:
-//             nodeCommand = `\\QuinaryInfC{${contentInMathMode}}`; // For five children
-//             break;
-//         default:
-//             console.log("Unsupported number of children");
-//             break;
-//     }
-
-//     // If the node has a right label, it should come before the node's inference command
-//     // Apply math mode to right label if global math_notation is true
-//     if (node.rightLabel) {
-//         const rightLabelInMathMode = formatContent(node.rightLabel, math_notation); // Global math mode applies to right label
-//         code = `${childrenCode} \\RightLabel{\\scriptsize{${rightLabelInMathMode}}}\n${nodeCommand}\n`;
-//     } else {
-//         code = `${childrenCode} ${nodeCommand}\n`;
-//     }
-
-//     return code;
-// };
 
 const generateLatexCode = (node) => {
   let code = "";
@@ -460,12 +322,37 @@ const generateLatexCode = (node) => {
 
 
 
-  const generateBtn = () => {
-    const proofTreeCode = generateLatexCode(rootNode);
-    setGeneratedCode(
-      `\\begin{prooftree}\n${proofTreeCode}\n   \\end{prooftree}`
-    );
-  };
+const generateBtn = () => {
+  const proofTreeCode = generateLatexCode(rootNode); // This function generates the LaTeX code for the tree
+
+  let latexCode = ""; // Initialize the LaTeX code string
+
+  // Check if the preamble should be included
+  if (includePreamble) {
+    latexCode += "\\documentclass{article}\n\\usepackage{bussproofs}\n\\begin{document}\n";
+  }
+  if (includeDocumentTags && !includePreamble) {
+    latexCode += "\\usepackage{bussproofs}\n";
+  }
+
+  // Add the proof tree environment with the code
+
+    latexCode += "\\begin{prooftree}\n";
+  
+
+  latexCode += `${proofTreeCode}\n`; // Add the main proof tree code
+
+
+    latexCode += "\\end{prooftree}\n";
+
+  // Check if document end tags should be included
+  if (includePreamble) {
+    latexCode += "\\end{document}";
+  }
+
+  setGeneratedCode(latexCode); // Set the generated LaTeX code to state
+};
+
 
   return (
     <div className="proof-tree-container">
@@ -519,6 +406,25 @@ const generateLatexCode = (node) => {
       {/* <div className="btn-container">{renderSymbolButtons()}</div> */}
       {renderTreeNode(rootNode)}
       <div></div>
+      <div className="settingsLatex">
+        <label htmlFor="includePreamble">Include whole LaTeX Preamble</label>
+        <input
+          type="checkbox"
+          id="includePreamble"
+          checked={includePreamble}
+          onChange={() => setIncludePreamble(!includePreamble)}
+        />
+
+        <label htmlFor="includeDocumentTags">
+          Include import of the forest package
+        </label>
+        <input
+          type="checkbox"
+          id="includeDocumentTags"
+          checked={includeDocumentTags}
+          onChange={() => setIncludeDocumentTags(!includeDocumentTags)}
+        />
+      </div>
       <button  id="generateBtn" onClick={() => generateBtn()}>
         Generate code{" "}
       </button>

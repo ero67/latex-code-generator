@@ -12,6 +12,11 @@ import ChooseOrientationModal from "../Components/ChooseOrientationModal";
 // import CustomPrompt from '../Components/Prompt';
 
 const Kmap = () => {
+
+  const [includePreamble, setIncludePreamble] = useState(false);
+  const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
+
+
   const [tableSize, setTableSize] = useState("0x0");
   const [option, setOption] = useState(0);
   const [opposite, setOpposite] = useState(1);
@@ -219,7 +224,14 @@ const Kmap = () => {
   const generateCodeLaTeX = () => {
     const [rows, cols] = tableSize.split("x").map(Number);
     const content = getContentOfCells();
-    let code = `\\begin{karnaugh-map}[${cols}][${rows}]\n`;
+    let code = "";
+    if(includePreamble){
+       code += `\\documentclass{article}\n\\usepackage{karnaugh-map}\n\\begin{document}\n`;
+    }
+    if(includeDocumentTags && !includePreamble){
+      code += `\\usepackage{karnaugh-map}\n`;
+    }
+     code += `\\begin{karnaugh-map}[${cols}][${rows}]\n`;
     code += "       \\manualterms{";
     // indexes of cells on grid of karnaugh-map package
     let indexes = [
@@ -309,6 +321,9 @@ const Kmap = () => {
   }
     }
     code += "\\end{karnaugh-map}";
+    if(includePreamble){
+      code += "\n\\end{document}";
+    }
     setGeneratedCode(code);
   };
   // adding all cell which are supposed to be in chosen implicant
@@ -1228,7 +1243,25 @@ const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(false);
         // isEightEdgeImplicant={is8}
         // changeDirectionofEdgeImplicant={setEdgePositionHorizontal()}
       ></EdgeImplicantList>
+<div className="settingsLatex" >
+        <label htmlFor="includePreamble">Include whole LaTeX Preamble</label>
+        <input
+          type="checkbox"
+          id="includePreamble"
+          checked={includePreamble}
+          onChange={() => setIncludePreamble(!includePreamble)}
+        />
 
+        <label htmlFor="includeDocumentTags">
+          Include import of the forest package
+        </label>
+        <input
+          type="checkbox"
+          id="includeDocumentTags"
+          checked={includeDocumentTags}
+          onChange={() => setIncludeDocumentTags(!includeDocumentTags)}
+        />
+      </div>
       <button
         id="generateBtn"
         onClick={() => generateCodeLaTeX()}
