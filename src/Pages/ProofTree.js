@@ -363,16 +363,17 @@ const generateBtn = () => {
         </p>
         {/* <div></div> */}
         <p>
-          1. Choose if you want to use mathematical font or not by clicking on
+        <b>1.</b> Choose if you want to use mathematical font or not by clicking on
           the checkbox.
         </p>
         <p>
-          2. Put the content of the node in the input field.
+        <b>2.</b> Put the content of the node in the input field.
         </p>
         <p>
-          3. If you want to add a child to a node, click on the "Add Child" button
+          <b>3.</b> To add a child node click on the "+" button, to remove node click the "-" button.
         </p>
-        <p>4. If you want to put a Right Label between parent and child node fill the bottom input field .</p>
+        <p><b>4.</b> If you want to put a Right Label between parent and child node fill the bottom input field .</p>
+        <p><b>5.</b> You can also select which nodes should have math mode one by clicking the checkbox in the node.</p>
         <p></p>
         
       </div>
