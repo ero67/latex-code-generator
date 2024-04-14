@@ -418,75 +418,18 @@ const SyntaxTreeD3 = () => {
 
   const handleOrientationClick = () => {
     if (indexOfOrientation === 0) {
-      const newWidth = calculateMaxWidth({ ...treeData });
-      console.log(newWidth);
-      // setSvgHeight(newWidth * 75);
-      // setHeight(newWidth * 75);
       setIndexOfOrientation(1);
     } else if (indexOfOrientation === 1) {
-      // setSvgHeight(height);
       setIndexOfOrientation(2);
     } else if (indexOfOrientation === 2) {
-      const newWidth = calculateMaxWidth({ ...treeData });
-      // setSvgHeight(newWidth * 75);
-      // setHeight(newWidth * 75);
       setIndexOfOrientation(3);
     } else if (indexOfOrientation === 3) {
-      // const newDepth = calculateDepth({ ...treeData });
       setIndexOfOrientation(0);
-      // setSvgHeight(newDepth * 100);
+
     }
   };
 
-  // const calculateMaxWidth = useCallback((node) => {
-  //   if (!node) return 0;
 
-  //   let maxWidth = 0;
-  //   const queue = [node]; // Initialize a queue with the root node
-
-  //   while (queue.length > 0) {
-  //     const levelSize = queue.length; // Number of elements at the current level
-  //     maxWidth = Math.max(maxWidth, levelSize); // Update maxWidth if the current level is wider
-
-  //     for (let i = 0; i < levelSize; i++) {
-  //       const currentNode = queue.shift(); // Remove the current node from the queue
-
-  //       // Add the children of the current node to the queue for the next level
-  //       if (currentNode.children) {
-  //         for (let child of currentNode.children) {
-  //           queue.push(child);
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   return maxWidth;
-  // }, []);
-
-  // function calculateMaxWidth(node) {
-  //   if (!node) return 0;
-
-  //   let maxWidth = 0;
-  //   const queue = [node]; // Initialize a queue with the root node
-
-  //   while (queue.length > 0) {
-  //     const levelSize = queue.length; // Number of elements at the current level
-  //     maxWidth = Math.max(maxWidth, levelSize); // Update maxWidth if the current level is wider
-
-  //     for (let i = 0; i < levelSize; i++) {
-  //       const currentNode = queue.shift(); // Remove the current node from the queue
-
-  //       // Add the children of the current node to the queue for the next level
-  //       if (currentNode.children) {
-  //         for (let child of currentNode.children) {
-  //           queue.push(child);
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   return maxWidth;
-  // }
 
   const handleLinkClick = useCallback(
     (event, link) => {
@@ -617,17 +560,17 @@ const SyntaxTreeD3 = () => {
         </p>
         {/* <div></div> */}
         <p>
-          1. Click on Create Tree button and type in the value of the root node.
+          <b>1.</b> Click on Create Tree button and type in the value of the root node.
         </p>
         <p>
-          2. Click on the node you want to expand and enter the value of the
+        <b>2.</b> Click on the node you want to expand and enter the value of the
           child.
         </p>
         <p>
-          3. If you want to label the edge, click on the edge and enter the
+        <b>3.</b> If you want to label the edge, click on the edge and enter the
           label you want.
         </p>
-        <p>4. After you are finished, generated the code for created tree.</p>
+        <p><b>4.</b> Using Turn Left button you can turn the tree 90 degrees to the left.</p>
         <p></p>
       </div>
       <div className="settings">
