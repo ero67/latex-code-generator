@@ -15,7 +15,7 @@ const Home = () => {
             map, fill in the values, mark implicants and finally generate LaTeX
             code for your karnaugh map so you can use it in your document.
           </div>
-          <Link to="/karnaugh-maps">
+          <Link to="/latex-code-generator/karnaugh-maps">
       <button id="homePageButton">Go to Karnaugh Maps</button>
     </Link>
         </div>
@@ -28,7 +28,7 @@ const Home = () => {
             structure and generating LaTeX code for the same structure so you
             can use it in your document.
           </div>
-          <Link to="/ast">
+          <Link to="/latex-code-generator/ast">
           <button id="homePageButton">Go to ASTs</button>
     </Link>
         </div>
@@ -41,7 +41,7 @@ const Home = () => {
             tree structure and generate LaTeX code for it . It also allows you
             to use "\" for specials characters in the values of the nodes.{" "}
           </div>
-          <Link to="/proof-trees">
+          <Link to="/latex-code-generator/proof-trees">
           <button id="homePageButton">Go to Proof Trees</button>
     </Link>
         
