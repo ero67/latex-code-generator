@@ -26,35 +26,34 @@ const SyntaxTreeD3 = () => {
 
   const [svgHeight, setSvgHeight] = useState(100);
 
+  const [includePreamble, setIncludePreamble] = useState(false);
+  const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
 
+  // Define the calculateMaxWidth function with useCallback
+  const calculateMaxWidth = useCallback((node) => {
+    if (!node) return 0;
 
+    let maxWidth = 0;
+    const queue = [node]; // Initialize a queue with the root node
 
-// Define the calculateMaxWidth function with useCallback
-const calculateMaxWidth = useCallback((node) => {
-  if (!node) return 0;
+    while (queue.length > 0) {
+      const levelSize = queue.length; // Number of elements at the current level
+      maxWidth = Math.max(maxWidth, levelSize); // Update maxWidth if the current level is wider
 
-  let maxWidth = 0;
-  const queue = [node]; // Initialize a queue with the root node
+      for (let i = 0; i < levelSize; i++) {
+        const currentNode = queue.shift(); // Remove the current node from the queue
 
-  while (queue.length > 0) {
-    const levelSize = queue.length; // Number of elements at the current level
-    maxWidth = Math.max(maxWidth, levelSize); // Update maxWidth if the current level is wider
-
-    for (let i = 0; i < levelSize; i++) {
-      const currentNode = queue.shift(); // Remove the current node from the queue
-
-      // Add the children of the current node to the queue for the next level
-      if (currentNode.children) {
-        for (let child of currentNode.children) {
-          queue.push(child);
+        // Add the children of the current node to the queue for the next level
+        if (currentNode.children) {
+          for (let child of currentNode.children) {
+            queue.push(child);
+          }
         }
       }
     }
-  }
 
-  return maxWidth;
-}, []);
-
+    return maxWidth;
+  }, []);
 
   // const [width, setWidth] = useState(100);
   useEffect(() => {
@@ -125,14 +124,14 @@ const calculateMaxWidth = useCallback((node) => {
             svgDimensions.height - (d.source.y + d.target.y) / 2;
           d3.select(this)
             .attr("x", midX)
-            .attr("y", midYInverted+350 );
+            .attr("y", midYInverted + 350);
           break;
         case 3: // Horizontal (Right-Left) and inverted vertically
           midX = (d.source.x + d.target.x) / 2;
           midY = (d.source.y + d.target.y) / 2;
           d3.select(this)
             .attr("x", svgDimensions.width - midY - 20)
-            .attr("y", svgDimensions.height - midX+500);
+            .attr("y", svgDimensions.height - midX + 500);
           break;
         default:
           break;
@@ -283,7 +282,7 @@ const calculateMaxWidth = useCallback((node) => {
 
   function renderBottomUpTree(svg, root, svgHeight) {
     // Draw the links (edges) between nodes
-    const svgHeightNew = svgHeight - 150
+    const svgHeightNew = svgHeight - 150;
     svg
       .selectAll("path.link")
       .data(root.links())
@@ -309,7 +308,10 @@ const calculateMaxWidth = useCallback((node) => {
       .enter()
       .append("g")
       .attr("class", "node")
-      .attr("transform", (d) => `translate(${d.x},${svgHeightNew - (d.y + 20)})`) // Invert y-coordinates for bottom-up
+      .attr(
+        "transform",
+        (d) => `translate(${d.x},${svgHeightNew - (d.y + 20)})`
+      ) // Invert y-coordinates for bottom-up
       .on("click", (event, d) => handleNodeClick(event, d));
 
     // Add circles to represent nodes
@@ -376,7 +378,6 @@ const calculateMaxWidth = useCallback((node) => {
     [treeData, nodeId]
   );
 
-
   // useEffect(() => {
   //   let newHeight = 0;
   //   if (indexOfOrientation === 0 ) {
@@ -396,7 +397,6 @@ const calculateMaxWidth = useCallback((node) => {
 
   //   console.log(`Updated svgHeight: ${newHeight}`);
   // }, [indexOfOrientation, treeData, calculateDepth, calculateMaxWidth]); // Remove svgHeight from dependencies
-
 
   // useEffect(() => {
   //   if (indexOfOrientation === 0) {
@@ -561,28 +561,51 @@ const calculateMaxWidth = useCallback((node) => {
 
   const handleGenerateLatex = () => {
     let latexCode = "";
-    if (indexOfOrientation === 0) {
-      latexCode = `\\begin{forest}\n${generateLatexCode(
-        treeData
-      )}\n\\end{forest}`;
-    } else if (indexOfOrientation === 1) {
-      latexCode = `\\begin{forest}
-      for tree ={grow'= 0,}
-      ${generateLatexCode(treeData)}\n\\end{forest}`;
-    } else if (indexOfOrientation === 2) {
-      latexCode = `\\begin{forest}
-      for tree ={grow'= 90,}
-      ${generateLatexCode(treeData)}\n\\end{forest}`;
-    } else if (indexOfOrientation === 3) {
-      latexCode = `\\begin{forest}
-      for tree={grow'=180,} 
-      ${generateLatexCode(treeData)}
-\\end{forest}`;
+    // Check if the preamble should be included
+    if (includePreamble) {
+      latexCode += "\\documentclass{article}\n\\usepackage{forest}\n";
+      // if (includeDocumentTags) {
+        latexCode += "\\begin{document}\n";
+      // }
     }
+    else if (includeDocumentTags) {
+      latexCode += "\\usepackage{forest}\n";
+    }
+  
+    // Add the forest environment with configuration based on orientation
+    // if (includeDocumentTags) {
+      latexCode += "\\begin{forest}\n";
+    // }
+  
+    switch (indexOfOrientation) {
+      case 0:
+        latexCode += `${generateLatexCode(treeData)}\n`;
+        break;
+      case 1:
+        latexCode += `for tree ={grow'= 0,}\n${generateLatexCode(treeData)}\n`;
+        break;
+      case 2:
+        latexCode += `for tree ={grow'= 90,}\n${generateLatexCode(treeData)}\n`;
+        break;
+      case 3:
+        latexCode += `for tree={grow'=180,}\n${generateLatexCode(treeData)}\n`;
+        break;
+      default:
+        break;
+    }
+  
+    // if (includeDocumentTags) {
+      latexCode += "\\end{forest}\n";
+    // }
+  
+    // Check if document end should be included
+    if (includePreamble) {
+      latexCode += "\\end{document}";
+    }
+  
     setGeneratedCode(latexCode);
-    // console.log(latexCode);
-    // console.log(isChecked);
   };
+  
 
   return (
     <div className="TreeDiv">
@@ -648,6 +671,26 @@ const calculateMaxWidth = useCallback((node) => {
           onClick={() => setTreeData(null)} // Clear selection when clicking on the background
         />
       </div>
+      <div className="settingsLatex">
+        <label htmlFor="includePreamble">Include whole LaTeX Preamble</label>
+        <input
+          type="checkbox"
+          id="includePreamble"
+          checked={includePreamble}
+          onChange={() => setIncludePreamble(!includePreamble)}
+        />
+
+        <label htmlFor="includeDocumentTags">
+          Include import of the forest package
+        </label>
+        <input
+          type="checkbox"
+          id="includeDocumentTags"
+          checked={includeDocumentTags}
+          onChange={() => setIncludeDocumentTags(!includeDocumentTags)}
+        />
+      </div>
+
       <button id="generateBtn" onClick={handleGenerateLatex}>
         Generate LaTeX
       </button>
