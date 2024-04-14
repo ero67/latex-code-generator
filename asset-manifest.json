@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/latex-code-generator/static/css/main.e2cad98c.css",
-    "main.js": "/latex-code-generator/static/js/main.b451dd6a.js",
+    "main.js": "/latex-code-generator/static/js/main.46c21cbc.js",
     "react-syntax-highlighter/refractor-core-import.js": "/latex-code-generator/static/js/react-syntax-highlighter/refractor-core-import.af3cf325.chunk.js",
     "react-syntax-highlighter_languages_refractor_abap.js": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_abap.7ca622ff.chunk.js",
     "react-syntax-highlighter_languages_refractor_abnf.js": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_abnf.9261bc69.chunk.js",
@@ -282,7 +282,7 @@
     "react-syntax-highlighter_languages_refractor_zig.js": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_zig.c8dd740d.chunk.js",
     "index.html": "/latex-code-generator/index.html",
     "main.e2cad98c.css.map": "/latex-code-generator/static/css/main.e2cad98c.css.map",
-    "main.b451dd6a.js.map": "/latex-code-generator/static/js/main.b451dd6a.js.map",
+    "main.46c21cbc.js.map": "/latex-code-generator/static/js/main.46c21cbc.js.map",
     "refractor-core-import.af3cf325.chunk.js.map": "/latex-code-generator/static/js/react-syntax-highlighter/refractor-core-import.af3cf325.chunk.js.map",
     "react-syntax-highlighter_languages_refractor_abap.7ca622ff.chunk.js.map": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_abap.7ca622ff.chunk.js.map",
     "react-syntax-highlighter_languages_refractor_abnf.9261bc69.chunk.js.map": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_abnf.9261bc69.chunk.js.map",
@@ -564,6 +564,6 @@
   },
   "entrypoints": [
     "static/css/main.e2cad98c.css",
-    "static/js/main.b451dd6a.js"
+    "static/js/main.46c21cbc.js"
   ]
 }
