@@ -10,7 +10,7 @@ import { BsTree } from "react-icons/bs";
 export const SidebarData = [
   {
     title: 'Home',
-    path: '/',
+    path: '/latex-code-generator',
     icon: <AiIcons.AiFillHome />,
     cName: 'nav-text'
   },
