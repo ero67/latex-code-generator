@@ -20,11 +20,11 @@ function App() {
       <Navbar></Navbar>
       <div className="content">
           <Routes>
-            <Route path='/latex-code-generator' element={<Home></Home>}/>
-            <Route path='/latex-code-generator/karnaugh-maps' element={<Kmap></Kmap>}/>
+            <Route path='/' element={<Home></Home>}/>
+            <Route path='/karnaugh-maps' element={<Kmap></Kmap>}/>
             {/* <Route path= '/ast' element={<Tree></Tree>}></Route> */}
-            <Route path= '/latex-code-generator/ast' element={<SyntaxTreeD3></SyntaxTreeD3>}></Route>
-            <Route path= '/latex-code-generator/proof-trees' element={<ProofTree></ProofTree>}></Route>
+            <Route path= '/ast' element={<SyntaxTreeD3></SyntaxTreeD3>}></Route>
+            <Route path= '/proof-trees' element={<ProofTree></ProofTree>}></Route>
             
           </Routes>
      </div>
