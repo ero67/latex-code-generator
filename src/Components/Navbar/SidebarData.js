@@ -10,25 +10,25 @@ import { BsTree } from "react-icons/bs";
 export const SidebarData = [
   {
     title: 'Home',
-    path: '/latex-code-generator',
+    path: '/',
     icon: <AiIcons.AiFillHome />,
     cName: 'nav-text'
   },
   {
     title: 'Karnaugh maps',
-    path: '/latex-code-generator/karnaugh-maps',
+    path: '/karnaugh-maps',
     icon: <FaTableCells/>,
     cName: 'nav-text'
   },
   {
     title: 'Abstract syntax trees',
-    path: '/latex-code-generator/ast',
+    path: '/ast',
     icon: <BsTreeFill />,
     cName: 'nav-text'
   },
   {
     title: 'Proof trees',
-    path: '/latex-code-generator/proof-trees',
+    path: '/proof-trees',
     icon: <BsTree />,
     cName: 'nav-text'
   }
