@@ -552,7 +552,7 @@ const SyntaxTreeD3 = () => {
 
   return (
     <div className="TreeDiv">
-      <h1>Abstract syntax tree</h1>
+      <h1>Abstract Syntax Tree</h1>
 
       <div class="containerText">
         <p id="question" style={{ fontWeight: "bold" }}>
