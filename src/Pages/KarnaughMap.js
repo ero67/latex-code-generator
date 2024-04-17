@@ -109,9 +109,12 @@ const Kmap = () => {
     } else if (activeImplicantType === "edge") {
       activeImplicanCellIndexes = edgeimplicantCellIndexes;
     }
-
     if (activeImplicantIndex !== null) {
       const activeImplicant = activeImplicanCellIndexes[activeImplicantIndex];
+      // console.log(`activeImplicaes ${activeImplicant}`);
+      console.log("toto je adasdasdasdasdasdasdasdasdasd");
+      console.log(activeImplicant);
+
       if (activeImplicant === undefined) {
         return;
       }
@@ -413,10 +416,10 @@ const Kmap = () => {
 
 
 
-const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(false);
+const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(true);
 
   // sorting edge implicant so user can click in any order and it will be generated correctly
-  const sortVerticalEdgeImplicants = (combinedArray) => {
+  const sortVerticalEdgeImplicants = (combinedArray,isHorizontal) => {
     const [rows, cols] = tableSize.split("x").map(Number);
 
     // Check for horizontal or vertical alignment based on user clicks
@@ -438,9 +441,10 @@ const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(false);
       prioritizeRow = true;
     }
     if(combinedArray.length === 8){
-      const isHorizontal = window.confirm("Choose 'OK' for Horizontal or 'Cancel' for Vertical");
+      // const isHorizontal = window.confirm("Choose 'OK' for Horizontal or 'Cancel' for Vertical");
       // console.log(`result of rpompt is : ${isHorizontal}`);
-      setIsEightEdgeHorizontal(isHorizontal);
+      // setIsEightEdgeHorizontal(isHorizontal);
+      prioritizeRow = isEightEdteHorizontal;
       prioritizeRow = isHorizontal;
 
       // handleOpenModal(); // This will prompt the user for input
@@ -579,6 +583,7 @@ const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(false);
     } 
     // LOGIC FOR PROCESSING EDGE IMPLICANT AFTER USER IS DONE SELECTING CELLS OF THE IMPLICANT
     else if (markingEdgeImplicant) {
+      console.log(`edge implicant length is : ${edgeImplicant.length}`);
       if (
         edgeImplicant.length > 1 &&
         (edgeImplicant.length === 2 ||
@@ -590,14 +595,34 @@ const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(false);
           singeEdgeImplicantIndexes,
           edgeImplicant
         );
-        const sortedImplicants = sortVerticalEdgeImplicants(combinedArray);
+console.log("dlzka picoviny kokotkskej");
+console.log(combinedArray);
+console.log(combinedArray[0].row,combinedArray[0].col,combinedArray[1].row,combinedArray[1].col);
+let isHorizontal = false;
+if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray[1].row === 3 && combinedArray[1].col === 3))||
+ ((combinedArray[0].row === 3 && combinedArray[0].col ===3) && (combinedArray[1].row === 0 && combinedArray[1].col ===0)) || 
+ ((combinedArray[0].row === 3 && combinedArray[0].col ===0) && (combinedArray[1].row === 0 && combinedArray[1].col ===3)) ||
+ ((combinedArray[0].row === 0 && combinedArray[0].col ===3) && (combinedArray[1].row === 3 && combinedArray[1].col ===0)) 
+  ){
+  console.log("presla pmoja genialna podmienka");
+ isHorizontal = window.confirm("Choose 'OK' for Horizontal or 'Cancel' for Vertical");
+  // console.log(`result of rpompt is : ${isHorizontal}`);
+  setIsEightEdgeHorizontal(isHorizontal);
+  console.log(`thisi is isHorizontal ${isHorizontal}`);
+  console.log(`thisi is isEightEdgeHorizontal ${isEightEdteHorizontal}`);
+ }
+ else{
+  console.log("nepresla ta sracka");
+ }
+ 
+        const sortedImplicants = sortVerticalEdgeImplicants(combinedArray,isHorizontal);
 
         const fullimplicant = processEdgeImplicantClicks(
           sortedImplicants,
           rows,
           cols
         );
-        const sortedFullImplicant = sortVerticalEdgeImplicants(fullimplicant);
+        const sortedFullImplicant = sortVerticalEdgeImplicants(fullimplicant,isHorizontal);
         console.log("this is sorted full implicant");
         console.log(sortedFullImplicant);
 
@@ -619,18 +644,27 @@ const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(false);
         let tempFullEdgeImplicant_realindexes = [];
         // console.log(`this is lenght of dge implicant ${sortedFullImplicant.length}`);
         if(sortedFullImplicant.length === 8){
+
           // console.log("asdasdasdasdasdasdasdasdsadasdasdasdasd")
-          if(!isEightEdteHorizontal){
+          if(isHorizontal){
             tempFullEdgeImplicant_kmindexes = [fullEdgeImplicant[0], fullEdgeImplicant[1], fullEdgeImplicant[6], fullEdgeImplicant[7], fullEdgeImplicant[2], fullEdgeImplicant[3], fullEdgeImplicant[4], fullEdgeImplicant[5]];
             tempFullEdgeImplicant_realindexes = [fullimplicant[0], fullimplicant[1], fullimplicant[6], fullimplicant[7], fullimplicant[2], fullimplicant[3], fullimplicant[4], fullimplicant[5]];
+            // console.log(" podmienkaaaaaaaaaaaaaaaa");
+            console.log("toto je full impicant ktoreho kuskujem");
+            console.log(fullimplicant);
           }
           else{
+
             tempFullEdgeImplicant_kmindexes = [fullEdgeImplicant[0], fullEdgeImplicant[3], fullEdgeImplicant[4], fullEdgeImplicant[7], fullEdgeImplicant[1], fullEdgeImplicant[2], fullEdgeImplicant[5], fullEdgeImplicant[6]];
             tempFullEdgeImplicant_realindexes = [fullimplicant[0], fullimplicant[3], fullimplicant[4], fullimplicant[7], fullimplicant[1], fullimplicant[2], fullimplicant[5], fullimplicant[6]];
+            // console.log("second podmienkaaaaaaaaaaaaaaaa");
           }
+          // console.log("tu checkujem ten skurveny bug...................");
           console.log(tempFullEdgeImplicant_kmindexes) ;
           console.log(tempFullEdgeImplicant_realindexes);
           addEdgeImplicant([...edgeImplicants, tempFullEdgeImplicant_kmindexes]);
+          console.log("toto pridavam do toho pola co sa vykresluje");
+          console.log(tempFullEdgeImplicant_realindexes);
           addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes, tempFullEdgeImplicant_realindexes]);
         }
         else{
