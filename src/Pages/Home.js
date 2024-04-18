@@ -16,8 +16,8 @@ const Home = () => {
             code for your karnaugh map so you can use it in your document.
           </div>
           <Link to="/karnaugh-maps">
-      <button id="homePageButton">Go to Karnaugh Maps</button>
-    </Link>
+            <button id="homePageButton">Go to Karnaugh Maps</button>
+          </Link>
         </div>
         <div className="asts" id="astsid">
           <span>
@@ -29,8 +29,8 @@ const Home = () => {
             can use it in your document.
           </div>
           <Link to="/ast">
-          <button id="homePageButton">Go to ASTs</button>
-    </Link>
+            <button id="homePageButton">Go to ASTs</button>
+          </Link>
         </div>
         <div className="prooftrees" id="prooftreesid">
           <span>
@@ -42,9 +42,8 @@ const Home = () => {
             to use "\" for specials characters in the values of the nodes.{" "}
           </div>
           <Link to="/proof-trees">
-          <button id="homePageButton">Go to Proof Trees</button>
-    </Link>
-        
+            <button id="homePageButton">Go to Proof Trees</button>
+          </Link>
         </div>
       </div>
     </div>

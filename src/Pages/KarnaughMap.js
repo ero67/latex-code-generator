@@ -12,10 +12,8 @@ import ChooseOrientationModal from "../Components/ChooseOrientationModal";
 // import CustomPrompt from '../Components/Prompt';
 
 const Kmap = () => {
-
   const [includePreamble, setIncludePreamble] = useState(false);
   const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
-
 
   const [tableSize, setTableSize] = useState("0x0");
   const [option, setOption] = useState(0);
@@ -35,7 +33,7 @@ const Kmap = () => {
   const [cornerImplicantDisabled, setCornerImplicantDisabled] = useState(true);
   // const [is8,setIs8] = useState(false);
   // const [showPrompt, setShowPrompt] = useState(false);
-  const [orientation, setOrientation] = useState('');
+  const [orientation, setOrientation] = useState("");
 
   // default implicant
   const [implicants, addImplicant] = useState([]);
@@ -67,24 +65,21 @@ const Kmap = () => {
 
   const [edgePositionHorizontal, setEdgePositionHorizontal] = useState(false);
 
-
   // orientation modal variables
   const [isModalOpen, setIsModalOpen] = useState(false);
   // const [isEightEdgeHorizontal, setIsEightEdgeHorizontal] = useState(null);
 
-   // Function to open the modal
-   const handleOpenModal = () => {
+  // Function to open the modal
+  const handleOpenModal = () => {
     setIsModalOpen(true);
   };
 
-   // Handler for when the user makes a choice
-   const handleUserChoice = (choice) => {
+  // Handler for when the user makes a choice
+  const handleUserChoice = (choice) => {
     setIsEightEdgeHorizontal(choice);
     setIsModalOpen(false); // Close the modal
     // Additional logic based on the user's choice
   };
-
-
 
   const handleImplicantClick = (index, typeOfImplicant) => {
     setActiveImplicantIndex(index);
@@ -228,13 +223,13 @@ const Kmap = () => {
     const [rows, cols] = tableSize.split("x").map(Number);
     const content = getContentOfCells();
     let code = "";
-    if(includePreamble){
-       code += `\\documentclass{article}\n\\usepackage{karnaugh-map}\n\\begin{document}\n`;
+    if (includePreamble) {
+      code += `\\documentclass{article}\n\\usepackage{karnaugh-map}\n\\begin{document}\n`;
     }
-    if(includeDocumentTags && !includePreamble){
+    if (includeDocumentTags && !includePreamble) {
       code += `\\usepackage{karnaugh-map}\n`;
     }
-     code += `\\begin{karnaugh-map}[${cols}][${rows}]\n`;
+    code += `\\begin{karnaugh-map}[${cols}][${rows}]\n`;
     code += "       \\manualterms{";
     // indexes of cells on grid of karnaugh-map package
     let indexes = [
@@ -295,7 +290,7 @@ const Kmap = () => {
       if (edgeImplicants[row].length === 2) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
       } else if (
-        edgeImplicants[row].length === 4 
+        edgeImplicants[row].length === 4
         // ||
         // edgeImplicants[row].length === 6 ||
         // edgeImplicants[row].length === 8
@@ -313,18 +308,15 @@ const Kmap = () => {
         } else {
           code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
         }
-      }
-   else if (edgeImplicants[row].length === 6) {
+      } else if (edgeImplicants[row].length === 6) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}{${edgeImplicants[row][5]}}\n`;
-  }
-  else if (edgeImplicants[row].length === 8) {
-    // code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][6]}}{${edgeImplicants[row][7]}}\n`;
-    code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
-
-  }
+      } else if (edgeImplicants[row].length === 8) {
+        // code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][6]}}{${edgeImplicants[row][7]}}\n`;
+        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
+      }
     }
     code += "\\end{karnaugh-map}";
-    if(includePreamble){
+    if (includePreamble) {
       code += "\n\\end{document}";
     }
     setGeneratedCode(code);
@@ -414,12 +406,10 @@ const Kmap = () => {
     return implicantIndices;
   }
 
-
-
-const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(true);
+  const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(true);
 
   // sorting edge implicant so user can click in any order and it will be generated correctly
-  const sortVerticalEdgeImplicants = (combinedArray,isHorizontal) => {
+  const sortVerticalEdgeImplicants = (combinedArray, isHorizontal) => {
     const [rows, cols] = tableSize.split("x").map(Number);
 
     // Check for horizontal or vertical alignment based on user clicks
@@ -433,14 +423,14 @@ const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(true);
     // console.log(allHorizontalEdges);
     // console.log(allVerticalEdges);
     // // console.log(`lenght of combined array is : ${combinedArray.length}`);
-    
+
     // Decide on the primary sorting criterion based on the edge alignment
     let prioritizeRow = allHorizontalEdges && !allVerticalEdges;
     if (combinedArray[0].row === combinedArray[1].row) {
       // allVerticalEdges = true;
       prioritizeRow = true;
     }
-    if(combinedArray.length === 8){
+    if (combinedArray.length === 8) {
       // const isHorizontal = window.confirm("Choose 'OK' for Horizontal or 'Cancel' for Vertical");
       // console.log(`result of rpompt is : ${isHorizontal}`);
       // setIsEightEdgeHorizontal(isHorizontal);
@@ -466,8 +456,7 @@ const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(true);
     });
   };
 
-
-// combines arrays of the cell real indexse and indexes of the cells in the kmap package
+  // combines arrays of the cell real indexse and indexes of the cells in the kmap package
   const combineArrays = (implicants, indexes) => {
     return implicants.map((implicant, i) => ({
       ...implicant,
@@ -555,7 +544,7 @@ const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(true);
       [0, 1],
       [2, 3],
     ];
-// logic for processing default implicant after user is done selecting cells of the implicant
+    // logic for processing default implicant after user is done selecting cells of the implicant
     if (markingImplicant) {
       //adds implicant to the all implicants list
       if (implicant.length > 0) {
@@ -580,7 +569,7 @@ const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(true);
       addPartOfImplicant([]);
       setNumberOfImplicants(0);
       setMarkingImplicant(false);
-    } 
+    }
     // LOGIC FOR PROCESSING EDGE IMPLICANT AFTER USER IS DONE SELECTING CELLS OF THE IMPLICANT
     else if (markingEdgeImplicant) {
       console.log(`edge implicant length is : ${edgeImplicant.length}`);
@@ -595,34 +584,61 @@ const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(true);
           singeEdgeImplicantIndexes,
           edgeImplicant
         );
-console.log("dlzka picoviny kokotkskej");
-console.log(combinedArray);
-console.log(combinedArray[0].row,combinedArray[0].col,combinedArray[1].row,combinedArray[1].col);
-let isHorizontal = false;
-if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray[1].row === 3 && combinedArray[1].col === 3))||
- ((combinedArray[0].row === 3 && combinedArray[0].col ===3) && (combinedArray[1].row === 0 && combinedArray[1].col ===0)) || 
- ((combinedArray[0].row === 3 && combinedArray[0].col ===0) && (combinedArray[1].row === 0 && combinedArray[1].col ===3)) ||
- ((combinedArray[0].row === 0 && combinedArray[0].col ===3) && (combinedArray[1].row === 3 && combinedArray[1].col ===0)) 
-  ){
-  console.log("presla pmoja genialna podmienka");
- isHorizontal = window.confirm("Choose 'OK' for Horizontal or 'Cancel' for Vertical");
-  // console.log(`result of rpompt is : ${isHorizontal}`);
-  setIsEightEdgeHorizontal(isHorizontal);
-  console.log(`thisi is isHorizontal ${isHorizontal}`);
-  console.log(`thisi is isEightEdgeHorizontal ${isEightEdteHorizontal}`);
- }
- else{
-  console.log("nepresla ta sracka");
- }
- 
-        const sortedImplicants = sortVerticalEdgeImplicants(combinedArray,isHorizontal);
+        console.log("dlzka picoviny kokotkskej");
+        console.log(combinedArray);
+        console.log(
+          combinedArray[0].row,
+          combinedArray[0].col,
+          combinedArray[1].row,
+          combinedArray[1].col
+        );
+        let isHorizontal = false;
+        if (
+          (combinedArray[0].row === 0 &&
+            combinedArray[0].col === 0 &&
+            combinedArray[1].row === 3 &&
+            combinedArray[1].col === 3) ||
+          (combinedArray[0].row === 3 &&
+            combinedArray[0].col === 3 &&
+            combinedArray[1].row === 0 &&
+            combinedArray[1].col === 0) ||
+          (combinedArray[0].row === 3 &&
+            combinedArray[0].col === 0 &&
+            combinedArray[1].row === 0 &&
+            combinedArray[1].col === 3) ||
+          (combinedArray[0].row === 0 &&
+            combinedArray[0].col === 3 &&
+            combinedArray[1].row === 3 &&
+            combinedArray[1].col === 0)
+        ) {
+          console.log("presla pmoja genialna podmienka");
+          isHorizontal = window.confirm(
+            "Choose 'OK' for Horizontal or 'Cancel' for Vertical"
+          );
+          // console.log(`result of rpompt is : ${isHorizontal}`);
+          setIsEightEdgeHorizontal(isHorizontal);
+          console.log(`thisi is isHorizontal ${isHorizontal}`);
+          console.log(
+            `thisi is isEightEdgeHorizontal ${isEightEdteHorizontal}`
+          );
+        } else {
+          console.log("nepresla ta sracka");
+        }
+
+        const sortedImplicants = sortVerticalEdgeImplicants(
+          combinedArray,
+          isHorizontal
+        );
 
         const fullimplicant = processEdgeImplicantClicks(
           sortedImplicants,
           rows,
           cols
         );
-        const sortedFullImplicant = sortVerticalEdgeImplicants(fullimplicant,isHorizontal);
+        const sortedFullImplicant = sortVerticalEdgeImplicants(
+          fullimplicant,
+          isHorizontal
+        );
         console.log("this is sorted full implicant");
         console.log(sortedFullImplicant);
 
@@ -637,44 +653,82 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
               indexes[fullimplicant[i].row][fullimplicant[i].col];
           }
         }
-// console.log("totot jeeeeee suksuasadasdsadasdsad");
+        // console.log("totot jeeeeee suksuasadasdsadasdsad");
         // console.log(fullEdgeImplicant);
         // console.log(fullimplicant);
-        let tempFullEdgeImplicant_kmindexes= [];
+        let tempFullEdgeImplicant_kmindexes = [];
         let tempFullEdgeImplicant_realindexes = [];
         // console.log(`this is lenght of dge implicant ${sortedFullImplicant.length}`);
-        if(sortedFullImplicant.length === 8){
-
+        if (sortedFullImplicant.length === 8) {
           // console.log("asdasdasdasdasdasdasdasdsadasdasdasdasd")
-          if(isHorizontal){
-            tempFullEdgeImplicant_kmindexes = [fullEdgeImplicant[0], fullEdgeImplicant[1], fullEdgeImplicant[6], fullEdgeImplicant[7], fullEdgeImplicant[2], fullEdgeImplicant[3], fullEdgeImplicant[4], fullEdgeImplicant[5]];
-            tempFullEdgeImplicant_realindexes = [fullimplicant[0], fullimplicant[1], fullimplicant[6], fullimplicant[7], fullimplicant[2], fullimplicant[3], fullimplicant[4], fullimplicant[5]];
+          if (isHorizontal) {
+            tempFullEdgeImplicant_kmindexes = [
+              fullEdgeImplicant[0],
+              fullEdgeImplicant[1],
+              fullEdgeImplicant[6],
+              fullEdgeImplicant[7],
+              fullEdgeImplicant[2],
+              fullEdgeImplicant[3],
+              fullEdgeImplicant[4],
+              fullEdgeImplicant[5],
+            ];
+            tempFullEdgeImplicant_realindexes = [
+              fullimplicant[0],
+              fullimplicant[1],
+              fullimplicant[6],
+              fullimplicant[7],
+              fullimplicant[2],
+              fullimplicant[3],
+              fullimplicant[4],
+              fullimplicant[5],
+            ];
             // console.log(" podmienkaaaaaaaaaaaaaaaa");
             console.log("toto je full impicant ktoreho kuskujem");
             console.log(fullimplicant);
-          }
-          else{
-
-            tempFullEdgeImplicant_kmindexes = [fullEdgeImplicant[0], fullEdgeImplicant[3], fullEdgeImplicant[4], fullEdgeImplicant[7], fullEdgeImplicant[1], fullEdgeImplicant[2], fullEdgeImplicant[5], fullEdgeImplicant[6]];
-            tempFullEdgeImplicant_realindexes = [fullimplicant[0], fullimplicant[3], fullimplicant[4], fullimplicant[7], fullimplicant[1], fullimplicant[2], fullimplicant[5], fullimplicant[6]];
+          } else {
+            tempFullEdgeImplicant_kmindexes = [
+              fullEdgeImplicant[0],
+              fullEdgeImplicant[3],
+              fullEdgeImplicant[4],
+              fullEdgeImplicant[7],
+              fullEdgeImplicant[1],
+              fullEdgeImplicant[2],
+              fullEdgeImplicant[5],
+              fullEdgeImplicant[6],
+            ];
+            tempFullEdgeImplicant_realindexes = [
+              fullimplicant[0],
+              fullimplicant[3],
+              fullimplicant[4],
+              fullimplicant[7],
+              fullimplicant[1],
+              fullimplicant[2],
+              fullimplicant[5],
+              fullimplicant[6],
+            ];
             // console.log("second podmienkaaaaaaaaaaaaaaaa");
           }
           // console.log("tu checkujem ten skurveny bug...................");
-          console.log(tempFullEdgeImplicant_kmindexes) ;
+          console.log(tempFullEdgeImplicant_kmindexes);
           console.log(tempFullEdgeImplicant_realindexes);
-          addEdgeImplicant([...edgeImplicants, tempFullEdgeImplicant_kmindexes]);
+          addEdgeImplicant([
+            ...edgeImplicants,
+            tempFullEdgeImplicant_kmindexes,
+          ]);
           console.log("toto pridavam do toho pola co sa vykresluje");
           console.log(tempFullEdgeImplicant_realindexes);
-          addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes, tempFullEdgeImplicant_realindexes]);
-        }
-        else{
-        addEdgeImplicant([...edgeImplicants, fullEdgeImplicant]);
+          addEdgeImplicantCellIndexes([
+            ...edgeimplicantCellIndexes,
+            tempFullEdgeImplicant_realindexes,
+          ]);
+        } else {
+          addEdgeImplicant([...edgeImplicants, fullEdgeImplicant]);
 
-        addEdgeImplicantCellIndexes([
-          ...edgeimplicantCellIndexes,
-          fullimplicant,
-        ]);
-      }
+          addEdgeImplicantCellIndexes([
+            ...edgeimplicantCellIndexes,
+            fullimplicant,
+          ]);
+        }
       }
       ////// CLEARING DATA FOR EDGE IMPLICANT AFTER ADDING IT TO HE FINAL ARRAY
       addPartOfEdgeImplicant([]);
@@ -794,11 +848,9 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
             row={row}
             col={col}
             disabled={disabled}
-            // cellColor = {cellColor}
             cellColor={getCellColor(
               row,
               col,
-              // activeImplicantIndex,
               activeImplicantType,
               implicantCellIndexes,
               edgeimplicantCellIndexes,
@@ -844,9 +896,7 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
   //     // window.location.reload(false)
   //   }
 
-
-//----------FUNCTIONS FOR DRAWING IMPLICANTS ON KMAP CANVAS----------------
-
+  //----------FUNCTIONS FOR DRAWING IMPLICANTS ON KMAP CANVAS----------------
 
   // Initialize an empty object to store implicant-to-color mappings
   const implicantColorMap = {};
@@ -897,7 +947,6 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
     // console.log("these are cell index in useefefet");
     // console.log(implicantCellIndexes);
     drawImplicants(implicantCellIndexes);
-
   });
 
   //calculating boundaries for rectangle representing implicant
@@ -963,8 +1012,16 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
       secondPartofEdgeImplicant.push(edgeImplicant[1]);
     } else if (edgeImplicant.length === 4) {
       // check if edgeimplicant is corner implicant
-      if (edgeImplicant[0].row === 0 && edgeImplicant[0].col === 0 && edgeImplicant[1].row === 0 && edgeImplicant[1].col === 3 &&
-        edgeImplicant[2].row === 3 && edgeImplicant[2].col === 0 && edgeImplicant[3].row === 3 && edgeImplicant[3].col === 3) {
+      if (
+        edgeImplicant[0].row === 0 &&
+        edgeImplicant[0].col === 0 &&
+        edgeImplicant[1].row === 0 &&
+        edgeImplicant[1].col === 3 &&
+        edgeImplicant[2].row === 3 &&
+        edgeImplicant[2].col === 0 &&
+        edgeImplicant[3].row === 3 &&
+        edgeImplicant[3].col === 3
+      ) {
         // console.log("presla prva podmienka");
         firstPartofEdgeImplicant.push(edgeImplicant[0]);
         secondPartofEdgeImplicant.push(edgeImplicant[1]);
@@ -986,18 +1043,13 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
         secondPartofEdgeImplicant.push(edgeImplicant[2]);
         secondPartofEdgeImplicant.push(edgeImplicant[3]);
       }
-    }
-    else if (edgeImplicant.length===6){
+    } else if (edgeImplicant.length === 6) {
       //hardcoded edge indexes of edge implicants since the edge implicant is already sorted so its always the same
       firstPartofEdgeImplicant.push(edgeImplicant[0]);
       firstPartofEdgeImplicant.push(edgeImplicant[2]);
       secondPartofEdgeImplicant.push(edgeImplicant[3]);
       secondPartofEdgeImplicant.push(edgeImplicant[5]);
-    }
-
-  
-
-    else if (edgeImplicant.length===8){
+    } else if (edgeImplicant.length === 8) {
       // setIs8(true);
       //hardcoded edge indexes of edge implicants since the edge implicant is already sorted so its always the same
       //changed this for bug when 8 cells are selected in horizontal edgeimplicant
@@ -1138,18 +1190,15 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
     addEdgeImplicant(newEdgeImplicants);
     addEdgeImplicantCellIndexes(newEdgeImplicantsIndexes);
   };
- // Handle user choice from prompt
-//  const handleChoice = (choice) => {
-//   setOrientation(choice); // 'horizontal' or 'vertical'
-//   console.log(orientation);
-//   setShowPrompt(false);
-//   // Additional logic to process the choice
-// };
+  // Handle user choice from prompt
+  //  const handleChoice = (choice) => {
+  //   setOrientation(choice); // 'horizontal' or 'vertical'
+  //   console.log(orientation);
+  //   setShowPrompt(false);
+  //   // Additional logic to process the choice
+  // };
   return (
-    
     <div className="Kmap">
-         {/* <CustomPrompt show={showPrompt} onClose={() => setShowPrompt(false)} onChoose={handleChoice} /> */}
-
       <h1>Karnaugh maps</h1>
       <Instructions></Instructions>
       <div className="settings" disabled={disabled}>
@@ -1193,8 +1242,6 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
             Submit
           </button>
 
-          {/* <button id="clearBtn" onClick={()=>handleClearButton()} disabled={disabled}>Clear Cells</button> */}
-          {/* create button and when its clicked console log hello */}
           <button id="goback" disabled={!disabled} onClick={handleGoBackButton}>
             Go back
           </button>
@@ -1225,24 +1272,8 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
           >
             + Corner impl
           </button>
-          {/* <button
-            id="finishImplicant"
-            disabled={finishImplicantDisabled}
-            onClick={() => finishImplicant()}
-          >
-            Finish Implicant
-          </button> */}
-          {/* <button
-  id="finishImplicant"
-  disabled={finishImplicantDisabled}
-  onClick={() => setEdgePositionHorizontal(!edgePositionHorizontal)}
->
-  {edgePositionHorizontal ? "Set Vertical" : "Set Horizontal"}
-</button> */}
-
         </div>
       </div>
-      {/* <ChooseOrientationModal isOpen={isModalOpen} onChoose={handleUserChoice} /> */}
       <div className="kmap-wrapper">
         <div style={{ position: "relative" }}>
           {generateTable()}
@@ -1265,7 +1296,6 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
 
       <ImplicantsList
         implicants={implicants}
-        // implicants={implicants}
         onImplicantClick={handleImplicantClick}
         onRemoveImplicant={handleRemoveImplicant}
       />
@@ -1274,10 +1304,8 @@ if(((combinedArray[0].row === 0 && combinedArray[0].col === 0) && (combinedArray
         edgeImplicants={edgeImplicants}
         onImplicantClick={handleImplicantClick}
         onRemoveEdgeImplicant={handleRemoveEdgeImplicant}
-        // isEightEdgeImplicant={is8}
-        // changeDirectionofEdgeImplicant={setEdgePositionHorizontal()}
       ></EdgeImplicantList>
-<div className="settingsLatex" >
+      <div className="settingsLatex">
         <label htmlFor="includePreamble">Include whole LaTeX Preamble</label>
         <input
           type="checkbox"
