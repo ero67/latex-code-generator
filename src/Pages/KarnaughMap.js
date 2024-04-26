@@ -84,6 +84,8 @@ const Kmap = () => {
   const handleImplicantClick = (index, typeOfImplicant) => {
     setActiveImplicantIndex(index);
     setActiveImplicantType(typeOfImplicant);
+    console.log(`this is index of implicant ${index}`);
+    console.log(`this is type of implicant ${typeOfImplicant}`);
   };
   //function for finding out what color should the cell be after hovering over list
   function getCellColor(
@@ -96,9 +98,12 @@ const Kmap = () => {
     defaultColor,
     activeColor
   ) {
+    
     // Check if there is an active implicant
     // console.log(activeImplicantType);
     let activeImplicanCellIndexes = edgeimplicantCellIndexes;
+    console.log("===============asdasdasd===============");
+    console.log(activeImplicanCellIndexes);
     if (activeImplicantType === "default") {
       activeImplicanCellIndexes = implicantCellIndexes;
     } else if (activeImplicantType === "edge") {
@@ -121,16 +126,16 @@ const Kmap = () => {
     }
 
     // Check if the cell belongs to any other implicant
-    if (activeImplicantIndex !== null) {
-      for (let i = 0; i < activeImplicanCellIndexes.length; i++) {
-        if (i !== activeImplicantIndex) {
-          const implicant = activeImplicanCellIndexes[i];
-          if (implicant.some((cell) => cell.row === row && cell.col === col)) {
-            return defaultColor; // Color for non-active implicant cells
-          }
-        }
-      }
-    }
+    // if (activeImplicantIndex !== null) {
+    //   for (let i = 0; i < activeImplicanCellIndexes.length; i++) {
+    //     if (i !== activeImplicantIndex) {
+    //       const implicant = activeImplicanCellIndexes[i];
+    //       if (implicant.some((cell) => cell.row === row && cell.col === col)) {
+    //         return defaultColor; // Color for non-active implicant cells
+    //       }
+    //     }
+    //   }
+    // }
     return null; // No color if the cell is not part of any implicant
   }
 
@@ -748,10 +753,13 @@ const Kmap = () => {
   //set up buttons settings and interface when adding deafult implicant
   const addingimplicant = () => {
     setMarkingImplicant(!markingImplicant);
-    setfinishImplicantDisabled(false);
+    // setfinishImplicantDisabled(false);
+    setfinishImplicantDisabled(!finishImplicantDisabled);
+    // setfinishImplicantDisabled(!finishImplicantDisabled);
+    // setClassicImplicantDisabled(false);
     setClassicImplicantDisabled(false);
-    setEdgeImplicantDisabled(true);
-    setCornerImplicantDisabled(true);
+    setEdgeImplicantDisabled(!edgeImplicantDisabled);
+    setCornerImplicantDisabled(!cornerImplicantDisabled);
   };
 
   //set up buttons settings and interface when adding edge implicant
@@ -759,9 +767,9 @@ const Kmap = () => {
     setMarkingEdgeImplicant(!markingEdgeImplicant);
 
     setfinishImplicantDisabled(false);
-    setClassicImplicantDisabled(true);
+    setClassicImplicantDisabled(!classicImplicantDisabled);
     setEdgeImplicantDisabled(false);
-    setCornerImplicantDisabled(true);
+    setCornerImplicantDisabled(!cornerImplicantDisabled);
   };
 
   const handleCellClick = (row, col) => {

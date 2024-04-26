@@ -101,6 +101,36 @@ const SyntaxTreeD3 = () => {
       .text((d) => d.target.data.label || "");
   });
 
+  const removeNode = (nodeData) => {
+    const deleteRecursively = (targetId, currentNode) => {
+      if (!currentNode.children) return false;
+      const index = currentNode.children.findIndex(child => child.id === targetId);
+  
+      if (index >= 0) { // Node is found
+        currentNode.children.splice(index, 1); // Remove the node
+        return true;
+      } else { // Search in children
+        currentNode.children.forEach(child => {
+          if (deleteRecursively(targetId, child)) {
+            return true;
+          }
+        });
+      }
+      return false;
+    };
+  
+    // Clone the tree data to ensure immutability
+    const newTreeData = JSON.parse(JSON.stringify(treeData));
+    if (newTreeData.id === nodeData.id) { // If the root is the node to remove
+      setTreeData({}); // or handle differently if the root node can't be deleted
+    } else {
+      deleteRecursively(nodeData.id, newTreeData);
+      setTreeData(newTreeData);
+    }
+  };
+  
+
+
   function setLabelPosition(selection, orientation, svgDimensions) {
     selection.each(function (d) {
       let midX, midY;
@@ -170,7 +200,11 @@ const SyntaxTreeD3 = () => {
         "transform",
         (d) => `translate(${svgWidth - (d.y + 20)},${svgHeight - d.x})`
       ) // Invert both x and y coordinates
-      .on("click", (event, d) => handleNodeClick(event, d));
+      .on("click", (event, d) => handleNodeClick(event, d))
+      .on("contextmenu", (event, d) => {
+        event.preventDefault(); // Prevent the browser context menu from opening
+        removeNode(d.data); // Call removeNode passing the data of the node to be removed
+      });
 
     // Add circles to represent nodes
     nodes
@@ -216,7 +250,11 @@ const SyntaxTreeD3 = () => {
       .append("g")
       .attr("class", "node")
       .attr("transform", (d) => `translate(${d.y + 20},${d.x})`)
-      .on("click", (event, d) => handleNodeClick(event, d));
+      .on("click", (event, d) => handleNodeClick(event, d))
+      .on("contextmenu", (event, d) => {
+        event.preventDefault(); // Prevent the browser context menu from opening
+        removeNode(d.data); // Call removeNode passing the data of the node to be removed
+      });
 
     // Add circles to represent nodes
     nodes
@@ -262,7 +300,11 @@ const SyntaxTreeD3 = () => {
       .append("g")
       .attr("class", "node")
       .attr("transform", (d) => `translate(${d.x},${d.y + 20})`)
-      .on("click", (event, d) => handleNodeClick(event, d));
+      .on("click", (event, d) => handleNodeClick(event, d))
+      .on("contextmenu", (event, d) => {
+        event.preventDefault(); // Prevent the browser context menu from opening
+        removeNode(d.data); // Call removeNode passing the data of the node to be removed
+      });
 
     // Add circles to represent nodes
     nodes
@@ -312,7 +354,11 @@ const SyntaxTreeD3 = () => {
         "transform",
         (d) => `translate(${d.x},${svgHeightNew - (d.y + 20)})`
       ) // Invert y-coordinates for bottom-up
-      .on("click", (event, d) => handleNodeClick(event, d));
+      .on("click", (event, d) => handleNodeClick(event, d))
+      .on("contextmenu", (event, d) => {
+        event.preventDefault(); // Prevent the browser context menu from opening
+        removeNode(d.data); // Call removeNode passing the data of the node to be removed
+      });
 
     // Add circles to represent nodes
     nodes
@@ -476,6 +522,32 @@ const SyntaxTreeD3 = () => {
     }
   };
 
+  // const generateLatexCode = (node, parentLabel = "") => {
+  //   if (!node) {
+  //     return "";
+  //   }
+  //   let nodeLabel = isChecked ? `$${node.value}$` : node.value;
+  //   let latexCode = "[\n  " + nodeLabel;
+
+  //   if (parentLabel) {
+  //     latexCode += `, edge label={node[midway,right,font=\\scriptsize,inner sep=1pt]{${parentLabel.text}}}`;
+  //   }
+
+  //   if (node.children && node.children.length > 0) {
+  //     const childStrings = node.children.map((child) => {
+  //       let childLabel = child.label
+  //         ? { text: child.label, position: "right" }
+  //         : "";
+  //       return generateLatexCode(child, childLabel);
+  //     });
+  //     latexCode += childStrings.join("\n").replace(/^/gm, "  ");
+  //   }
+
+  //   latexCode += "\n]";
+
+  //   return latexCode;
+  // };
+
   const generateLatexCode = (node, parentLabel = "") => {
     if (!node) {
       return "";
@@ -484,13 +556,22 @@ const SyntaxTreeD3 = () => {
     let latexCode = "[\n  " + nodeLabel;
 
     if (parentLabel) {
-      latexCode += `, edge label={node[midway,right,font=\\scriptsize,inner sep=1pt]{${parentLabel.text}}}`;
+      // Use parentLabel.position to set the label's position dynamically
+      latexCode += `, edge label={node[midway,${parentLabel.position},font=\\scriptsize,inner sep=1pt]{${parentLabel.text}}}`;
     }
 
     if (node.children && node.children.length > 0) {
-      const childStrings = node.children.map((child) => {
+      const childStrings = node.children.map((child, index, array) => {
+        let position;
+        if (array.length === 2) {
+          // If there are exactly two children, position labels left and right respectively
+          position = index === 0 ? "left" : "right";
+        } else {
+          // If there are more than two children, position labels left for all except the last one
+          position = index === array.length - 1 ? "right" : "left";
+        }
         let childLabel = child.label
-          ? { text: child.label, position: "right" }
+          ? { text: child.label, position: position }
           : "";
         return generateLatexCode(child, childLabel);
       });
@@ -500,7 +581,8 @@ const SyntaxTreeD3 = () => {
     latexCode += "\n]";
 
     return latexCode;
-  };
+};
+
 
   const handleGenerateLatex = () => {
     let latexCode = "";
@@ -571,6 +653,7 @@ const SyntaxTreeD3 = () => {
           label you want.
         </p>
         <p><b>4.</b> Using Turn Left button you can turn the tree 90 degrees to the left.</p>
+        <p><b>5.</b> By using right click on the node you can remove the node from the tree structure.</p>
         <p></p>
       </div>
       <div className="settings">
