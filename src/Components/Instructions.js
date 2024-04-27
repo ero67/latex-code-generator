@@ -10,9 +10,9 @@ const Instructions = () => {
             <p><b>3.</b> After pressing submit, mark the needed implicants</p>
             
             <p id="question2" style={{ fontWeight: 'bold' }}>How to mark implicants?</p>
-            <p>- If marking a rectangular implicant, click the upper left corner and bottom right corner of desired implicant</p>
+            <p>- If marking a rectangular implicant, click opposite corners of the rectangle in any order</p>
             <p>- If marking a implicant in single row or column click the beginning and the end of the implicant</p>
-            <p>- If marking an edge implicant, click to left and bottom right corner of implicant.</p>
+            <p>- If marking an edge implicant, click opposite corners of the rectangle of desired implicant.</p>
         </div>
     );
 };
