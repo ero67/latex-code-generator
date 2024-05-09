@@ -9,6 +9,17 @@
   
   
 }
+.variable-inputs {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.variable-inputs input {
+  flex-grow: 1;
+  margin: 0 10px;
+}
+
 .user-img{
   width: 50px;
   border-radius:  100%;
@@ -394,11 +405,35 @@ h1{
 }
 
 .kmap-wrapper {
+  position: relative;
+}
+
+
+.kmap-container {
   display: flex;
-  justify-content: center; 
-  align-items: center; 
-  /* height: 50vh;  */
-  position: relative; 
+  flex-direction: column;
+  align-items: center;
+}
+
+.column-labels {
+  display: flex;
+  justify-content: space-around; /* Ensures equal spacing */
+  margin-bottom: 5px;
+}
+
+/* .column-variable {
+  padding: 0 10px; 
+} */
+
+.row-labels {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around; /* Ensures equal spacing */
+  margin-right: 5px;
+}
+
+.row-variable {
+  padding: 0 5px; /* Adjust to match the height of the map's rows */
 }
 
 .karnaugh-map {

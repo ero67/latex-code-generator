@@ -15,6 +15,10 @@ const Kmap = () => {
   const [includePreamble, setIncludePreamble] = useState(false);
   const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
 
+  const [variables, setVariables] = useState([]);
+
+  
+
   const [tableSize, setTableSize] = useState("0x0");
   const [option, setOption] = useState(0);
   const [opposite, setOpposite] = useState(1);
@@ -63,23 +67,62 @@ const Kmap = () => {
   const [activeImplicantIndex, setActiveImplicantIndex] = useState(null);
   const [activeImplicantType, setActiveImplicantType] = useState(null);
 
-  const [edgePositionHorizontal, setEdgePositionHorizontal] = useState(false);
+  // const [edgePositionHorizontal, setEdgePositionHorizontal] = useState(false);
 
   // orientation modal variables
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
+
+///////////////////////////////////////////////////////////////////////
+// Assuming these states are set correctly based on the map dimensions
+const [rows, cols] = tableSize.split("x").map(Number);
+const rowVarsCount = Math.floor(Math.log2(rows));
+const colVarsCount = Math.floor(Math.log2(cols));
+const totalVars = rowVarsCount + colVarsCount;
+
+const rowVariables = variables.slice(0, rowVarsCount);
+const colVariables = variables.slice(rowVarsCount, totalVars);
+
+const VariableLabels = ({ labels, isColumn }) => (
+  <div className={`variable-labels ${isColumn ? "column-labels" : "row-labels"}`}>
+    {labels.map((label, index) => (
+      <div key={index} className={isColumn ? "column-variable" : "row-variable"}>
+        {label}
+      </div>
+    ))}
+  </div>
+);
+
   // const [isEightEdgeHorizontal, setIsEightEdgeHorizontal] = useState(null);
 
   // Function to open the modal
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-  };
+  // const handleOpenModal = () => {
+  //   setIsModalOpen(true);
+  // };
 
+  const renderVarInputs = () => (
+    <div className="variable-inputs">
+      {variables.map((varName, index) => (
+        <input
+          key={`var-${index}`}
+          value={varName}
+          onChange={(e) => {
+            const newVars = [...variables];
+            newVars[index] = e.target.value;
+            setVariables(newVars);
+          }}
+          placeholder={`X${index }`}
+        />
+      ))}
+    </div>
+  );
+  
+  
   // Handler for when the user makes a choice
-  const handleUserChoice = (choice) => {
-    setIsEightEdgeHorizontal(choice);
-    setIsModalOpen(false); // Close the modal
-    // Additional logic based on the user's choice
-  };
+  // const handleUserChoice = (choice) => {
+  //   setIsEightEdgeHorizontal(choice);
+  //   setIsModalOpen(false); // Close the modal
+  //   // Additional logic based on the user's choice
+  // };
 
   const handleImplicantClick = (index, typeOfImplicant) => {
     setActiveImplicantIndex(index);
@@ -102,8 +145,8 @@ const Kmap = () => {
     // Check if there is an active implicant
     // console.log(activeImplicantType);
     let activeImplicanCellIndexes = edgeimplicantCellIndexes;
-    console.log("===============asdasdasd===============");
-    console.log(activeImplicanCellIndexes);
+    // console.log("===============asdasdasd===============");
+    // console.log(activeImplicanCellIndexes);
     if (activeImplicantType === "default") {
       activeImplicanCellIndexes = implicantCellIndexes;
     } else if (activeImplicantType === "edge") {
@@ -112,8 +155,8 @@ const Kmap = () => {
     if (activeImplicantIndex !== null) {
       const activeImplicant = activeImplicanCellIndexes[activeImplicantIndex];
       // console.log(`activeImplicaes ${activeImplicant}`);
-      console.log("toto je adasdasdasdasdasdasdasdasdasd");
-      console.log(activeImplicant);
+      // console.log("toto je adasdasdasdasdasdasdasdasdasd");
+      // console.log(activeImplicant);
 
       if (activeImplicant === undefined) {
         return;
@@ -145,7 +188,11 @@ const Kmap = () => {
 
   // zmena velkosti tabulky
   const handleTableSizeChange = (event) => {
-    setTableSize(event.target.value);
+    const newSize = event.target.value;
+    setTableSize(newSize);
+    const [rows, cols] = newSize.split('x').map(Number);
+    const totalVars = Math.ceil(Math.log2(rows * cols));
+    setVariables(Array(totalVars).fill(''));
   };
 
   // zmena hodnoty ktoru budeme davat do cells na ktore budeme klikat
@@ -226,7 +273,27 @@ const Kmap = () => {
 
   const generateCodeLaTeX = () => {
     const [rows, cols] = tableSize.split("x").map(Number);
-    const content = getContentOfCells();
+  //   const totalVars = Math.ceil(Math.log2(rows * cols));
+  // const rowVarsCount = Math.ceil(totalVars / 2); // Split variables between rows and columns
+  // // const colVarsCount = totalVars - rowVarsCount;
+
+  // // const rowLabels = variables.slice(0, rowVarsCount).map(v => `$${v}$`).join('][');
+  // // const colLabels = variables.slice(rowVarsCount, totalVars).map(v => `$${v}$`).join('][');
+    
+  // const rowLabels = variables.slice(0, rowVarsCount).reverse().map(v => `$${v}$`).join('][');
+  // const colLabels = variables.slice(rowVarsCount, totalVars).reverse().map(v => `$${v}$`).join('][');
+
+ // Calculate the number of variables based on powers of 2
+ const rowVarsCount = Math.floor(Math.log2(rows));
+ const colVarsCount = Math.floor(Math.log2(cols));
+ const totalVars = rowVarsCount + colVarsCount;
+
+ // Allocate variables based on the calculated counts
+ const rowLabels = variables.slice(0, rowVarsCount).reverse().map(v => `${v}`).join('][');
+ const colLabels = variables.slice(rowVarsCount, totalVars).reverse().map(v => `${v}`).join('][');
+
+
+  const content = getContentOfCells();
     let code = "";
     if (includePreamble) {
       code += `\\documentclass{article}\n\\usepackage{karnaugh-map}\n\\begin{document}\n`;
@@ -234,8 +301,13 @@ const Kmap = () => {
     if (includeDocumentTags && !includePreamble) {
       code += `\\usepackage{karnaugh-map}\n`;
     }
-    code += `\\begin{karnaugh-map}[${cols}][${rows}]\n`;
-    code += "       \\manualterms{";
+    // code += `\\begin{karnaugh-map}[${cols}][${rows}]\n`;
+    // code += "       \\manualterms{";
+    // Integrate variable names into the LaTeX map header
+  code += `\\begin{karnaugh-map}[${cols}][${rows}][1][${colLabels}][${rowLabels}]\n`;
+  code += "       \\manualterms{";
+
+    
     // indexes of cells on grid of karnaugh-map package
     let indexes = [
       [0, 1, 3, 2],
@@ -1058,33 +1130,12 @@ const Kmap = () => {
       secondPartofEdgeImplicant.push(edgeImplicant[3]);
       secondPartofEdgeImplicant.push(edgeImplicant[5]);
     } else if (edgeImplicant.length === 8) {
-      // setIs8(true);
-      //hardcoded edge indexes of edge implicants since the edge implicant is already sorted so its always the same
-      //changed this for bug when 8 cells are selected in horizontal edgeimplicant
-      // if(!isEightEdteHorizontal){
-      // firstPartofEdgeImplicant.push(edgeImplicant[0]);
-      // firstPartofEdgeImplicant.push(edgeImplicant[3]);
-      // secondPartofEdgeImplicant.push(edgeImplicant[4]);
-      // secondPartofEdgeImplicant.push(edgeImplicant[7]);
-      // }
-      // else{
-      //   firstPartofEdgeImplicant.push(edgeImplicant[0]);
-      //   firstPartofEdgeImplicant.push(edgeImplicant[1]);
-      //   secondPartofEdgeImplicant.push(edgeImplicant[6]);
-      //   secondPartofEdgeImplicant.push(edgeImplicant[7]);
-      // }
+
       firstPartofEdgeImplicant.push(edgeImplicant[0]);
       firstPartofEdgeImplicant.push(edgeImplicant[1]);
       secondPartofEdgeImplicant.push(edgeImplicant[2]);
       secondPartofEdgeImplicant.push(edgeImplicant[3]);
     }
-    // console.log("sem to preslo");
-    // console.log(edgeImplicant);
-    // console.log(firstPartofEdgeImplicant);
-    // console.log(secondPartofEdgeImplicant);
-    // console.log(thirdPartofEdgeImplicant);
-    // console.log(fourthPartofEdgeImplicant);
-    // console.log(isEdge);
 
     return [
       firstPartofEdgeImplicant,
@@ -1282,8 +1333,13 @@ const Kmap = () => {
           </button>
         </div>
       </div>
-      <div className="kmap-wrapper">
-        <div style={{ position: "relative" }}>
+
+      <div className="kmap-container">
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <VariableLabels labels={colVariables} isColumn={true} />
+      <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+        <VariableLabels labels={rowVariables} isColumn={false} />
+        <div className="kmap-wrapper" style={{ position: "relative" }}>
           {generateTable()}
           {disabled && (
             <canvas
@@ -1301,6 +1357,77 @@ const Kmap = () => {
           )}
         </div>
       </div>
+    </div>
+  </div>
+
+
+
+      {/* <div className="kmap-container">
+  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+
+    <div className="column-labels">
+      {variables.slice(2).map((varName, index) => (
+        <span key={`col-var-${index}`} className="column-variable">{varName}</span>
+      ))}
+    </div>
+
+    <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+  
+      <div className="row-labels">
+        {variables.slice(0, 2).map((varName, index) => (
+          <div key={`row-var-${index}`} className="row-variable">{varName}</div>
+        ))}
+      </div>
+
+ 
+      <div className="kmap-wrapper" style={{ position: "relative" }}>
+        {generateTable()}
+        {disabled && (
+          <canvas
+            id="kmapCanvas"
+            width={mapWidth}
+            height={mapHeight}
+            disabled={!disabled}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              pointerEvents: "none",
+            }}
+          ></canvas>
+        )}
+      </div>
+    </div>
+  </div>
+</div> */}
+
+
+
+
+      {/* <div className="kmap-wrapper">
+        <div style={{ position: "relative" }}>
+          {generateTable()}
+          {disabled && (
+            <canvas
+              id="kmapCanvas"
+              width={mapWidth}
+              height={mapHeight}
+              disabled={!disabled}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                pointerEvents: "none",
+              }}
+            ></canvas>
+          )}
+        </div>
+      </div> */}
+
+      <div className="variable-settings">
+      <h3>Variables</h3>
+      {renderVarInputs()}
+    </div>
 
       <ImplicantsList
         implicants={implicants}
