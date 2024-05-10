@@ -1341,10 +1341,10 @@ const VariableLabels = ({ labels, isColumn }) => (
 
       <div className="kmap-container">
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <VariableLabels labels={colVariables} isColumn={true} />
+    {customVariablesAllowed && <VariableLabels labels={colVariables} isColumn={true} />}
       <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-        <VariableLabels labels={rowVariables} isColumn={false} />
-        <div className="kmap-wrapper" style={{ position: "relative" }}>
+      {customVariablesAllowed && <VariableLabels labels={rowVariables} isColumn={false} />}        
+      <div className="kmap-wrapper" style={{ position: "relative" }}>
           {generateTable()}
           {disabled && (
             <canvas
