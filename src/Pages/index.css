@@ -436,6 +436,49 @@ h1{
   padding: 0 5px; /* Adjust to match the height of the map's rows */
 }
 
+.column-variable{
+  padding: 0 5px; /* Adjust to match the width of the map's columns */
+
+}
+
+
+/* General style for the container */
+.checkbox-container {
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #f4f4f4;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+}
+
+/* Style for the label which includes the checkbox */
+.checkbox-label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  color: #333;
+}
+
+/* Custom checkbox styling */
+.checkbox-label input[type="checkbox"] {
+  margin-right: 10px;
+  cursor: pointer;
+  accent-color: #007BFF; /* Change this color to match your theme */
+}
+
+/* Improve the focus state of the checkbox for accessibility */
+.checkbox-label input[type="checkbox"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.5);
+}
+
+
+
+
+
 .karnaugh-map {
   display: inline-block;
   border: 1px solid rgb(75, 43, 43);

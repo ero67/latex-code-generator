@@ -8,7 +8,7 @@ import GeneratedCode from "../Components/GeneratedCode";
 import ImplicantsList from "../Components/ImplicantsList";
 import EdgeImplicantList from "../Components/EdgeImplicantList";
 import Instructions from "../Components/Instructions";
-import ChooseOrientationModal from "../Components/ChooseOrientationModal";
+// import ChooseOrientationModal from "../Components/ChooseOrientationModal";
 // import CustomPrompt from '../Components/Prompt';
 
 const Kmap = () => {
@@ -17,7 +17,7 @@ const Kmap = () => {
 
   const [variables, setVariables] = useState([]);
 
-  
+  const [customVariablesAllowed,setCustomVariablesAllowed] = useState(false);
 
   const [tableSize, setTableSize] = useState("0x0");
   const [option, setOption] = useState(0);
@@ -44,7 +44,7 @@ const Kmap = () => {
   const [markingImplicant, setMarkingImplicant] = useState(false);
   const [numberOfImplicants, setNumberOfImplicants] = useState(0);
   const [implicant, addPartOfImplicant] = useState([]);
-  // const [indexesOfImplicant, addIndexOfImplicant] = useState([]);
+  const [indexesOfImplicant, addIndexOfImplicant] = useState([]);
 
   //useStates for coloring implicants
   const [singeImplicantIndexes, addPartOfSingleImplicantIndex] = useState([]);
@@ -67,7 +67,7 @@ const Kmap = () => {
   const [activeImplicantIndex, setActiveImplicantIndex] = useState(null);
   const [activeImplicantType, setActiveImplicantType] = useState(null);
 
-  // const [edgePositionHorizontal, setEdgePositionHorizontal] = useState(false);
+  const [edgePositionHorizontal, setEdgePositionHorizontal] = useState(false);
 
   // orientation modal variables
   // const [isModalOpen, setIsModalOpen] = useState(false);
@@ -304,7 +304,12 @@ const VariableLabels = ({ labels, isColumn }) => (
     // code += `\\begin{karnaugh-map}[${cols}][${rows}]\n`;
     // code += "       \\manualterms{";
     // Integrate variable names into the LaTeX map header
-  code += `\\begin{karnaugh-map}[${cols}][${rows}][1][${colLabels}][${rowLabels}]\n`;
+    if(customVariablesAllowed){
+      code += `\\begin{karnaugh-map}[${cols}][${rows}][1][${colLabels}][${rowLabels}]\n`;    
+    }else{
+      code += `\\begin{karnaugh-map}[${cols}][${rows}][1]\n`;
+    }
+  
   code += "       \\manualterms{";
 
     
@@ -1426,7 +1431,17 @@ const VariableLabels = ({ labels, isColumn }) => (
 
       <div className="variable-settings">
       <h3>Variables</h3>
-      {renderVarInputs()}
+      <div className="checkbox-container">
+      <label className="checkbox-label">
+        <input
+          type="checkbox"
+          checked={customVariablesAllowed}
+          onChange={() => setCustomVariablesAllowed(!customVariablesAllowed)}
+        />
+        Allow Custom Variable Names
+      </label>
+    </div>
+      {customVariablesAllowed && renderVarInputs()}
     </div>
 
       <ImplicantsList
