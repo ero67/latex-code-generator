@@ -657,6 +657,11 @@ const SyntaxTreeD3 = () => {
         <p></p>
       </div>
       <div className="settings">
+        <button id="createTree" onClick={handleCreateTree}>
+          Create New Tree
+        </button>
+      </div>
+      <div className="settings">
         <label htmlFor="math">Mathematical font </label>
         <input
           type="checkbox"
@@ -671,7 +676,7 @@ const SyntaxTreeD3 = () => {
           // onClick={() => handleOptionChange(false)}
           onClick={handleOrientationClick}
           // onClick={() => setTreeOrientation("top-down")}
-          style={{ backgroundColor: "#7393B3" }}
+          // style={{ backgroundColor: "#7393B3" }}
         >
           Turn Left
         </button>
@@ -683,11 +688,7 @@ const SyntaxTreeD3 = () => {
         Horizontal
       </button> */}
       </div>
-      <div className="settings">
-        <button id="createTree" onClick={handleCreateTree}>
-          Create Tree
-        </button>
-      </div>
+
       <div className="Tree">
         <svg
           ref={svgRef}

@@ -127,8 +127,7 @@ const VariableLabels = ({ labels, isColumn }) => (
   const handleImplicantClick = (index, typeOfImplicant) => {
     setActiveImplicantIndex(index);
     setActiveImplicantType(typeOfImplicant);
-    console.log(`this is index of implicant ${index}`);
-    console.log(`this is type of implicant ${typeOfImplicant}`);
+
   };
   //function for finding out what color should the cell be after hovering over list
   function getCellColor(
@@ -230,7 +229,7 @@ const VariableLabels = ({ labels, isColumn }) => (
     for (let cell of cells) {
       // If the cell is empty, set its value to the opposite number
       if (!cell.textContent) {
-        cell.textContent = opposite;
+        cell.textContent = option;
       }
     }
   };
@@ -244,6 +243,7 @@ const VariableLabels = ({ labels, isColumn }) => (
 
     return content;
   };
+
 
   const addCornerImplicant = () => {
     // Correctly adding all corner indices in a single update
@@ -269,6 +269,7 @@ const VariableLabels = ({ labels, isColumn }) => (
     addPartOfEdgeImplicant([]);
     addPartOfSingleEdgeImplicantIndex([]);
     setNumberOfEdgeImplicants(0);
+
   };
 
   const generateCodeLaTeX = () => {
@@ -830,13 +831,12 @@ const VariableLabels = ({ labels, isColumn }) => (
   //set up buttons settings and interface when adding deafult implicant
   const addingimplicant = () => {
     setMarkingImplicant(!markingImplicant);
-    // setfinishImplicantDisabled(false);
     setfinishImplicantDisabled(!finishImplicantDisabled);
-    // setfinishImplicantDisabled(!finishImplicantDisabled);
-    // setClassicImplicantDisabled(false);
     setClassicImplicantDisabled(false);
     setEdgeImplicantDisabled(!edgeImplicantDisabled);
-    setCornerImplicantDisabled(!cornerImplicantDisabled);
+    if(tableSize==="4x4"){
+      setCornerImplicantDisabled(!cornerImplicantDisabled);
+    }
   };
 
   //set up buttons settings and interface when adding edge implicant
@@ -846,8 +846,13 @@ const VariableLabels = ({ labels, isColumn }) => (
     setfinishImplicantDisabled(false);
     setClassicImplicantDisabled(!classicImplicantDisabled);
     setEdgeImplicantDisabled(false);
-    setCornerImplicantDisabled(!cornerImplicantDisabled);
+    if(tableSize==="4x4"){
+      setCornerImplicantDisabled(!cornerImplicantDisabled);
+    }
   };
+
+  
+  
 
   const handleCellClick = (row, col) => {
     let indexes = [];
@@ -954,6 +959,9 @@ const VariableLabels = ({ labels, isColumn }) => (
 
     return <div className="karnaugh-map">{table}</div>;
   };
+
+
+  
 
   const handleGoBackButton = () => {
     Disable(false);
@@ -1254,6 +1262,21 @@ const VariableLabels = ({ labels, isColumn }) => (
     addEdgeImplicant(newEdgeImplicants);
     addEdgeImplicantCellIndexes(newEdgeImplicantsIndexes);
   };
+
+  // const handleClearButton = () => {
+  //   const cells = document.getElementsByClassName("cell");
+  //   for (let cell of cells) {
+  //     cell.textContent = '';
+  //   }
+  //   addImplicant([]);
+  //   addEdgeImplicant([]);
+  //   addImplicantCellIndexes([]);
+  //   addEdgeImplicantCellIndexes([]);
+  //   setGeneratedCode("Your code will appear here \n after you click on Generate Code button");
+  //   setActiveImplicantIndex(null);
+  //   setActiveImplicantType(null);
+  // };
+  
   // Handle user choice from prompt
   //  const handleChoice = (choice) => {
   //   setOrientation(choice); // 'horizontal' or 'vertical'
@@ -1298,6 +1321,7 @@ const VariableLabels = ({ labels, isColumn }) => (
           <button id="autofill" disabled={disabled} onClick={fillCells}>
             Fill the rest
           </button>
+
           <button
             id="submitBtn"
             onClick={() => handleDisable()}
@@ -1465,7 +1489,7 @@ const VariableLabels = ({ labels, isColumn }) => (
         />
 
         <label htmlFor="includeDocumentTags">
-          Include import of the forest package
+          Include import of the karnaugh map package
         </label>
         <input
           type="checkbox"

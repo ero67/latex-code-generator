@@ -257,20 +257,35 @@ h1{
   margin-top: 20px; /* Space above the button */
   margin-bottom: 20px; /* Space below the button */
 }
-#createTree{
-  place-self: center;
-  width: 100px;
-  height: 30px;
-  background-color: #426dcc;
-  color: #fffdfd;
-  border: 1px solid #000000;
-  border-radius: 3px;
-  /* font-size: 10px; */
-  font-weight: bold;
-  cursor: pointer; 
-  margin-left: 10px;
-  margin-bottom: 1rem;
+
+#createTree {
+  background-color: #28a745; /* Green background */
+  color: white; /* White text */
+  padding: 12px 24px; /* Padding for size */
+  border: none; /* No border */
+  border-radius: 4px; /* Rounded corners */
+  font-size: 12px; /* Font size */
+  font-weight: bold; /* Bold font */
+  cursor: pointer; /* Pointer cursor on hover */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  transition: background-color 0.3s, transform 0.3s; /* Smooth transitions */
 }
+
+#createTree:hover {
+  background-color: #218838; /* Darker green on hover */
+  /* transform: translateY(-2px); Slight lift on hover */
+}
+
+#createTree:active {
+  background-color: #1e7e34; /* Even darker green on click */
+  transform: translateY(0); /* Reset lift on click */
+}
+
+#createTree:focus {
+  outline: none; /* No outline */
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.5); /* Focus ring */
+}
+
 
 
 
@@ -332,42 +347,58 @@ h1{
   
  }
  
-  #button0 {
-  width: 40px;
-  height: 30px;
-  margin-bottom: 5px;
-  margin-top: 5px;
-  margin-left: 10px;
-  cursor: pointer;
-  border: 1px solid #000000;
-  font-weight: bold;
-  border-radius: 3px;
- }
+ #button0, #button1 {
+  width: 40px; /* Maintain original width */
+  height: 30px; /* Maintain original height */
+  margin-bottom: 5px; /* Maintain original bottom margin */
+  margin-top: 5px; /* Maintain original top margin */
+  margin-left: 10px; /* Maintain original left margin */
+  cursor: pointer; /* Maintain pointer cursor on hover */
+  border: 1px solid #000000; /* Maintain original border */
+  font-weight: bold; /* Maintain original font weight */
+  border-radius: 3px; /* Maintain original border radius */
+  background-color: #007bff; /* Blue background */
+  color: rgb(0, 0, 0); /* White text */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  transition: background-color 0.3s, transform 0.3s; /* Smooth transitions */
+}
 
- #button1 {
-  width: 40px;
-  height: 30px;
-  margin-bottom: 5px;
-  margin-top: 5px;
-  cursor: pointer;
-  margin-left: 10px;
-  border: 1px solid #000000;
-  font-weight: bold;
-  border-radius: 3px;
- }
- #autofill{
-  width: 80px;
-  height: 30px;
-  background-color: #1368b2;
-  color: #fffdfd;
-  border: 1px solid #ffffff;
-  border-radius: 3px;
-  /* font-size: 10px; */
-  font-weight: bold;
-  cursor: pointer; 
-  margin-left: 10px;
-  border: 1px solid #000000;
- }
+#button0:hover, #button1:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+  /* transform: translateY(-2px); Slight lift on hover */
+}
+
+#button0:active, #button1:active {
+  background-color: #004085; /* Even darker blue on click */
+  transform: translateY(0); /* Reset lift on click */
+}
+
+#button0:focus, #button1:focus {
+  outline: none; /* No outline */
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5); /* Focus ring */
+}
+
+
+#autofill {
+  width: 80px; /* Maintain original width */
+  height: 30px; /* Maintain original height */
+  background-color: #1368b2; /* Maintain original background color */
+  color: #fffdfd; /* Maintain original text color */
+  border: 1px solid #000000; /* Maintain original border */
+  border-radius: 3px; /* Maintain original border radius */
+  font-weight: bold; /* Maintain original font weight */
+  cursor: pointer; /* Maintain pointer cursor on hover */
+  margin-left: 10px; /* Maintain original left margin */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  transition: background-color 0.3s, transform 0.3s; /* Smooth transitions */
+}
+
+#autofill:hover {
+  background-color: #0f5492; /* Darker blue on hover */
+  /* transform: translateY(-2px); Slight lift on hover */
+}
+
+
  
  #goback{
   width: 80px;
