@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/latex-code-generator/static/css/main.276f543c.css",
-    "main.js": "/latex-code-generator/static/js/main.b0bc543b.js",
+    "main.css": "/latex-code-generator/static/css/main.2ee3817a.css",
+    "main.js": "/latex-code-generator/static/js/main.1a0b5b1e.js",
     "react-syntax-highlighter/refractor-core-import.js": "/latex-code-generator/static/js/react-syntax-highlighter/refractor-core-import.af3cf325.chunk.js",
     "react-syntax-highlighter_languages_refractor_abap.js": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_abap.7ca622ff.chunk.js",
     "react-syntax-highlighter_languages_refractor_abnf.js": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_abnf.9261bc69.chunk.js",
@@ -281,8 +281,8 @@
     "react-syntax-highlighter_languages_refractor_yang.js": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_yang.75d04fbf.chunk.js",
     "react-syntax-highlighter_languages_refractor_zig.js": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_zig.c8dd740d.chunk.js",
     "index.html": "/latex-code-generator/index.html",
-    "main.276f543c.css.map": "/latex-code-generator/static/css/main.276f543c.css.map",
-    "main.b0bc543b.js.map": "/latex-code-generator/static/js/main.b0bc543b.js.map",
+    "main.2ee3817a.css.map": "/latex-code-generator/static/css/main.2ee3817a.css.map",
+    "main.1a0b5b1e.js.map": "/latex-code-generator/static/js/main.1a0b5b1e.js.map",
     "refractor-core-import.af3cf325.chunk.js.map": "/latex-code-generator/static/js/react-syntax-highlighter/refractor-core-import.af3cf325.chunk.js.map",
     "react-syntax-highlighter_languages_refractor_abap.7ca622ff.chunk.js.map": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_abap.7ca622ff.chunk.js.map",
     "react-syntax-highlighter_languages_refractor_abnf.9261bc69.chunk.js.map": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_abnf.9261bc69.chunk.js.map",
@@ -563,7 +563,7 @@
     "react-syntax-highlighter_languages_refractor_zig.c8dd740d.chunk.js.map": "/latex-code-generator/static/js/react-syntax-highlighter_languages_refractor_zig.c8dd740d.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.276f543c.css",
-    "static/js/main.b0bc543b.js"
+    "static/css/main.2ee3817a.css",
+    "static/js/main.1a0b5b1e.js"
   ]
 }
