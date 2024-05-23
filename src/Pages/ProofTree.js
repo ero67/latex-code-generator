@@ -417,7 +417,7 @@ const generateBtn = () => {
         />
 
         <label htmlFor="includeDocumentTags">
-          Include import of the forest package
+          Include import of the bussproofs package
         </label>
         <input
           type="checkbox"
