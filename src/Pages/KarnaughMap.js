@@ -667,7 +667,6 @@ const VariableLabels = ({ labels, isColumn }) => (
           singeEdgeImplicantIndexes,
           edgeImplicant
         );
-        console.log("dlzka picoviny kokotkskej");
         console.log(combinedArray);
         console.log(
           combinedArray[0].row,
@@ -694,7 +693,6 @@ const VariableLabels = ({ labels, isColumn }) => (
             combinedArray[1].row === 3 &&
             combinedArray[1].col === 0)
         ) {
-          console.log("presla pmoja genialna podmienka");
           isHorizontal = window.confirm(
             "Choose 'OK' for Horizontal or 'Cancel' for Vertical"
           );
@@ -704,9 +702,7 @@ const VariableLabels = ({ labels, isColumn }) => (
           console.log(
             `thisi is isEightEdgeHorizontal ${isEightEdteHorizontal}`
           );
-        } else {
-          console.log("nepresla ta sracka");
-        }
+        } 
 
         const sortedImplicants = sortVerticalEdgeImplicants(
           combinedArray,
@@ -765,8 +761,6 @@ const VariableLabels = ({ labels, isColumn }) => (
               fullimplicant[4],
               fullimplicant[5],
             ];
-            // console.log(" podmienkaaaaaaaaaaaaaaaa");
-            console.log("toto je full impicant ktoreho kuskujem");
             console.log(fullimplicant);
           } else {
             tempFullEdgeImplicant_kmindexes = [
