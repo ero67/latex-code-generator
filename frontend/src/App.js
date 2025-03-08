@@ -1,13 +1,13 @@
 import Navbar from "./Components/Navbar/Navbar";
 import Home from "./Pages/Home";
-import Kmap from "./Pages/KarnaughMap";
-import ProofTree from "./Pages/ProofTree";
+import Kmap from "./Pages/KarnaughMap/KarnaughMap";
+import ProofTree from "./Pages/ProofTrees/ProofTree";
 import { Route, Routes } from "react-router-dom";
-import SyntaxTreeD3 from "./Pages/AST";
-import LoginForm from "./Pages/LoginForm";
-import RegisterForm from "./Pages/RegisterForm";
+import SyntaxTreeD3 from "./Pages/AbstractSyntaxTrees/AST";
+import LoginForm from "./Pages/AuthForms/LoginForm";
+import RegisterForm from "./Pages/AuthForms/RegisterForm";
 import { AuthProvider } from "./context/AuthContext";
-import KarnaughMapSelection from "./Pages/KarnaughMapSelection";
+import KarnaughMapSelection from "./Pages/KarnaughMap/KarnaughMapSelection";
 import "./index.css";
 
 function App() {
@@ -23,7 +23,10 @@ function App() {
               element={<KarnaughMapSelection></KarnaughMapSelection>}
             />
             <Route path="/karnaugh-maps/create" element={<Kmap></Kmap>}></Route>
-            <Route path="/karnaugh-maps/edit" element={<Kmap></Kmap>}></Route>
+            <Route
+              path="/karnaugh-maps/edit/:id"
+              element={<Kmap></Kmap>}
+            ></Route>
 
             <Route path="/ast" element={<SyntaxTreeD3></SyntaxTreeD3>}></Route>
             <Route
