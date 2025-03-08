@@ -6,7 +6,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import GeneratedCode from "../Components/GeneratedCode";
+import GeneratedCode from "../../Components/GeneratedCode";
 
 const SyntaxTreeD3 = () => {
   const [treeData, setTreeData] = useState(null);

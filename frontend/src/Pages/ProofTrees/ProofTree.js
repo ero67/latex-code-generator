@@ -4,9 +4,9 @@
 // NOTE DONE: PROOF TREES : namiesto tlacitok hore pre davanie specialnych znakov pridat ze ak napise "\" tak mu to da na vyber tie specialne znaky, jak taky autocomplete cca
 // NOTE DONE: PROOF TREES : podpora az 5tich potomkov https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
 import React, { useState } from "react";
-import "./index.css";
-import GeneratedCode from "../Components/GeneratedCode";
-import LatexInput from "../Components/LatexInput";
+import "../index.css";
+import GeneratedCode from "../../Components/GeneratedCode";
+import LatexInput from "../../Components/LatexInput";
 
 // ProofTreeNode Data Structure
 let nodeId = 0;

@@ -8,6 +8,7 @@ export interface IKarnaughMap extends Document {
   // userId: string;
 }
 
+// TODO save user id with map
 const karnaughMapSchema = new Schema<IKarnaughMap>(
   {
     tableSize: { type: String },

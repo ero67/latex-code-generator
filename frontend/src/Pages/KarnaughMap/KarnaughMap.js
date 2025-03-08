@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 // import "./index.css";
-import Cell from "../Components/Cell";
-import GeneratedCode from "../Components/GeneratedCode";
-import ImplicantsList from "../Components/ImplicantsList";
-import EdgeImplicantList from "../Components/EdgeImplicantList";
-import Instructions from "../Components/Instructions";
-import { karnaughMapService } from "../services/karnaughmap.service";
+import Cell from "../../Components/KarnaughMap/Cell";
+import GeneratedCode from "../../Components/GeneratedCode";
+import ImplicantsList from "../../Components/KarnaughMap/ImplicantsList";
+import EdgeImplicantList from "../../Components/KarnaughMap/EdgeImplicantList";
+import Instructions from "../../Components/KarnaughMap/Instructions";
+import { karnaughMapService } from "../../services/karnaughmap.service";
 import { ToastContainer, toast } from "react-toastify";
-import Dropdown from "../Components/Dropdown/DropDown";
+import Dropdown from "../../Components/Dropdown/DropDown";
 
 const Kmap = () => {
   const [includePreamble, setIncludePreamble] = useState(false);
@@ -33,16 +33,12 @@ const Kmap = () => {
     useState(true);
   const [edgeImplicantDisabled, setEdgeImplicantDisabled] = useState(true);
   const [cornerImplicantDisabled, setCornerImplicantDisabled] = useState(true);
-  // const [is8,setIs8] = useState(false);
-  // const [showPrompt, setShowPrompt] = useState(false);
-  const [orientation, setOrientation] = useState("");
 
   // default implicant
   const [implicants, addImplicant] = useState([]);
   const [markingImplicant, setMarkingImplicant] = useState(false);
   const [numberOfImplicants, setNumberOfImplicants] = useState(0);
   const [implicant, addPartOfImplicant] = useState([]);
-  const [indexesOfImplicant, addIndexOfImplicant] = useState([]);
 
   //useStates for coloring implicants
   const [singeImplicantIndexes, addPartOfSingleImplicantIndex] = useState([]);
@@ -59,19 +55,12 @@ const Kmap = () => {
     "Your code will appear here \n after you click on Generate Code button"
   );
   // drAwing implicants
-  const [mapHeight, setMapHeight] = useState(null); // Store the start point
-  const [mapWidth, setMapWidth] = useState(null); // Store the end point
+  const [mapHeight, setMapHeight] = useState(null);
+  const [mapWidth, setMapWidth] = useState(null);
 
   const [activeImplicantIndex, setActiveImplicantIndex] = useState(null);
   const [activeImplicantType, setActiveImplicantType] = useState(null);
 
-  const [edgePositionHorizontal, setEdgePositionHorizontal] = useState(false);
-
-  // orientation modal variables
-  // const [isModalOpen, setIsModalOpen] = useState(false);
-
-  ///////////////////////////////////////////////////////////////////////
-  // Assuming these states are set correctly based on the map dimensions
   const [rows, cols] = tableSize.split("x").map(Number);
   const rowVarsCount = Math.floor(Math.log2(rows));
   const colVarsCount = Math.floor(Math.log2(cols));
@@ -142,10 +131,8 @@ const Kmap = () => {
     activeColor
   ) {
     // Check if there is an active implicant
-    // console.log(activeImplicantType);
     let activeImplicanCellIndexes = edgeimplicantCellIndexes;
-    // console.log("===============asdasdasd===============");
-    // console.log(activeImplicanCellIndexes);
+
     if (activeImplicantType === "default") {
       activeImplicanCellIndexes = implicantCellIndexes;
     } else if (activeImplicantType === "edge") {
@@ -153,9 +140,6 @@ const Kmap = () => {
     }
     if (activeImplicantIndex !== null) {
       const activeImplicant = activeImplicanCellIndexes[activeImplicantIndex];
-      // console.log(`activeImplicaes ${activeImplicant}`);
-      // console.log("toto je adasdasdasdasdasdasdasdasdasd");
-      // console.log(activeImplicant);
 
       if (activeImplicant === undefined) {
         return;
@@ -167,22 +151,7 @@ const Kmap = () => {
       }
     }
 
-    // Check if the cell belongs to any other implicant
-    // if (activeImplicantIndex !== null) {
-    //   for (let i = 0; i < activeImplicanCellIndexes.length; i++) {
-    //     if (i !== activeImplicantIndex) {
-    //       const implicant = activeImplicanCellIndexes[i];
-    //       if (implicant.some((cell) => cell.row === row && cell.col === col)) {
-    //         return defaultColor; // Color for non-active implicant cells
-    //       }
-    //     }
-    //   }
-    // }
     return null; // No color if the cell is not part of any implicant
-  }
-
-  function getColorForImplicant() {
-    return colors[19];
   }
 
   // zmena velkosti tabulky
@@ -272,15 +241,6 @@ const Kmap = () => {
 
   const generateCodeLaTeX = () => {
     const [rows, cols] = tableSize.split("x").map(Number);
-    //   const totalVars = Math.ceil(Math.log2(rows * cols));
-    // const rowVarsCount = Math.ceil(totalVars / 2); // Split variables between rows and columns
-    // // const colVarsCount = totalVars - rowVarsCount;
-
-    // // const rowLabels = variables.slice(0, rowVarsCount).map(v => `$${v}$`).join('][');
-    // // const colLabels = variables.slice(rowVarsCount, totalVars).map(v => `$${v}$`).join('][');
-
-    // const rowLabels = variables.slice(0, rowVarsCount).reverse().map(v => `$${v}$`).join('][');
-    // const colLabels = variables.slice(rowVarsCount, totalVars).reverse().map(v => `$${v}$`).join('][');
 
     // Calculate the number of variables based on powers of 2
     const rowVarsCount = Math.floor(Math.log2(rows));
@@ -307,9 +267,7 @@ const Kmap = () => {
     if (includeDocumentTags && !includePreamble) {
       code += `\\usepackage{karnaugh-map}\n`;
     }
-    // code += `\\begin{karnaugh-map}[${cols}][${rows}]\n`;
-    // code += "       \\manualterms{";
-    // Integrate variable names into the LaTeX map header
+
     if (customVariablesAllowed) {
       code += `\\begin{karnaugh-map}[${cols}][${rows}][1][${colLabels}][${rowLabels}]\n`;
     } else {
@@ -368,7 +326,7 @@ const Kmap = () => {
     } else if (implicantCorner && (rows !== 4 || cols !== 4)) {
       alert("Implicant na rohy sa dá zaznačiť len na poliach rozmeru 4x4");
     }
-    // console.log(edgeImplicants);
+
     // logic for generating code for edge implicant
     // required number of {} for \implicantedge command is 4
     // if i want to mark only 2 cells i need to put both indexes twice
@@ -376,12 +334,7 @@ const Kmap = () => {
       // console.log(edgeImplicants[row].length);
       if (edgeImplicants[row].length === 2) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
-      } else if (
-        edgeImplicants[row].length === 4
-        // ||
-        // edgeImplicants[row].length === 6 ||
-        // edgeImplicants[row].length === 8
-      ) {
+      } else if (edgeImplicants[row].length === 4) {
         const [firstindex, secondindex, thirdindex, fourthindex] =
           edgeImplicants[row];
         if (
@@ -677,14 +630,10 @@ const Kmap = () => {
               indexes[fullimplicant[i].row][fullimplicant[i].col];
           }
         }
-        // console.log("totot jeeeeee suksuasadasdsadasdsad");
-        // console.log(fullEdgeImplicant);
-        // console.log(fullimplicant);
+
         let tempFullEdgeImplicant_kmindexes = [];
         let tempFullEdgeImplicant_realindexes = [];
-        // console.log(`this is lenght of dge implicant ${sortedFullImplicant.length}`);
         if (sortedFullImplicant.length === 8) {
-          // console.log("asdasdasdasdasdasdasdasdsadasdasdasdasd")
           if (isHorizontal) {
             tempFullEdgeImplicant_kmindexes = [
               fullEdgeImplicant[0],
@@ -728,9 +677,7 @@ const Kmap = () => {
               fullimplicant[5],
               fullimplicant[6],
             ];
-            // console.log("second podmienkaaaaaaaaaaaaaaaa");
           }
-          // console.log("tu checkujem ten skurveny bug...................");
           console.log(tempFullEdgeImplicant_kmindexes);
           console.log(tempFullEdgeImplicant_realindexes);
           addEdgeImplicant([
@@ -846,8 +793,6 @@ const Kmap = () => {
   };
 
   useEffect(() => {
-    // console.log(implicant.length);
-    // console.log(implicant);
     if (implicant.length === 2 || edgeImplicant.length === 2) {
       finishImplicant();
     }
@@ -909,18 +854,7 @@ const Kmap = () => {
     addImplicantCellIndexes([]);
     addEdgeImplicantCellIndexes([]);
   };
-
-  // const handleClearButton = () =>{
-  //     setOption(0);
-  //     setOpposite(1);
-  //     // Loop through all the cells in the table
-  //     const cells = document.getElementsByClassName("cell");
-  //     for (let cell of cells) {
-  //       // If the cell is empty, set its value to the opposite number
-  //         cell.textContent = '';
-  //     }
-  //     // window.location.reload(false)
-  //   }
+  
 
   //----------FUNCTIONS FOR DRAWING IMPLICANTS ON KMAP CANVAS----------------
 
