@@ -1,17 +1,6 @@
 import { Request, Response } from "express";
 import { KarnaughMap, IKarnaughMap } from "../models/KarnaughMap";
 
-type SaveKMRequest = Request<
-  {},
-  {},
-  {
-    tableSize: string;
-    cellValues: string[];
-    implicants: number[][];
-    edgeImplicants: number[][];
-  }
->;
-
 export const saveKM = async (req: Request, res: Response) => {
   try {
     const { tableSize, cellValues, implicants, edgeImplicants } = req.body;
@@ -61,7 +50,6 @@ export const getAllKM = async (req: Request, res: Response) => {
 export const getKMById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
     const karnaughMap = await KarnaughMap.findById(id);
 
     if (!karnaughMap) {
