@@ -14,7 +14,7 @@ app.use(morgan("dev")); // HTTP request logger
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/saveKM", karnaughMapRoutes);
+app.use("/api/karnaughmap", karnaughMapRoutes);
 
 // Basic error handling
 app.use(

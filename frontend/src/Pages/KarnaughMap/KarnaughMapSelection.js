@@ -13,7 +13,9 @@ const KarnaughMapSelection = () => {
     const fetchSavedMaps = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:3001/api/saveKM");
+        const response = await axios.get(
+          "http://localhost:3001/api/karnaughmap"
+        );
         setSavedMaps(response.data.data);
         setLoading(false);
       } catch (err) {

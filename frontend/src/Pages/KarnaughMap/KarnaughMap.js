@@ -8,10 +8,18 @@ import Instructions from "../../Components/KarnaughMap/Instructions";
 import { karnaughMapService } from "../../services/karnaughmap.service";
 import { ToastContainer, toast } from "react-toastify";
 import Dropdown from "../../Components/Dropdown/DropDown";
+import { useNavigate, useParams } from "react-router-dom";
+import { createGlobalStyle } from "styled-components";
 
 const Kmap = () => {
+  //edit stuff
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [isEditMode, setIsEdit] = useState(id);
+
   const [includePreamble, setIncludePreamble] = useState(false);
   const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
+  
 
   const [variables, setVariables] = useState([]);
 
@@ -84,13 +92,6 @@ const Kmap = () => {
     </div>
   );
 
-  // const [isEightEdgeHorizontal, setIsEightEdgeHorizontal] = useState(null);
-
-  // Function to open the modal
-  // const handleOpenModal = () => {
-  //   setIsModalOpen(true);
-  // };
-
   const renderVarInputs = () => (
     <div className="variable-inputs">
       {variables.map((varName, index) => (
@@ -107,13 +108,6 @@ const Kmap = () => {
       ))}
     </div>
   );
-
-  // Handler for when the user makes a choice
-  // const handleUserChoice = (choice) => {
-  //   setIsEightEdgeHorizontal(choice);
-  //   setIsModalOpen(false); // Close the modal
-  //   // Additional logic based on the user's choice
-  // };
 
   const handleImplicantClick = (index, typeOfImplicant) => {
     setActiveImplicantIndex(index);
@@ -189,11 +183,24 @@ const Kmap = () => {
     setMapHeight(rect.height);
     setMapWidth(rect.width);
   };
+  // TODO len passnut array z backendu do tejto funckie
+  const fillCellsOnEdit = (cellsFromBackend) => {
+    // Loop through all the cells in the table
+    console.log(cellsFromBackend);
+    const cells = document.getElementsByClassName("cell");
+    let i = 0;
+    for (let cell of cells) {
+      // If the cell is empty, set its value to the opposite number
+      // if (!cell.textContent) {
+      cell.textContent = cellsFromBackend[i];
+      i++;
+      // }
+    }
+  };
 
   // Define a function to fill the cells with the opposite number
   const fillCells = () => {
-    // Loop through all the cells in the table
-
+    // Loop through all the cells in the tabl
     const cells = document.getElementsByClassName("cell");
     for (let cell of cells) {
       // If the cell is empty, set its value to the opposite number
@@ -225,7 +232,6 @@ const Kmap = () => {
     ];
 
     addPartOfSingleEdgeImplicantIndex(newSingleEdgeImplicantIndexes);
-    // console.log(newSingleEdgeImplicantIndexes);
 
     // Final state updates
     addEdgeImplicant([...edgeImplicants, newEdgeImplicant]);
@@ -331,7 +337,6 @@ const Kmap = () => {
     // required number of {} for \implicantedge command is 4
     // if i want to mark only 2 cells i need to put both indexes twice
     for (let row = 0; row < edgeImplicants.length; row++) {
-      // console.log(edgeImplicants[row].length);
       if (edgeImplicants[row].length === 2) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
       } else if (edgeImplicants[row].length === 4) {
@@ -553,7 +558,6 @@ const Kmap = () => {
     }
     // LOGIC FOR PROCESSING EDGE IMPLICANT AFTER USER IS DONE SELECTING CELLS OF THE IMPLICANT
     else if (markingEdgeImplicant) {
-      console.log(`edge implicant length is : ${edgeImplicant.length}`);
       if (
         edgeImplicant.length > 1 &&
         (edgeImplicant.length === 2 ||
@@ -564,13 +568,6 @@ const Kmap = () => {
         const combinedArray = combineArrays(
           singeEdgeImplicantIndexes,
           edgeImplicant
-        );
-        console.log(combinedArray);
-        console.log(
-          combinedArray[0].row,
-          combinedArray[0].col,
-          combinedArray[1].row,
-          combinedArray[1].col
         );
         let isHorizontal = false;
         if (
@@ -594,12 +591,7 @@ const Kmap = () => {
           isHorizontal = window.confirm(
             "Choose 'OK' for Horizontal or 'Cancel' for Vertical"
           );
-          // console.log(`result of rpompt is : ${isHorizontal}`);
           setIsEightEdgeHorizontal(isHorizontal);
-          console.log(`thisi is isHorizontal ${isHorizontal}`);
-          console.log(
-            `thisi is isEightEdgeHorizontal ${isEightEdteHorizontal}`
-          );
         }
 
         const sortedImplicants = sortVerticalEdgeImplicants(
@@ -616,8 +608,6 @@ const Kmap = () => {
           fullimplicant,
           isHorizontal
         );
-        console.log("this is sorted full implicant");
-        console.log(sortedFullImplicant);
 
         // adding the kmap package indexes of the cells which are part of the implicant
         let fullEdgeImplicant = [];
@@ -655,7 +645,6 @@ const Kmap = () => {
               fullimplicant[4],
               fullimplicant[5],
             ];
-            console.log(fullimplicant);
           } else {
             tempFullEdgeImplicant_kmindexes = [
               fullEdgeImplicant[0],
@@ -678,14 +667,10 @@ const Kmap = () => {
               fullimplicant[6],
             ];
           }
-          console.log(tempFullEdgeImplicant_kmindexes);
-          console.log(tempFullEdgeImplicant_realindexes);
           addEdgeImplicant([
             ...edgeImplicants,
             tempFullEdgeImplicant_kmindexes,
           ]);
-          console.log("toto pridavam do toho pola co sa vykresluje");
-          console.log(tempFullEdgeImplicant_realindexes);
           addEdgeImplicantCellIndexes([
             ...edgeimplicantCellIndexes,
             tempFullEdgeImplicant_realindexes,
@@ -854,7 +839,6 @@ const Kmap = () => {
     addImplicantCellIndexes([]);
     addEdgeImplicantCellIndexes([]);
   };
-  
 
   //----------FUNCTIONS FOR DRAWING IMPLICANTS ON KMAP CANVAS----------------
 
@@ -904,8 +888,6 @@ const Kmap = () => {
 
   //useEffect function which draws implicants when something changes
   useEffect(() => {
-    // console.log("these are cell index in useefefet");
-    // console.log(implicantCellIndexes);
     drawImplicants(implicantCellIndexes);
   });
 
@@ -926,6 +908,7 @@ const Kmap = () => {
   //function which draws implicants
   const drawImplicants = (implicants) => {
     // Ensure colors are assigned to new implicants
+    console.log("drawing imp");
     assignColorsToImplicants(implicants);
 
     const [rows, cols] = tableSize.split("x").map(Number);
@@ -982,15 +965,12 @@ const Kmap = () => {
         edgeImplicant[3].row === 3 &&
         edgeImplicant[3].col === 3
       ) {
-        // console.log("presla prva podmienka");
         firstPartofEdgeImplicant.push(edgeImplicant[0]);
         secondPartofEdgeImplicant.push(edgeImplicant[1]);
         thirdPartofEdgeImplicant.push(edgeImplicant[2]);
         fourthPartofEdgeImplicant.push(edgeImplicant[3]);
         isEdge = true;
       } else {
-        // console.log("testtesteteetetetete");
-        // console.log(edgeImplicant);
         if (edgeImplicant[0].row === edgeImplicant[1].row) {
           firstPartofEdgeImplicant.push(edgeImplicant[0]);
           firstPartofEdgeImplicant.push(edgeImplicant[1]);
@@ -1129,28 +1109,6 @@ const Kmap = () => {
     addEdgeImplicantCellIndexes(newEdgeImplicantsIndexes);
   };
 
-  // const handleClearButton = () => {
-  //   const cells = document.getElementsByClassName("cell");
-  //   for (let cell of cells) {
-  //     cell.textContent = '';
-  //   }
-  //   addImplicant([]);
-  //   addEdgeImplicant([]);
-  //   addImplicantCellIndexes([]);
-  //   addEdgeImplicantCellIndexes([]);
-  //   setGeneratedCode("Your code will appear here \n after you click on Generate Code button");
-  //   setActiveImplicantIndex(null);
-  //   setActiveImplicantType(null);
-  // };
-
-  // Handle user choice from prompt
-  //  const handleChoice = (choice) => {
-  //   setOrientation(choice); // 'horizontal' or 'vertical'
-  //   console.log(orientation);
-  //   setShowPrompt(false);
-  //   // Additional logic to process the choice
-  // };
-
   const karnaughMapStructure = {
     tableSize: tableSize,
     implicants: implicants,
@@ -1167,6 +1125,57 @@ const Kmap = () => {
       console.error("Error while saving KM: ", error);
     }
   };
+
+  const testAddingImplicants = () => {
+    const testImplt = [
+      [0, 5],
+      [15, 10],
+    ];
+    addImplicant(testImplt);
+    drawImplicants(implicants);
+  };
+
+  useEffect(() => {
+    const fetchKarnaughMap = async () => {
+      if (isEditMode) {
+        try {
+          const response = await karnaughMapService.getKM(id);
+          const karnaughMap = response.data;
+
+          handleTableSizeChange({ target: { value: karnaughMap.tableSize } });
+          // Add a small delay to ensure the DOM is updated
+          setTimeout(() => {
+            fillCellsOnEdit(karnaughMap.cellValues);
+          }, 0);
+          setTimeout(() => {
+            addImplicant(karnaughMap.implicants);
+          }, 100);
+          setTimeout(() => {
+            drawImplicants(implicants);
+          }, 1200);
+          // addEdgeImplicant(karnaughMap.edgeImplicants);
+          // setVariables(karnaughMap.variables || []);
+          // setCustomVariablesAllowed(
+          //   karnaughMap.customVariablesAllowed || false
+          // );
+          // setIncludePreamble(karnaughMap.includePreamble || false);
+          // setIncludeDocumentTags(karnaughMap.includeDocumentTags || false);
+
+          // // Populate cell values
+          // const cells = document.getElementsByClassName("cell");
+          // karnaughMap.cellValues.forEach((value, index) => {
+          //   cells[index].textContent = value;
+          // });
+
+          // // Disable the initial configuration section
+        } catch (error) {
+          console.error("Error fetching Karnaugh map:", error);
+        }
+      }
+    };
+
+    fetchKarnaughMap();
+  }, [id, isEditMode]);
 
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
@@ -1372,7 +1381,12 @@ const Kmap = () => {
       <div>
         <button onClick={handleSave}>Save</button>
       </div>
-
+      <div>
+        <button onClick={fillCells}>test cells</button>
+      </div>
+      <div>
+        <button onClick={testAddingImplicants}>test</button>
+      </div>
       {/* Variables Section */}
       <div className="w-full mb-8">
         <h3 className="text-xl font-semibold mb-4">Variables</h3>
