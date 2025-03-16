@@ -1,39 +1,16 @@
-import React, { useState } from "react";
-
-const Cell = ({ option, onClick, row, col, disabled,cellColor}) => {
-  // Declare a state variable to store the value of the cell
-  const [cellValue, setCellValue] = useState (null);
-
-
-  
+const Cell = ({ onClick, row, col, cellColor, value }) => {
+  // Log the actual value and its type when the component renders
 
   const handleClick = () => {
-   
-      // if (cellValue === null) {
-      if(!disabled){  
-        setCellValue(option); 
-        // console.log(cellValue)
-        // console.log("cellValue===null if statement");
-      }
-      
-      else{
-        // console.log("cellValue===null else statement");
-      }
-        onClick(row, col);
-       
-        // console.log("this is row and col of a cell when clicked");
-        // console.log(row, col);
-        // console.log("handleClick in Cell compnent");
+    onClick(row, col);
   };
 
   const cellStyle = cellColor ? { backgroundColor: cellColor } : {};
 
+  // This approach should show us what's happening
   return (
-    <div className="cell" onClick= {handleClick} style={cellStyle} >
-      {/* Render the cell value if it is not null */}
-      {/* {cellValue && <ValueOfCell />} */}
-      {cellValue}
-      {/* {<ValueOfCell/>} */}
+    <div className="cell" onClick={handleClick} style={cellStyle}>
+      <span>{value}</span>
     </div>
   );
 };

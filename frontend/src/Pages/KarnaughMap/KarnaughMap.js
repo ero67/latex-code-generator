@@ -11,23 +11,101 @@ import Dropdown from "../../Components/Dropdown/DropDown";
 import { useNavigate, useParams } from "react-router-dom";
 import { createGlobalStyle } from "styled-components";
 
+const BinaryColumnLabels = ({ size }) => {
+  // Generate binary labels based on size with proper Gray code ordering
+  let labels = [];
+  const [rows, cols] = size.split("x").map(Number);
+  if (cols === 1) {
+    labels = ["0"]; // Only one column
+  } else if (cols === 2) {
+    labels = ["0", "1"]; // Two columns
+  } else if (cols === 4) {
+    labels = ["00", "01", "11", "10"]; // Four columns with Gray code ordering
+  }
+
+  // Calculate width based on map size
+  const labelWidth = size === "4x4" ? 50 : 50; // Adjust as needed
+
+  return (
+    <div className="flex justify-center mb-2">
+      <div style={{ width: "30px" }}></div>{" "}
+      {/* Space for corner - increased for better alignment */}
+      {labels.map((label, index) => (
+        <div
+          key={index}
+          className="cell-label font-medium ml-2 "
+          style={{
+            color: "#006400",
+            width: `${labelWidth}px`,
+            textAlign: "center",
+            paddingLeft: "2px", // Slight adjustment to center the binary labels over cells
+          }}
+        >
+          {label}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Improved binary row labels with better alignment
+const BinaryRowLabels = ({ size }) => {
+  // Generate binary labels based on size with proper Gray code ordering
+  let labels = [];
+  const [rows, cols] = size.split("x").map(Number);
+  if (rows === 1) {
+    labels = ["0"]; // Only one row
+  } else if (rows === 2) {
+    labels = ["0", "1"]; // Two rows
+  } else if (rows === 4) {
+    labels = ["00", "01", "11", "10"]; // Four rows with Gray code ordering
+  }
+
+  // Calculate height based on map size
+  const labelHeight = size === "4x4" ? 50 : 50; // Adjust as needed
+
+  return (
+    <div className="flex flex-col mr-2 mb-4">
+      {" "}
+      {/* Increased margin for better alignment */}
+      {labels.map((label, index) => (
+        <div
+          key={index}
+          className="cell-label font-medium mt-2"
+          style={{
+            color: "#006400",
+            height: `${labelHeight}px`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            paddingRight: "6px",
+            paddingTop: "3px", // Slight adjustment to vertically center the labels
+          }}
+        >
+          {label}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const Kmap = () => {
   //edit stuff
   const { id } = useParams();
   const navigate = useNavigate();
   const [isEditMode, setIsEdit] = useState(id);
+  const [cellValues, setCellValues] = useState([]);
 
   const [includePreamble, setIncludePreamble] = useState(false);
   const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
-  
 
   const [variables, setVariables] = useState([]);
 
   const [customVariablesAllowed, setCustomVariablesAllowed] = useState(false);
 
   const [tableSize, setTableSize] = useState("0x0");
-  const [option, setOption] = useState(0);
-  const [opposite, setOpposite] = useState(1);
+  const [option, setOption] = useState("0");
+  const [opposite, setOpposite] = useState("1");
   const [disabled, Disable] = useState(false);
 
   // edge implicant
@@ -160,11 +238,14 @@ const Kmap = () => {
   // zmena hodnoty ktoru budeme davat do cells na ktore budeme klikat
   const handleOptionChange = (value) => {
     setOption(value);
-    if (value === 1) {
-      setOpposite(0);
+
+    if (value === "1") {
+      setOpposite("0");
     } else {
-      setOpposite(1);
+      setOpposite("0");
     }
+
+    console.log("Option set to:", value);
   };
 
   // handling initail state of buttons shown
@@ -199,15 +280,30 @@ const Kmap = () => {
   };
 
   // Define a function to fill the cells with the opposite number
+  // const fillCells = () => {
+  //   // Loop through all the cells in the tabl
+  //   const cells = document.getElementsByClassName("cell");
+  //   for (let cell of cells) {
+  //     // If the cell is empty, set its value to the opposite number
+  //     if (!cell.textContent) {
+  //       cell.textContent = option;
+  //     }
+  //   }
+  // };
+
   const fillCells = () => {
-    // Loop through all the cells in the tabl
-    const cells = document.getElementsByClassName("cell");
-    for (let cell of cells) {
-      // If the cell is empty, set its value to the opposite number
-      if (!cell.textContent) {
-        cell.textContent = option;
+    const [rows, cols] = tableSize.split("x").map(Number);
+    const totalCells = rows * cols;
+    const newCellValues = [...cellValues];
+
+    // Fill any empty cells with the selected option
+    for (let i = 0; i < totalCells; i++) {
+      if (!newCellValues[i]) {
+        newCellValues[i] = option;
       }
     }
+
+    setCellValues(newCellValues);
   };
 
   const getContentOfCells = () => {
@@ -722,6 +818,66 @@ const Kmap = () => {
     }
   };
 
+  // const handleCellClick = (row, col) => {
+  //   let indexes = [];
+  //   let rows = 0;
+  //   let cols = 0;
+  //   if (tableSize === "2x2") {
+  //     indexes = [
+  //       [0, 1],
+  //       [2, 3],
+  //     ];
+  //     rows = 2;
+  //     cols = 2;
+  //   } else if (tableSize === "2x1") {
+  //     indexes = [[0], [1]];
+  //     rows = 2;
+  //     cols = 1;
+  //   } else {
+  //     indexes = [
+  //       [0, 1, 3, 2],
+  //       [4, 5, 7, 6],
+  //       [12, 13, 15, 14],
+  //       [8, 9, 11, 10],
+  //     ];
+  //     rows = 4;
+  //     cols = 4;
+  //   }
+
+  //   // disabled means that we are in the implicant part of this page
+  //   // if am am marking basic implicant
+  //   if (disabled && markingImplicant && implicant.length <= 1) {
+  //     addPartOfImplicant([...implicant, indexes[row][col]]);
+  //     addPartOfSingleImplicantIndex([...singeImplicantIndexes, { row, col }]);
+  //     setNumberOfImplicants(numberOfImplicants + 1);
+  //   }
+
+  //   // if i am choosing esge implicant and also disbled is true
+  //   // disabled means that we are in the implicant part of this page
+  //   else if (disabled && markingEdgeImplicant) {
+  //     if (row === 0 || row === rows - 1 || col === 0 || col === cols - 1) {
+  //       addPartOfEdgeImplicant([...edgeImplicant, indexes[row][col]]);
+  //       addPartOfSingleEdgeImplicantIndex([
+  //         ...singeEdgeImplicantIndexes,
+  //         { row, col },
+  //       ]);
+
+  //       setNumberOfEdgeImplicants(numberOfEdgeImplicants + 1);
+  //     } else {
+  //       alert("you can only select Cells on edges");
+  //       setMarkingEdgeImplicant(false);
+  //       setfinishImplicantDisabled(true);
+  //       setClassicImplicantDisabled(false);
+  //       setCornerImplicantDisabled(false);
+  //     }
+  //   }
+  // };
+
+  useEffect(() => {
+    const [rows, cols] = tableSize.split("x").map(Number);
+    setCellValues(Array(rows * cols).fill(""));
+  }, [tableSize]);
+
   const handleCellClick = (row, col) => {
     let indexes = [];
     let rows = 0;
@@ -747,25 +903,29 @@ const Kmap = () => {
       rows = 4;
       cols = 4;
     }
+    // If we're in the initial configuration phase (not in the implicant part)
+    if (!disabled) {
+      const newCellValues = [...cellValues];
+      const index = row * cols + col;
 
-    // disabled means that we are in the implicant part of this page
-    // if am am marking basic implicant
-    if (disabled && markingImplicant && implicant.length <= 1) {
+      // Store the current option value directly (0 or 1)
+      newCellValues[index] = option;
+
+      setCellValues(newCellValues);
+      return;
+    }
+    // The rest of your existing code for implicant handling
+    if (markingImplicant && implicant.length <= 1) {
       addPartOfImplicant([...implicant, indexes[row][col]]);
       addPartOfSingleImplicantIndex([...singeImplicantIndexes, { row, col }]);
       setNumberOfImplicants(numberOfImplicants + 1);
-    }
-
-    // if i am choosing esge implicant and also disbled is true
-    // disabled means that we are in the implicant part of this page
-    else if (disabled && markingEdgeImplicant) {
+    } else if (markingEdgeImplicant) {
       if (row === 0 || row === rows - 1 || col === 0 || col === cols - 1) {
         addPartOfEdgeImplicant([...edgeImplicant, indexes[row][col]]);
         addPartOfSingleEdgeImplicantIndex([
           ...singeEdgeImplicantIndexes,
           { row, col },
         ]);
-
         setNumberOfEdgeImplicants(numberOfEdgeImplicants + 1);
       } else {
         alert("you can only select Cells on edges");
@@ -804,6 +964,7 @@ const Kmap = () => {
             row={row}
             col={col}
             disabled={disabled}
+            value={cellValues[row * cols + col] || ""}
             cellColor={getCellColor(
               row,
               col,
@@ -1248,12 +1409,12 @@ const Kmap = () => {
               <Dropdown
                 trigger={
                   <button className="w-20 h-10 rounded border border-gray-300 font-medium transition-colors bg-white text-gray-800 hover:bg-gray-50 flex items-center justify-center">
-                    {option === 0 ? "0" : "1"}
+                    {option}
                   </button>
                 }
                 menu={[
-                  { label: "0", onClick: () => handleOptionChange(0) },
-                  { label: "1", onClick: () => handleOptionChange(1) },
+                  { label: "0", onClick: () => handleOptionChange("0") },
+                  { label: "1", onClick: () => handleOptionChange("1") },
                 ]}
                 className="inline-block"
               />
@@ -1358,12 +1519,14 @@ const Kmap = () => {
         {customVariablesAllowed && (
           <VariableLabels labels={colVariables} isColumn={true} />
         )}
+        {disabled && <BinaryColumnLabels size={tableSize} />}
 
         <div className="flex items-center">
           {customVariablesAllowed && (
             <VariableLabels labels={rowVariables} isColumn={false} />
           )}
-
+          {/* Binary Row Labels (00, 01, 11, 10) */}
+          {disabled && <BinaryRowLabels size={tableSize} />}
           <div className="relative">
             {generateTable()}
             {disabled && (
