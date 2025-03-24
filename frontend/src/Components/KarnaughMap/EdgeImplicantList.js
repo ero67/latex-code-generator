@@ -8,37 +8,47 @@ const EdgeImplicantList = ({
   changeDirectionofEdgeImplicant = () => {},
 }) => {
   return (
-    <div className="mt-6 mb-8">
-      <h3 className="text-lg font-semibold text-gray-700 mb-2">
-        Edge Implicants:
+    <div className="w-full my-8 bg-white p-5 rounded-lg shadow">
+      <h3 className="text-xl font-semibold text-gray-700 mb-4">
+        Edge Implicants
       </h3>
-      <ul className="space-y-2 w-full">
-        {edgeImplicants.length === 0 ? (
-          <li className="text-gray-500 italic">No edge implicants added yet</li>
-        ) : (
-          edgeImplicants.map((implicant, index) => (
+      {edgeImplicants.length === 0 ? (
+        <div className="text-gray-500 italic py-4 text-center border border-dashed border-gray-300 rounded-md bg-gray-50">
+          No edge implicants added yet
+        </div>
+      ) : (
+        <ul className="space-y-3 w-full">
+          {edgeImplicants.map((implicant, index) => (
             <li
               key={index}
-              className="flex flex-wrap justify-between items-center p-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors gap-2 w-full"
+              className="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-green-50 transition-colors w-full group"
               onMouseEnter={() => onImplicantClick(index, "edge")}
               onMouseLeave={() => onImplicantClick(null, "edge")}
             >
-              <span className="font-medium">
-                Edge Implicant {index + 1}:{" "}
-                <span className="font-normal">{implicant.join(", ")}</span>
-              </span>
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold">
+                  {index + 1}
+                </div>
+                <span className="font-medium">
+                  Edge Implicant:{" "}
+                  <span className="font-normal text-gray-700">
+                    {implicant.join(", ")}
+                  </span>
+                </span>
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => onRemoveEdgeImplicant(index)}
-                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-sm transition-colors"
+                  className="px-4 py-2 bg-red-50 border border-red-200 text-red-600 hover:bg-red-600 hover:text-white font-medium rounded-md text-sm transition-all duration-200 group-hover:shadow-sm"
+                  aria-label="Remove edge implicant"
                 >
                   Remove
                 </button>
               </div>
             </li>
-          ))
-        )}
-      </ul>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

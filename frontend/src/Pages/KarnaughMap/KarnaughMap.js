@@ -10,6 +10,7 @@ import { ToastContainer, toast } from "react-toastify";
 import Dropdown from "../../Components/Dropdown/DropDown";
 import { useNavigate, useParams } from "react-router-dom";
 import { createGlobalStyle } from "styled-components";
+import { useAuth } from "../../context/AuthContext";
 
 const BinaryColumnLabels = ({ size }) => {
   // Generate binary labels based on size with proper Gray code ordering
@@ -91,6 +92,8 @@ const BinaryRowLabels = ({ size }) => {
 
 const Kmap = () => {
   //edit stuff
+  const { user } = useAuth();
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [isEditMode, setIsEdit] = useState(id);
@@ -244,8 +247,6 @@ const Kmap = () => {
     } else {
       setOpposite("0");
     }
-
-    console.log("Option set to:", value);
   };
 
   // handling initail state of buttons shown
@@ -267,7 +268,6 @@ const Kmap = () => {
   // TODO len passnut array z backendu do tejto funckie
   const fillCellsOnEdit = (cellsFromBackend) => {
     // Loop through all the cells in the table
-    console.log(cellsFromBackend);
     const cells = document.getElementsByClassName("cell");
     let i = 0;
     for (let cell of cells) {
@@ -944,8 +944,6 @@ const Kmap = () => {
     // Additional actions here based on the updated 'implicant' state
   }, [implicant, edgeImplicant]); // This effect runs whenever 'implicant' changes
 
-  // TODO function for sorting edge implicants so they are generated correctly no matter the order of being clicked
-
   const generateTable = () => {
     // get the number of rows and columns from the tableSize string
     const [rows, cols] = tableSize.split("x").map(Number);
@@ -1047,11 +1045,6 @@ const Kmap = () => {
     });
   };
 
-  //useEffect function which draws implicants when something changes
-  useEffect(() => {
-    drawImplicants(implicantCellIndexes);
-  });
-
   //calculating boundaries for rectangle representing implicant
   const calculateImplicantBoundaries = (implicant) => {
     const rows = implicant.map((cell) => cell.row);
@@ -1068,8 +1061,6 @@ const Kmap = () => {
 
   //function which draws implicants
   const drawImplicants = (implicants) => {
-    // Ensure colors are assigned to new implicants
-    console.log("drawing imp");
     assignColorsToImplicants(implicants);
 
     const [rows, cols] = tableSize.split("x").map(Number);
@@ -1102,6 +1093,11 @@ const Kmap = () => {
 
     drawEdgeImplicants(edgeimplicantCellIndexes);
   };
+
+  //useEffect function which draws implicants when something changes
+  // useEffect(() => {
+  //   drawImplicants(implicantCellIndexes);
+  // }, [disabled, implicantCellIndexes, tableSize]);
 
   //function for diving edge implicants into parts since the edge implicants are constructed from multiple rectangles for one implicant
   const divideEdgeImplicantsIntoTwo = (edgeImplicant) => {
@@ -1168,6 +1164,7 @@ const Kmap = () => {
 
   // function which draws all needed parts of edge implicant
   const drawEdgeImplicants = (edgeImplicants) => {
+    console.log(edgeImplicants, "drawiiing");
     const [rows, cols] = tableSize.split("x").map(Number);
     const canvas = document.getElementById("kmapCanvas");
     if (!canvas) return;
@@ -1273,12 +1270,17 @@ const Kmap = () => {
   const karnaughMapStructure = {
     tableSize: tableSize,
     implicants: implicants,
+    implicantCellIndexes: implicantCellIndexes,
+    edgeImplicantCellIndexes: edgeimplicantCellIndexes,
     edgeImplicants: edgeImplicants,
     cellValues: getContentOfCells(),
+    userId: user?.id,
   };
 
   const handleSave = async () => {
-    console.log(karnaughMapStructure);
+    if (user == null) {
+      return;
+    }
     try {
       const response = await karnaughMapService.saveKM(karnaughMapStructure);
       console.log("Save Response", response);
@@ -1287,14 +1289,7 @@ const Kmap = () => {
     }
   };
 
-  const testAddingImplicants = () => {
-    const testImplt = [
-      [0, 5],
-      [15, 10],
-    ];
-    addImplicant(testImplt);
-    drawImplicants(implicants);
-  };
+  const [fetchedKarnaughMap, setFetchedKarnaughMap] = useState(null);
 
   useEffect(() => {
     const fetchKarnaughMap = async () => {
@@ -1303,32 +1298,8 @@ const Kmap = () => {
           const response = await karnaughMapService.getKM(id);
           const karnaughMap = response.data;
 
-          handleTableSizeChange({ target: { value: karnaughMap.tableSize } });
-          // Add a small delay to ensure the DOM is updated
-          setTimeout(() => {
-            fillCellsOnEdit(karnaughMap.cellValues);
-          }, 0);
-          setTimeout(() => {
-            addImplicant(karnaughMap.implicants);
-          }, 100);
-          setTimeout(() => {
-            drawImplicants(implicants);
-          }, 1200);
-          // addEdgeImplicant(karnaughMap.edgeImplicants);
-          // setVariables(karnaughMap.variables || []);
-          // setCustomVariablesAllowed(
-          //   karnaughMap.customVariablesAllowed || false
-          // );
-          // setIncludePreamble(karnaughMap.includePreamble || false);
-          // setIncludeDocumentTags(karnaughMap.includeDocumentTags || false);
-
-          // // Populate cell values
-          // const cells = document.getElementsByClassName("cell");
-          // karnaughMap.cellValues.forEach((value, index) => {
-          //   cells[index].textContent = value;
-          // });
-
-          // // Disable the initial configuration section
+          // Store the fetched data in a temporary state
+          setFetchedKarnaughMap(karnaughMap);
         } catch (error) {
           console.error("Error fetching Karnaugh map:", error);
         }
@@ -1338,12 +1309,35 @@ const Kmap = () => {
     fetchKarnaughMap();
   }, [id, isEditMode]);
 
+  useEffect(() => {
+    if (fetchedKarnaughMap) {
+      const mapSize = fetchedKarnaughMap.tableSize;
+      setTableSize(mapSize);
+      setTimeout(() => {
+        fillCellsOnEdit(fetchedKarnaughMap.cellValues);
+        handleDisable();
+
+        if (
+          fetchedKarnaughMap.implicants &&
+          fetchedKarnaughMap.implicants.length > 0
+        ) {
+          const importedImplicants = fetchedKarnaughMap.implicants;
+          addImplicant(importedImplicants);
+
+          addImplicantCellIndexes(fetchedKarnaughMap.implicantCellIndexes);
+        }
+      }, 100);
+    }
+  }, [fetchedKarnaughMap]);
+
+  useEffect(() => {
+    drawImplicants(implicantCellIndexes);
+  }, [disabled, implicantCellIndexes]);
+
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-8 text-center">Karnaugh maps</h1>
-
       <Instructions />
-
       {/* Settings Section - Initial Map Configuration */}
       {!disabled && (
         <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
@@ -1440,7 +1434,6 @@ const Kmap = () => {
           </div>
         </div>
       )}
-
       {/* Implicant Actions Section - After Map Creation */}
       {disabled && (
         <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
@@ -1513,7 +1506,6 @@ const Kmap = () => {
           </div>
         </div>
       )}
-
       {/* Karnaugh Map Container */}
       <div className="flex flex-col items-center mb-8">
         {customVariablesAllowed && (
@@ -1540,16 +1532,6 @@ const Kmap = () => {
           </div>
         </div>
       </div>
-
-      <div>
-        <button onClick={handleSave}>Save</button>
-      </div>
-      <div>
-        <button onClick={fillCells}>test cells</button>
-      </div>
-      <div>
-        <button onClick={testAddingImplicants}>test</button>
-      </div>
       {/* Variables Section */}
       <div className="w-full mb-8">
         <h3 className="text-xl font-semibold mb-4">Variables</h3>
@@ -1568,20 +1550,17 @@ const Kmap = () => {
         </div>
         {customVariablesAllowed && renderVarInputs()}
       </div>
-
       {/* Implicant Lists */}
       <ImplicantsList
         implicants={implicants}
         onImplicantClick={handleImplicantClick}
         onRemoveImplicant={handleRemoveImplicant}
       />
-
       <EdgeImplicantList
         edgeImplicants={edgeImplicants}
         onImplicantClick={handleImplicantClick}
         onRemoveEdgeImplicant={handleRemoveEdgeImplicant}
       />
-
       {/* LaTeX Settings */}
       <div className="w-full bg-gray-100 p-4 rounded-lg shadow-sm mb-8 flex flex-wrap gap-6">
         <label className="flex items-center">
@@ -1604,7 +1583,6 @@ const Kmap = () => {
           Include import of the karnaugh map package
         </label>
       </div>
-
       {/* Generate Code Button */}
       <button
         onClick={generateCodeLaTeX}
@@ -1613,9 +1591,31 @@ const Kmap = () => {
       >
         Generate code
       </button>
-
       {/* Generated Code */}
       <GeneratedCode disabled={!disabled} code={generatedCode} />
+      {!isEditMode && (
+        <div>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            disabled={!user}
+          >
+            Save
+          </button>
+        </div>
+      )}
+      // TODO call update
+      {isEditMode && (
+        <div>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            disabled={!user}
+          >
+            Save Updated KM
+          </button>
+        </div>
+      )}
     </div>
   );
 };

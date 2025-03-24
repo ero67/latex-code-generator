@@ -4,18 +4,35 @@ export interface IKarnaughMap extends Document {
   tableSize: string;
   cellValues: string[];
   implicants: number[][];
+  implicantCellIndexes: { row: number; col: number }[][];
+  edgeImplicantCellIndexes: { row: number; col: number }[][];
   edgeImplicants: number[][];
-  // userId: string;
+  userId: string;
 }
 
-// TODO save user id with map
 const karnaughMapSchema = new Schema<IKarnaughMap>(
   {
     tableSize: { type: String },
     cellValues: { type: [String] },
     implicants: { type: [[Number]] },
+    implicantCellIndexes: [
+      [
+        {
+          row: { type: Number, required: true },
+          col: { type: Number, required: true },
+        },
+      ],
+    ],
     edgeImplicants: { type: [[Number]] },
-    // userId: { type: String, required: true },
+    edgeImplicantCellIndexes: [
+      [
+        {
+          row: { type: Number, required: true },
+          col: { type: Number, required: true },
+        },
+      ],
+    ],
+    userId: { type: String, required: true },
   },
   {
     timestamps: true,
