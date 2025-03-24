@@ -3,14 +3,25 @@ import { KarnaughMap, IKarnaughMap } from "../models/KarnaughMap";
 
 export const saveKM = async (req: Request, res: Response) => {
   try {
-    const { tableSize, cellValues, implicants, edgeImplicants } = req.body;
+    const {
+      tableSize,
+      cellValues,
+      implicants,
+      implicantCellIndexes,
+      edgeImplicants,
+      edgeImplicantCellIndexes,
+      userId,
+    } = req.body;
 
     // Create new Karnaugh map
     const karnaughMap = new KarnaughMap({
       tableSize,
       cellValues,
       implicants,
+      implicantCellIndexes,
       edgeImplicants,
+      edgeImplicantCellIndexes,
+      userId,
     });
 
     await karnaughMap.save();
@@ -30,9 +41,13 @@ export const saveKM = async (req: Request, res: Response) => {
 
 // Get all Karnaugh maps
 export const getAllKM = async (req: Request, res: Response) => {
+  const { userId } = req.query;
+  console.log(req.query);
+  console.log("useridfrom request", userId);
   try {
-    const karnaughMaps = await KarnaughMap.find().sort({ createdAt: -1 });
-
+    const filter = userId ? { userId } : {};
+    const karnaughMaps = await KarnaughMap.find(filter).sort({ createdAt: -1 });
+    console.log(karnaughMaps);
     res.status(200).json({
       status: "success",
       results: karnaughMaps.length,
@@ -76,7 +91,15 @@ export const getKMById = async (req: Request, res: Response) => {
 export const updateKM = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { tableSize, cellValues, implicants, edgeImplicants } = req.body;
+    const {
+      tableSize,
+      cellValues,
+      implicants,
+      implicantCellIndexes,
+      edgeImplicants,
+      edgeImplicantCellIndexes,
+      userId,
+    } = req.body;
 
     const updatedKarnaughMap = await KarnaughMap.findByIdAndUpdate(
       id,
@@ -84,7 +107,10 @@ export const updateKM = async (req: Request, res: Response) => {
         tableSize,
         cellValues,
         implicants,
+        implicantCellIndexes,
         edgeImplicants,
+        edgeImplicantCellIndexes,
+        userId,
       },
       { new: true, runValidators: true }
     );

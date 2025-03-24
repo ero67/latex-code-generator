@@ -12,7 +12,6 @@ const router: Router = express.Router();
 
 // Create new Karnaugh map
 router.post("/", saveKM);
-
 // Get all Karnaugh maps
 router.get("/", getAllKM);
 

@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
 
 const KarnaughMapSelection = () => {
   const [savedMaps, setSavedMaps] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-
+  const { user } = useAuth();
+  console.log(user);
   useEffect(() => {
     // Fetch saved Karnaugh maps from the backend
     const fetchSavedMaps = async () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          "http://localhost:3001/api/karnaughmap"
+          `http://localhost:3001/api/karnaughmap?userId=${user.id}`
         );
         setSavedMaps(response.data.data);
         setLoading(false);
@@ -24,9 +26,11 @@ const KarnaughMapSelection = () => {
         setLoading(false);
       }
     };
-
-    fetchSavedMaps();
-  }, []);
+    if (user) {
+      setLoading(true);
+      fetchSavedMaps();
+    }
+  }, [user]);
 
   const handleEditMap = (mapId) => {
     navigate(`/karnaugh-maps/edit/${mapId}`);
