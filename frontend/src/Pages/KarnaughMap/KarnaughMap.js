@@ -1332,7 +1332,7 @@ const Kmap = () => {
 
   useEffect(() => {
     drawImplicants(implicantCellIndexes);
-  }, [disabled, implicantCellIndexes]);
+  }, [disabled, implicantCellIndexes, edgeimplicantCellIndexes]);
 
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
