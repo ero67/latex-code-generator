@@ -7,6 +7,10 @@ export interface IKarnaughMap extends Document {
   implicantCellIndexes: { row: number; col: number }[][];
   edgeImplicantCellIndexes: { row: number; col: number }[][];
   edgeImplicants: number[][];
+  customVariablesAllowed: boolean;
+  customVariablesValues: string[];
+  cornerImplicant: boolean;
+
   userId: string;
 }
 
@@ -32,7 +36,10 @@ const karnaughMapSchema = new Schema<IKarnaughMap>(
         },
       ],
     ],
+    customVariablesAllowed: { type: Boolean, required: true },
+    customVariablesValues: { type: [String] },
     userId: { type: String, required: true },
+    cornerImplicant: { type: Boolean, required: true },
   },
   {
     timestamps: true,

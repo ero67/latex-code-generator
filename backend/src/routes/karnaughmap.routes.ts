@@ -1,5 +1,4 @@
-// karnaughmap.routes.ts
-import express, { Router } from "express";
+import express, { RequestHandler, Router } from "express";
 import {
   saveKM,
   getAllKM,
@@ -11,11 +10,18 @@ import {
 const router: Router = express.Router();
 
 // Create new Karnaugh map
-router.post("/", saveKM);
+router.post("/", saveKM as RequestHandler);
+
 // Get all Karnaugh maps
-router.get("/", getAllKM);
+router.get("/", getAllKM as RequestHandler);
 
 // Get Karnaugh map by ID
-router.get("/:id", getKMById);
+router.get("/:id", getKMById as RequestHandler);
+
+// Update Karnaugh map
+router.put("/:id", updateKM as RequestHandler);
+
+// Delete Karnaugh map
+router.delete("/:id", deleteKM as RequestHandler);
 
 export const karnaughMapRoutes = router;

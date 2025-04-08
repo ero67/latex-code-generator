@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import { KarnaughMap, IKarnaughMap } from "../models/KarnaughMap";
 
-export const saveKM = async (req: Request, res: Response) => {
+export const saveKM = async (
+  req: Request,
+  res: Response
+): Promise<void | Response> => {
   try {
     const {
       tableSize,
@@ -10,6 +13,9 @@ export const saveKM = async (req: Request, res: Response) => {
       implicantCellIndexes,
       edgeImplicants,
       edgeImplicantCellIndexes,
+      customVariablesAllowed,
+      customVariablesValues,
+      cornerImplicant,
       userId,
     } = req.body;
 
@@ -21,6 +27,9 @@ export const saveKM = async (req: Request, res: Response) => {
       implicantCellIndexes,
       edgeImplicants,
       edgeImplicantCellIndexes,
+      customVariablesAllowed,
+      customVariablesValues,
+      cornerImplicant,
       userId,
     });
 
@@ -40,7 +49,10 @@ export const saveKM = async (req: Request, res: Response) => {
 };
 
 // Get all Karnaugh maps
-export const getAllKM = async (req: Request, res: Response) => {
+export const getAllKM = async (
+  req: Request,
+  res: Response
+): Promise<void | Response> => {
   const { userId } = req.query;
   console.log(req.query);
   console.log("useridfrom request", userId);
@@ -61,19 +73,19 @@ export const getAllKM = async (req: Request, res: Response) => {
     });
   }
 };
-
-export const getKMById = async (req: Request, res: Response) => {
+export const getKMById = async (
+  req: Request,
+  res: Response
+): Promise<void | Response> => {
   try {
     const { id } = req.params;
     const karnaughMap = await KarnaughMap.findById(id);
-
     if (!karnaughMap) {
       return res.status(404).json({
         status: "error",
         message: "Karnaugh map not found",
       });
     }
-
     res.status(200).json({
       status: "success",
       data: karnaughMap,
@@ -88,7 +100,10 @@ export const getKMById = async (req: Request, res: Response) => {
 };
 
 // Update Karnaugh map
-export const updateKM = async (req: Request, res: Response) => {
+export const updateKM = async (
+  req: Request,
+  res: Response
+): Promise<void | Response> => {
   try {
     const { id } = req.params;
     const {
@@ -136,7 +151,10 @@ export const updateKM = async (req: Request, res: Response) => {
 };
 
 // Delete Karnaugh map
-export const deleteKM = async (req: Request, res: Response) => {
+export const deleteKM = async (
+  req: Request,
+  res: Response
+): Promise<void | Response> => {
   try {
     const { id } = req.params;
 
