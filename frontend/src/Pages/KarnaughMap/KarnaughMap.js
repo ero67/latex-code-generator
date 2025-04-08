@@ -452,7 +452,6 @@ const Kmap = () => {
       } else if (edgeImplicants[row].length === 6) {
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}{${edgeImplicants[row][5]}}\n`;
       } else if (edgeImplicants[row].length === 8) {
-        // code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][6]}}{${edgeImplicants[row][7]}}\n`;
         code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
       }
     }
@@ -1274,6 +1273,9 @@ const Kmap = () => {
     edgeImplicantCellIndexes: edgeimplicantCellIndexes,
     edgeImplicants: edgeImplicants,
     cellValues: getContentOfCells(),
+    customVariablesAllowed: customVariablesAllowed,
+    customVariablesValues: variables,
+    cornerImplicant: implicantCorner,
     userId: user?.id,
   };
 
@@ -1312,11 +1314,15 @@ const Kmap = () => {
   useEffect(() => {
     if (fetchedKarnaughMap) {
       const mapSize = fetchedKarnaughMap.tableSize;
+      setCornerImplicantDisabled(mapSize !== "4x4");
       setTableSize(mapSize);
       setTimeout(() => {
         fillCellsOnEdit(fetchedKarnaughMap.cellValues);
         handleDisable();
-
+        setCustomVariablesAllowed(fetchedKarnaughMap.customVariablesAllowed);
+        setVariables(fetchedKarnaughMap.customVariablesValues);
+        addImplicantCorner(fetchedKarnaughMap.cornerImplicant);
+        addCornerImplicant();
         if (
           fetchedKarnaughMap.implicants &&
           fetchedKarnaughMap.implicants.length > 0
@@ -1604,7 +1610,6 @@ const Kmap = () => {
           </button>
         </div>
       )}
-      // TODO call update
       {isEditMode && (
         <div>
           <button
