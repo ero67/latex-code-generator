@@ -16,7 +16,7 @@ const ASTSelection = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:3001/api/abstractsyntax?userId=${user.id}`
+          `http://localhost:3001/api/ast?userId=${user.id}` // Changed endpoint
         );
         setSavedTrees(response.data.data);
         setLoading(false);
@@ -34,7 +34,38 @@ const ASTSelection = () => {
   }, [user]);
 
   const handleEditTree = (treeId) => {
-    navigate(`/abstract-syntax-trees/edit/${treeId}`);
+    navigate(`/ast/edit/${treeId}`);
+  };
+
+  const handleDeleteTree = async (treeId) => {
+    if (window.confirm("Are you sure you want to delete this tree?")) {
+      try {
+        await axios.delete(`http://localhost:3001/api/ast/${treeId}`);
+        // Remove the deleted tree from state
+        setSavedTrees(savedTrees.filter(tree => tree._id !== treeId));
+      } catch (err) {
+        console.error("Error deleting tree:", err);
+        setError("Failed to delete tree");
+      }
+    }
+  };
+
+  // Helper function to count nodes in a tree
+  const countNodes = (node) => {
+    if (!node) return 0;
+    let count = 1; // Count current node
+    if (node.children && node.children.length > 0) {
+      count += node.children.reduce((acc, child) => acc + countNodes(child), 0);
+    }
+    return count;
+  };
+
+  // Helper function to count edges in a tree
+  const countEdges = (node) => {
+    if (!node || !node.children) return 0;
+    let count = node.children.length; // Direct children edges
+    count += node.children.reduce((acc, child) => acc + countEdges(child), 0);
+    return count;
   };
 
   return (
@@ -54,7 +85,7 @@ const ASTSelection = () => {
             configuration.
           </p>
           <Link
-            to="/abstract-syntax-trees/create"
+            to="/ast/create"
             className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
           >
             Create New Tree
@@ -99,7 +130,7 @@ const ASTSelection = () => {
           <div className="text-center py-8 bg-gray-50 rounded-lg">
             <p className="text-gray-600">You don't have any saved trees yet.</p>
             <Link
-              to="/abstract-syntax-trees/create"
+              to="/ast/create"
               className="inline-block mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
             >
               Create Your First Tree
@@ -113,21 +144,47 @@ const ASTSelection = () => {
                 className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium">{tree.value}</h3>
+                  <h3 className="font-medium text-gray-800">
+                    {tree.name || "Untitled Tree"}
+                  </h3>
                   <span className="text-xs text-gray-500">
                     {new Date(tree.createdAt).toLocaleDateString()}
                   </span>
                 </div>
+                
+                {tree.description && (
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                    {tree.description}
+                  </p>
+                )}
+                
                 <div className="text-sm text-gray-600 mb-3">
-                  <p>Nodes: {tree.nodeCount}</p>
-                  <p>Edges: {tree.edgeCount}</p>
+                  <p>Root: {tree.treeData?.value || "N/A"}</p>
+                  <p>Nodes: {countNodes(tree.treeData)}</p>
+                  <p>Edges: {countEdges(tree.treeData)}</p>
+                  <p>
+                    Orientation: {
+                      ["Top-Down", "Left-Right", "Bottom-Up", "Right-Left"][
+                        tree.settings?.indexOfOrientation || 0
+                      ]
+                    }
+                  </p>
                 </div>
-                <button
-                  onClick={() => handleEditTree(tree._id)}
-                  className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center text-sm transition-colors"
-                >
-                  Edit Tree
-                </button>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEditTree(tree._id)}
+                    className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center text-sm transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTree(tree._id)}
+                    className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-sm transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>

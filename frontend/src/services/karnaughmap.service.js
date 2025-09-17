@@ -30,4 +30,19 @@ export const karnaughMapService = {
     }
     return result;
   },
+
+  async updateKM(id, karnaughMapData) {
+    const response = await fetch(`${API_URL}/karnaughmap/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(karnaughMapData),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.message || "Updating KM Failed");
+    }
+    return result;
+  },
 };

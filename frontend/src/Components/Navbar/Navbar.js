@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import * as FaIcons from "react-icons/fa";
+import * as AiIcons from "react-icons/ai";
 import { Link } from "react-router-dom";
 import { SidebarData } from "./SidebarData";
-import { useAuth } from "../../context/AuthContext";
+import "./Navbar.css";
 import { IconContext } from "react-icons";
+import { useAuth } from "../../context/AuthContext";
 
 function Navbar() {
   const { user, logout } = useAuth();
@@ -11,7 +13,7 @@ function Navbar() {
 
   return (
     <>
-      <IconContext.Provider value={{ color: "#000" }}>
+      <IconContext.Provider value={{ color: "#000000ff" }}>
         <nav className="bg-white shadow-md p-4 flex justify-between items-center">
           <div className="flex items-center">
             <Link to="/" className="text-2xl font-bold text-gray-800">
@@ -42,6 +44,14 @@ function Navbar() {
                     </Link>
                   </li>
                 ))}
+                {user && user.isAdmin && (
+                  <li className="nav-text">
+                    <Link to="/analytics">
+                      <AiIcons.AiOutlineBarChart />
+                      <span>Analytics</span>
+                    </Link>
+                  </li>
+                )}
                 {user ? (
                   <>
                     <li className="nav-item">
