@@ -27,7 +27,6 @@ const LoginForm = () => {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      console.log("Submitting data:", values);
       const response = await authService.login(values);
       login(response.user);
       navigate("/");

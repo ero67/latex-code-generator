@@ -36,6 +36,19 @@ const KarnaughMapSelection = () => {
     navigate(`/karnaugh-maps/edit/${mapId}`);
   };
 
+  const handleDeleteMap = async (mapId) => {
+    if (window.confirm("Are you sure you want to delete this map?")) {
+      try {
+        await axios.delete(`http://localhost:3001/api/karnaughmap/${mapId}`);
+        // Remove the deleted tree from state
+        setSavedMaps(savedMaps.filter((map) => map._id !== mapId));
+      } catch (err) {
+        console.error("Error deleting map:", err);
+        setError("Failed to delete map");
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-8 text-center">Karnaugh Maps</h1>
@@ -120,12 +133,20 @@ const KarnaughMapSelection = () => {
                   <p>Implicants: {map.implicants.length}</p>
                   <p>Edge Implicants: {map.edgeImplicants.length}</p>
                 </div>
+                 <div className="flex gap-2">
                 <button
                   onClick={() => handleEditMap(map._id)}
                   className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center text-sm transition-colors"
                 >
                   Edit Map
                 </button>
+                <button
+                  onClick={() => handleDeleteMap(map._id)}
+                  className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-sm transition-colors"
+                >
+                  Delete
+                </button>
+                                </div>
               </div>
             ))}
           </div>

@@ -4,10 +4,13 @@ import Kmap from "./Pages/KarnaughMap/KarnaughMap";
 import ProofTree from "./Pages/ProofTrees/ProofTree";
 import { Route, Routes } from "react-router-dom";
 import SyntaxTreeD3 from "./Pages/AbstractSyntaxTrees/AST";
+import ASTSelection from "./Pages/AbstractSyntaxTrees/ASTSelection";
 import LoginForm from "./Pages/AuthForms/LoginForm";
 import RegisterForm from "./Pages/AuthForms/RegisterForm";
 import { AuthProvider } from "./context/AuthContext";
 import KarnaughMapSelection from "./Pages/KarnaughMap/KarnaughMapSelection";
+import ProofTreeSelection from "./Pages/ProofTrees/ProofTreeSelection";
+import Analytics from "./Pages/Analytics";
 import "./index.css";
 
 function App() {
@@ -28,9 +31,25 @@ function App() {
               element={<Kmap></Kmap>}
             ></Route>
 
-            <Route path="/ast" element={<SyntaxTreeD3></SyntaxTreeD3>}></Route>
+            <Route path="/ast" element={<ASTSelection></ASTSelection>}></Route>
+            <Route
+              path="/ast/create"
+              element={<SyntaxTreeD3></SyntaxTreeD3>}
+            ></Route>
+            <Route
+              path="/ast/edit/:id"
+              element={<SyntaxTreeD3></SyntaxTreeD3>}
+            ></Route>
             <Route
               path="/proof-trees"
+              element={<ProofTreeSelection></ProofTreeSelection>}
+            ></Route>
+            <Route
+              path="/proof-trees/create"
+              element={<ProofTree></ProofTree>}
+            ></Route>
+            <Route
+              path="/proof-trees/edit/:id"
               element={<ProofTree></ProofTree>}
             ></Route>
             <Route path="/login" element={<LoginForm></LoginForm>}></Route>
@@ -38,6 +57,7 @@ function App() {
               path="/register"
               element={<RegisterForm></RegisterForm>}
             ></Route>
+            <Route path="/analytics" element={<Analytics />} />
           </Routes>
         </div>
       </div>

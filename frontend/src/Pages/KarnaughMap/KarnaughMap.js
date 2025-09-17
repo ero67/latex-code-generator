@@ -1279,18 +1279,42 @@ const Kmap = () => {
     userId: user?.id,
   };
 
+  // const handleSave = async () => {
+  //   if (user == null) {
+  //     return;
+  //   }
+  //   try {
+  //     const response = await karnaughMapService.saveKM(karnaughMapStructure);
+  //     console.log("Save Response", response);
+  //   } catch (error) {
+  //     console.error("Error while saving KM: ", error);
+  //   }
+  // };
+
   const handleSave = async () => {
     if (user == null) {
       return;
     }
     try {
-      const response = await karnaughMapService.saveKM(karnaughMapStructure);
-      console.log("Save Response", response);
+      let response;
+      if (isEditMode) {
+        // Update existing KM
+        response = await karnaughMapService.updateKM(id, karnaughMapStructure);
+        console.log("Update Response", response);
+        toast.success("Karnaugh Map updated successfully!");
+      } else {
+        // Create new KM
+        response = await karnaughMapService.saveKM(karnaughMapStructure);
+        console.log("Save Response", response);
+        toast.success("Karnaugh Map saved successfully!");
+        // Navigate to edit mode after saving
+        navigate(`/karnaugh-maps/edit/${response.data._id}`);
+      }
     } catch (error) {
-      console.error("Error while saving KM: ", error);
+      console.error("Error while saving/updating KM: ", error);
+      toast.error("Error saving Karnaugh Map");
     }
   };
-
   const [fetchedKarnaughMap, setFetchedKarnaughMap] = useState(null);
 
   useEffect(() => {
@@ -1331,6 +1355,19 @@ const Kmap = () => {
           addImplicant(importedImplicants);
 
           addImplicantCellIndexes(fetchedKarnaughMap.implicantCellIndexes);
+        }
+        if (
+          fetchedKarnaughMap.edgeImplicants &&
+          fetchedKarnaughMap.edgeImplicants.length > 0
+        ) {
+          const importedEdgeImplicants = fetchedKarnaughMap.edgeImplicants;
+          addEdgeImplicant(importedEdgeImplicants);
+          addEdgeImplicantCellIndexes(
+            fetchedKarnaughMap.edgeImplicantCellIndexes
+          );
+        }
+        if (fetchedKarnaughMap.cornerImplicant) {
+          addCornerImplicant();
         }
       }, 100);
     }
@@ -1606,7 +1643,7 @@ const Kmap = () => {
             className="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
             disabled={!user}
           >
-            Save
+            Save Karnaugh Map
           </button>
         </div>
       )}
@@ -1617,7 +1654,7 @@ const Kmap = () => {
             className="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
             disabled={!user}
           >
-            Save Updated KM
+            Update Karnaugh Map
           </button>
         </div>
       )}
