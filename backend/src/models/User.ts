@@ -54,7 +54,7 @@ userSchema.methods.comparePassword = async function (
 
 userSchema.methods.generateAuthToken = function (): string {
   return jwt.sign(
-    { id: this._id, isAdmin: this.isAdmin },
+    { id: this._id, name: this.name, isAdmin: this.isAdmin },
     process.env.JWT_SECRET || "your-secret-key",
     { expiresIn: "24h" }
   );

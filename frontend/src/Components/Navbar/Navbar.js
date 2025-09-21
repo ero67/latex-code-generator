@@ -45,10 +45,13 @@ function Navbar() {
                   </li>
                 ))}
                 {user && user.isAdmin && (
-                  <li className="nav-text">
-                    <Link to="/analytics">
+                  <li className="nav-item">
+                    <Link
+                      to="/analytics"
+                      className="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-200 rounded"
+                    >
                       <AiIcons.AiOutlineBarChart />
-                      <span>Analytics</span>
+                      <span className="ml-2">Analytics</span>
                     </Link>
                   </li>
                 )}
