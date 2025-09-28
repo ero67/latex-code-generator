@@ -140,6 +140,8 @@ const Kmap = () => {
   // corner implicant
   const [implicantCorner, addImplicantCorner] = useState(false);
 
+  const [latexInput, setLatexInput] = useState("");
+
   const [generatedCode, setGeneratedCode] = useState(
     "Your code will appear here \n after you click on Generate Code button"
   );
@@ -998,6 +1000,116 @@ const Kmap = () => {
     addEdgeImplicantCellIndexes([]);
   };
 
+  const parseLatexCode = (latex) => {
+    try {
+      // 1. Parse map size and variables
+      const mapHeaderRegex =
+        /\\begin{karnaugh-map}\[(\d+)\]\[(\d+)\](?:\[1\]\[([^\]]*)\]\[([^\]]*)\])?/;
+      const headerMatch = latex.match(mapHeaderRegex);
+      if (!headerMatch) {
+        toast.error("Could not parse Karnaugh map dimensions from LaTeX.");
+        return;
+      }
+
+      const cols = parseInt(headerMatch[1], 10);
+      const rows = parseInt(headerMatch[2], 10);
+      const newSize = `${rows}x${cols}`;
+      setTableSize(newSize);
+
+      if (headerMatch[3] !== undefined && headerMatch[4] !== undefined) {
+        setCustomVariablesAllowed(true);
+        const colVars = headerMatch[3].split("][").reverse();
+        const rowVars = headerMatch[4].split("][").reverse();
+        setVariables([...rowVars, ...colVars]);
+      } else {
+        setCustomVariablesAllowed(false);
+        const totalVars = Math.ceil(Math.log2(rows * cols));
+        setVariables(Array(totalVars).fill(""));
+      }
+
+      // 2. Parse manual terms
+      const manualTermsRegex = /\\manualterms{([^}]*)}/;
+      const termsMatch = latex.match(manualTermsRegex);
+      if (!termsMatch) {
+        toast.error("Could not find \\manualterms in the LaTeX code.");
+        return;
+      }
+
+      const terms = termsMatch[1].split(",");
+      const grayMap = {
+        "4x4": [
+          [0, 1, 3, 2],
+          [4, 5, 7, 6],
+          [12, 13, 15, 14],
+          [8, 9, 11, 10],
+        ],
+        "2x4": [
+          [0, 1, 3, 2],
+          [4, 5, 7, 6],
+        ],
+        "2x2": [
+          [0, 1],
+          [2, 3],
+        ],
+        "2x1": [[0], [1]],
+      };
+      const indexMap = grayMap[newSize];
+      const newCellValues = Array(rows * cols).fill("");
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const flatIndex = r * cols + c;
+          const termIndex = indexMap[r][c];
+          if (terms[termIndex]) {
+            newCellValues[flatIndex] = terms[termIndex];
+          }
+        }
+      }
+      setCellValues(newCellValues);
+
+      // 3. Parse implicants
+      const implicantRegex = /\\implicant{(\d+)}{(\d+)}/g;
+      let match;
+      const newImplicants = [];
+      while ((match = implicantRegex.exec(latex)) !== null) {
+        newImplicants.push([parseInt(match[1], 10), parseInt(match[2], 10)]);
+      }
+      addImplicant(newImplicants);
+
+      // 4. Parse edge implicants
+      const edgeImplicantRegex = /\\implicantedge{(\d+)}{(\d+)}{(\d+)}{(\d+)}/g;
+      const newEdgeImplicants = [];
+      while ((match = edgeImplicantRegex.exec(latex)) !== null) {
+        const implicant = [
+          parseInt(match[1], 10),
+          parseInt(match[2], 10),
+          parseInt(match[3], 10),
+          parseInt(match[4], 10),
+        ];
+        // The package uses 2 values for a 2-cell implicant, we store 4
+        if (implicant[0] === implicant[1] && implicant[2] === implicant[3]) {
+          newEdgeImplicants.push([implicant[0], implicant[2]]);
+        } else {
+          newEdgeImplicants.push(implicant);
+        }
+      }
+      addEdgeImplicant(newEdgeImplicants);
+
+      // 5. Parse corner implicant
+      if (/\\implicantcorner/.test(latex)) {
+        addImplicantCorner(true);
+      }
+
+      toast.success("Karnaugh map loaded from LaTeX!");
+      // This will switch to the edit view
+      setTimeout(() => {
+        handleDisable();
+      }, 100);
+    } catch (error) {
+      console.error("Failed to parse LaTeX:", error);
+      toast.error("An error occurred while parsing the LaTeX code.");
+    }
+  };
+
   //----------FUNCTIONS FOR DRAWING IMPLICANTS ON KMAP CANVAS----------------
 
   // Initialize an empty object to store implicant-to-color mappings
@@ -1098,7 +1210,7 @@ const Kmap = () => {
   //   drawImplicants(implicantCellIndexes);
   // }, [disabled, implicantCellIndexes, tableSize]);
 
-  //function for diving edge implicants into parts since the edge implicants are constructed from multiple rectangles for one implicant
+  //function for diving edge implicants into parts since the edge implicant is constructed from multiple rectangles for one implicant
   const divideEdgeImplicantsIntoTwo = (edgeImplicant) => {
     let firstPartofEdgeImplicant = [];
     let secondPartofEdgeImplicant = [];
@@ -1474,6 +1586,23 @@ const Kmap = () => {
                 <span>Create Map</span>
               </button>
             </div>
+          </div>
+          <div className="mt-6">
+            <h3 className="text-md font-semibold mb-2 text-gray-600">
+              Or Import from LaTeX
+            </h3>
+            <textarea
+              value={latexInput}
+              onChange={(e) => setLatexInput(e.target.value)}
+              placeholder="Paste your LaTeX code for a karnaugh-map here..."
+              className="w-full h-32 p-2 border border-gray-300 rounded-md font-mono text-sm"
+            />
+            <button
+              onClick={() => parseLatexCode(latexInput)}
+              className="mt-2 px-4 h-10 bg-teal-600 text-white font-medium rounded hover:bg-teal-700 transition-colors"
+            >
+              Load from LaTeX
+            </button>
           </div>
         </div>
       )}

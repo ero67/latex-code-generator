@@ -1,0 +1,1322 @@
+// NOTE DONE : PROOF TREES : right label nech ma mensiu velkost pisma jak nazvy v nodoch
+// NOTE DONE: PROOF TREES : dat na vyber ci generovat takto {$E \to B$} abo takto {E  $\to$  B}.
+//                     To znamena ze dat na vyber ci vsetko bude v matematickom pisme to znamena ze $takto$ alebo nie
+// NOTE DONE: PROOF TREES : namiesto tlacitok hore pre davanie specialnych znakov pridat ze ak napise "\" tak mu to da na vyber tie specialne znaky, jak taky autocomplete cca
+// NOTE DONE: PROOF TREES : podpora az 5tich potomkov https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
+import React, { useState, useEffect } from "react";
+import "../index.css";
+import GeneratedCode from "../../Components/GeneratedCode";
+import LatexInput from "../../Components/LatexInput";
+import ProofTreeInstructions from "../../Components/ProofTree/ProofTreeInstructions";
+import { useParams, useNavigate } from "react-router-dom";
+import { proofTreeService } from "../../services/prooftree.service";
+import { useAuth } from "../../context/AuthContext";
+
+// ProofTreeNode Data Structure
+let nodeId = 0;
+// const createProofTreeNode = (content = "", children = [], rightLabel = "") => {
+//   return { id: nodeId++, content, children, rightLabel };
+// };
+
+const createProofTreeNode = (
+  content = "",
+  children = [],
+  rightLabel = "",
+  mathMode = false
+) => {
+  return { id: nodeId++, content, children, rightLabel, mathMode };
+};
+
+// ProofTree Component
+const ProofTree = () => {
+  const [rootNode, setRootNode] = useState(createProofTreeNode());
+  const [generatedCode, setGeneratedCode] = useState(
+    "Your code will appear here \n after you click on Generate Code button"
+  );
+  // const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [math_notation, setMathNotation] = useState(false);
+
+  const handleOptionChange = (option) => {
+    setMathNotation(option);
+  };
+
+  const [includePreamble, setIncludePreamble] = useState(false);
+  const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
+
+  const [treeName, setTreeName] = useState("");
+  const [treeDescription, setTreeDescription] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { user } = useAuth();
+  const { id } = useParams(); // Get tree ID from URL for edit mode
+  const navigate = useNavigate();
+  const isEditMode = Boolean(id);
+
+  const toggleMathModeForAllNodes = (node, mathMode) => {
+    node.mathMode = mathMode; // Set mathMode for the current node
+    node.children.forEach((child) =>
+      toggleMathModeForAllNodes(child, mathMode)
+    ); // Recursively set for children
+  };
+
+  const handleMathNotationChange = () => {
+    const newMathMode = !math_notation;
+    setMathNotation(newMathMode);
+
+    // Create a deep copy of rootNode to ensure immutability
+    const rootNodeCopy = JSON.parse(JSON.stringify(rootNode));
+    toggleMathModeForAllNodes(rootNodeCopy, newMathMode);
+    setRootNode(rootNodeCopy); // Update the rootNode with new mathMode settings
+  };
+
+  const toggleMathMode = (nodeId, isMathMode) => {
+    // Logic to update the specific node's mathMode property
+    const updateMathMode = (node) => {
+      if (node.id === nodeId) {
+        node.mathMode = isMathMode;
+      } else {
+        node.children.forEach(updateMathMode);
+      }
+    };
+    updateMathMode(rootNode);
+    setRootNode({ ...rootNode });
+  };
+  const addNode = (parentId) => {
+    const stack = [rootNode];
+    let found = false;
+
+    while (stack.length > 0 && !found) {
+      const currentNode = stack.pop();
+
+      if (currentNode.id === parentId && currentNode.children.length < 5) {
+        currentNode.children.push(createProofTreeNode());
+        found = true; // Node added, exit the loop
+      } else {
+        // Add children to the stack for further processing
+        currentNode.children.forEach((child) => stack.push(child));
+      }
+    }
+
+    if (found) {
+      setRootNode({ ...rootNode });
+    } else {
+      console.log("Parent node not found.");
+    }
+  };
+
+  const removeNode = (nodeIdToRemove) => {
+    const removeNodeRecursive = (currentNode, nodeIdToRemove) => {
+      for (let i = 0; i < currentNode.children.length; i++) {
+        if (currentNode.children[i].id === nodeIdToRemove) {
+          currentNode.children.splice(i, 1); // Remove the node
+          return true; // Node found and removed
+        }
+
+        // Recurse into children
+        if (removeNodeRecursive(currentNode.children[i], nodeIdToRemove)) {
+          return true; // Node found and removed in deeper level
+        }
+      }
+      return false; // Node not found in this branch
+    };
+
+    // Start the recursive removal process
+    if (!removeNodeRecursive(rootNode, nodeIdToRemove)) {
+      console.log("Node not found.");
+    } else {
+      setRootNode({ ...rootNode }); // Update state to trigger re-render
+    }
+  };
+
+  // function to edit the content of a node based on its ID
+  const editNodeContent = (nodeId, newContent) => {
+    const stack = [rootNode];
+    while (stack.length > 0) {
+      const currentNode = stack.pop();
+
+      if (currentNode.id === nodeId) {
+        currentNode.content = newContent;
+        break;
+      }
+
+      // adding children to the stack... so they are processed
+      currentNode.children.forEach((child) => stack.push(child));
+    }
+
+    setRootNode({ ...rootNode });
+  };
+
+  const editNodeRightLabel = (nodeId, newRightLabel) => {
+    const stack = [rootNode];
+    while (stack.length > 0) {
+      const currentNode = stack.pop();
+
+      if (currentNode.id === nodeId) {
+        currentNode.rightLabel = newRightLabel;
+        break; // Stop the loop as we've found and updated the node
+      }
+
+      // Add children to the stack for further processing
+      currentNode.children.forEach((child) => stack.push(child));
+    }
+
+    setRootNode({ ...rootNode });
+  };
+
+  const renderTreeNode = (node, isRoot = true) => {
+    return (
+      <div className="proof-tree-node">
+        <div className="proof-tree-content">
+          <div className="node-input-group">
+            <label htmlFor={`node-content-${node.id}`}>Node Content</label>
+            <LatexInput
+              id={`node-content-${node.id}`}
+              value={node.content}
+              onChange={(value) => editNodeContent(node.id, value)}
+              mathNotation={math_notation}
+            />
+            {/* Checkbox for Math Mode */}
+          </div>
+
+          {node.children.length > 0 && (
+            <div className="node-input-group">
+              <label htmlFor={`node-right-label-${node.id}`}>Right Label</label>
+              <LatexInput
+                id={`node-right-label-${node.id}`}
+                value={node.rightLabel}
+                onChange={(value) => editNodeRightLabel(node.id, value)}
+                mathNotation={math_notation}
+              />
+            </div>
+          )}
+          <div className="node-action-buttons">
+            <button className="add-child-btn" onClick={() => addNode(node.id)}>
+              +
+            </button>
+            {!isRoot && ( // Conditionally show the Remove Node button
+              <button
+                className="remove-child-btn"
+                onClick={() => removeNode(node.id)}
+              >
+                <b>-</b>
+              </button>
+            )}
+
+            {/* <div> */}
+            <input
+              type="checkbox"
+              checked={node.mathMode}
+              onChange={(e) => toggleMathMode(node.id, e.target.checked)}
+              id={`math-mode-${node.id}`}
+            />
+            {/* <label htmlFor={`math-mode-${node.id}`}>Math Mode</label> */}
+            {/* </div> */}
+          </div>
+        </div>
+
+        <div className="proof-tree-children">
+          {node.children.map((child) => renderTreeNode(child, false))}{" "}
+          {/* Mark children as non-root */}
+        </div>
+      </div>
+    );
+  };
+
+  const generateLatexCode = (node) => {
+    let code = "";
+
+    // Improved function to conditionally wrap content in math mode
+    // and ensure LaTeX commands are always correctly formatted
+    const formatContent = (content, mathMode) => {
+      // This regular expression finds LaTeX commands
+      const regex = /(\\[a-zA-Z]+){1}(\{[^}]*\})?/g; // Match commands, possibly followed by their arguments in {}
+      let formattedContent = content.replace(regex, (match) => `$${match}$`); // Wrap each found command with $...$
+      if (mathMode) {
+        // If the entire content is in math mode, wrap everything once instead of individual components
+        formattedContent = `$${formattedContent.replace(/\$/g, "")}$`; // Remove inner $ signs and wrap the whole content
+      }
+      return formattedContent;
+    };
+
+    // Generate code for children first
+    let childrenCode = node.children
+      .map((child) => generateLatexCode(child))
+      .join(" ");
+
+    // Determine the appropriate command based on the number of children
+    let nodeCommand = "";
+    const contentInMathMode = formatContent(node.content, node.mathMode); // Apply math mode if needed
+
+    switch (node.children.length) {
+      case 0:
+        nodeCommand = `\\AxiomC{${contentInMathMode}}`;
+        break;
+      case 1:
+        nodeCommand = `\\UnaryInfC{${contentInMathMode}}`;
+        break;
+      case 2:
+        nodeCommand = `\\BinaryInfC{${contentInMathMode}}`;
+        break;
+      case 3:
+        nodeCommand = `\\TrinaryInfC{${contentInMathMode}}`;
+        break;
+      case 4:
+        nodeCommand = `\\QuaternaryInfC{${contentInMathMode}}`;
+        break;
+      case 5:
+        nodeCommand = `\\QuinaryInfC{${contentInMathMode}}`;
+        break;
+      default:
+        console.log("Unsupported number of children");
+        break;
+    }
+
+    // If the node has a right label, adjust for math mode
+    if (node.rightLabel) {
+      const rightLabelInMathMode = formatContent(
+        node.rightLabel,
+        node.mathMode
+      ); // Apply node's math mode to right label
+      code = `${childrenCode} \\RightLabel{\\scriptsize{${rightLabelInMathMode}}}\n${nodeCommand}\n`;
+    } else {
+      code = `${childrenCode} ${nodeCommand}\n`;
+    }
+
+    return code;
+  };
+
+  const generateBtn = () => {
+    const proofTreeCode = generateLatexCode(rootNode); // This function generates the LaTeX code for the tree
+
+    let latexCode = ""; // Initialize the LaTeX code string
+
+    // Check if the preamble should be included
+    if (includePreamble) {
+      latexCode +=
+        "\\documentclass{article}\n\\usepackage{bussproofs}\n\\begin{document}\n";
+    }
+    if (includeDocumentTags && !includePreamble) {
+      latexCode += "\\usepackage{bussproofs}\n";
+    }
+
+    // Add the proof tree environment with the code
+
+    latexCode += "\\begin{prooftree}\n";
+
+    latexCode += `${proofTreeCode}\n`; // Add the main proof tree code
+
+    latexCode += "\\end{prooftree}\n";
+
+    // Check if document end tags should be included
+    if (includePreamble) {
+      latexCode += "\\end{document}";
+    }
+
+    setGeneratedCode(latexCode); // Set the generated LaTeX code to state
+  };
+  useEffect(() => {
+    const loadProofTreeData = async () => {
+      if (id && user) {
+        try {
+          const response = await proofTreeService.getProofTree(id);
+          const loadedTree = response.data;
+
+          setRootNode(loadedTree.treeData);
+          setTreeName(loadedTree.name || "");
+          setTreeDescription(loadedTree.description || "");
+          setMathNotation(loadedTree.settings.math_notation);
+          setIncludePreamble(loadedTree.settings.includePreamble);
+          setIncludeDocumentTags(loadedTree.settings.includeDocumentTags);
+
+          // Find highest node ID to continue numbering
+          const findMaxId = (node) => {
+            let maxId = node.id || 0;
+            if (node.children) {
+              node.children.forEach((child) => {
+                maxId = Math.max(maxId, findMaxId(child));
+              });
+            }
+            return maxId;
+          };
+          nodeId = findMaxId(loadedTree.treeData) + 1;
+        } catch (error) {
+          console.error("Error loading proof tree:", error);
+        }
+      }
+    };
+
+    loadProofTreeData();
+  }, [id, user]);
+
+  const handleSave = async () => {
+    if (!user || !rootNode) {
+      alert("Please log in and create a proof tree first");
+      return;
+    }
+
+    if (!treeName.trim()) {
+      alert("Please enter a name for your proof tree");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const treeToSave = {
+        name: treeName,
+        description: treeDescription,
+        treeData: rootNode,
+        settings: {
+          math_notation,
+          includePreamble,
+          includeDocumentTags,
+        },
+        userId: user.id,
+      };
+
+      if (isEditMode) {
+        // Update existing proof tree
+        await proofTreeService.updateProofTree(id, treeToSave);
+        alert("Proof tree updated successfully!");
+      } else {
+        // Create new proof tree
+        const response = await proofTreeService.saveProofTree(treeToSave);
+        alert("Proof tree saved successfully!");
+        // Navigate to edit mode with the new tree ID
+        navigate(`/proof-trees/edit/${response.data._id}`);
+      }
+    } catch (error) {
+      console.error("Error saving proof tree:", error);
+      alert("Failed to save proof tree. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-8 text-center">Proof Trees</h1>
+
+      <ProofTreeInstructions />
+
+      {/* Tree Configuration Section */}
+      <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
+        <h2 className="text-lg font-semibold mb-3 text-gray-700">
+          Tree Configuration
+        </h2>
+        <div className="flex flex-wrap gap-4 items-center">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="math"
+              name="math"
+              value="math"
+              checked={math_notation}
+              onChange={handleMathNotationChange}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-600 font-medium">
+              Global Mathematical Font
+            </span>
+          </label>
+        </div>
+      </div>
+
+      {/* Tree Builder Section */}
+      <div className="w-full mb-8 bg-white p-5 rounded-lg shadow">
+        <h2 className="text-lg font-semibold mb-3 text-gray-700">
+          Tree Structure
+        </h2>
+        <div className="bg-gray-50 p-4 rounded-md border-2 border-dashed border-gray-300 min-h-[200px]">
+          {renderTreeNode(rootNode)}
+        </div>
+      </div>
+
+      {/* Tree Metadata Section */}
+      <div className="w-full bg-white p-5 rounded-lg shadow mb-8">
+        <h3 className="text-lg font-semibold mb-3 text-gray-700">
+          Proof Tree Information
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tree Name *
+            </label>
+            <input
+              type="text"
+              value={treeName}
+              onChange={(e) => setTreeName(e.target.value)}
+              placeholder="Enter a name for your proof tree"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description (Optional)
+            </label>
+            <textarea
+              value={treeDescription}
+              onChange={(e) => setTreeDescription(e.target.value)}
+              placeholder="Enter a description for your proof tree"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* LaTeX Settings */}
+      <div className="w-full bg-gray-100 p-4 rounded-lg shadow-sm mb-8">
+        <h3 className="text-lg font-semibold mb-3 text-gray-700">
+          LaTeX Settings
+        </h3>
+        <div className="flex flex-wrap gap-6">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="includePreamble"
+              checked={includePreamble}
+              onChange={() => setIncludePreamble(!includePreamble)}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-600 font-medium">
+              Include whole LaTeX Preamble
+            </span>
+          </label>
+
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="includeDocumentTags"
+              checked={includeDocumentTags}
+              onChange={() => setIncludeDocumentTags(!includeDocumentTags)}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-600 font-medium">
+              Include import of the bussproofs package
+            </span>
+          </label>
+        </div>
+      </div>
+
+      {/* Generate Code Button */}
+      <button
+        onClick={generateBtn}
+        className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 mb-8 transition-colors flex items-center"
+      >
+        <svg
+          className="w-4 h-4 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+          />
+        </svg>
+        <span>Generate LaTeX Code</span>
+      </button>
+
+      {/* Generated Code */}
+      <GeneratedCode id="generatedCode" code={generatedCode} />
+
+      {/* Save/Update Button */}
+      <div className="mb-8">
+        <button
+          onClick={handleSave}
+          disabled={!user || !rootNode || isSaving}
+          className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center"
+        >
+          {isSaving ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+              <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              <span>
+                {isEditMode ? "Update Proof Tree" : "Save Proof Tree"}
+              </span>
+            </>
+          )}
+        </button>
+        {!user && (
+          <p className="text-sm text-red-500 mt-2">
+            Please log in to save your proof tree
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ProofTree;
+// import React, { useState, useEffect } from "react";
+// import "../index.css";
+// import GeneratedCode from "../../Components/GeneratedCode";
+// import LatexInput from "../../Components/LatexInput";
+// import ProofTreeInstructions from "../../Components/ProofTree/ProofTreeInstructions";
+// import { useParams, useNavigate } from "react-router-dom";
+// import { proofTreeService } from "../../services/prooftree.service";
+// import { useAuth } from "../../context/AuthContext";
+
+// // ProofTreeNode Data Structure
+// let nodeId = 0;
+
+// const createProofTreeNode = (
+//   content = "",
+//   children = [],
+//   rightLabel = "",
+//   mathMode = false
+// ) => {
+//   return { id: nodeId++, content, children, rightLabel, mathMode };
+// };
+
+// // Tree Visualization Component
+// const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
+//   const calculateTreeDimensions = (node) => {
+//     if (!node.children || node.children.length === 0) {
+//       return { width: 120, height: 40 };
+//     }
+
+//     const childDimensions = node.children.map(calculateTreeDimensions);
+//     const totalChildWidth = childDimensions.reduce(
+//       (sum, dim) => sum + dim.width,
+//       0
+//     );
+//     const maxChildHeight = Math.max(
+//       ...childDimensions.map((dim) => dim.height)
+//     );
+
+//     return {
+//       width: Math.max(120, totalChildWidth + (node.children.length - 1) * 20),
+//       height: maxChildHeight + 80,
+//     };
+//   };
+
+//   const renderProofNode = (node, x, y, width) => {
+//     const isSelected = selectedNodeId === node.id;
+//     const hasChildren = node.children && node.children.length > 0;
+
+//     const elements = [];
+
+//     // Node content box
+//     elements.push(
+//       <rect
+//         key={`rect-${node.id}`}
+//         x={x - width / 2}
+//         y={y - 20}
+//         width={width}
+//         height={40}
+//         fill={isSelected ? "#e3f2fd" : "white"}
+//         stroke={isSelected ? "#1976d2" : "#ccc"}
+//         strokeWidth={isSelected ? 2 : 1}
+//         rx={4}
+//         className="cursor-pointer hover:fill-gray-50"
+//         onClick={() => onNodeClick(node.id)}
+//       />
+//     );
+
+//     // Node content text
+//     elements.push(
+//       <text
+//         key={`text-${node.id}`}
+//         x={x}
+//         y={y + 5}
+//         textAnchor="middle"
+//         className="text-sm font-mono select-none pointer-events-none"
+//         fill="#333"
+//       >
+//         {node.content || "empty"}
+//       </text>
+//     );
+
+//     // Right label
+//     if (hasChildren && node.rightLabel) {
+//       elements.push(
+//         <text
+//           key={`label-${node.id}`}
+//           x={x + width / 2 + 10}
+//           y={y + 5}
+//           textAnchor="start"
+//           className="text-xs font-mono fill-gray-600"
+//         >
+//           ({node.rightLabel})
+//         </text>
+//       );
+//     }
+
+//     // Horizontal line above node (inference line)
+//     if (hasChildren) {
+//       elements.push(
+//         <line
+//           key={`inference-${node.id}`}
+//           x1={x - width / 2}
+//           y1={y - 25}
+//           x2={x + width / 2}
+//           y2={y - 25}
+//           stroke="#333"
+//           strokeWidth={2}
+//         />
+//       );
+//     }
+
+//     return elements;
+//   };
+
+//   const renderTree = (node, x, y, availableWidth) => {
+//     const hasChildren = node.children && node.children.length > 0;
+//     const nodeElements = [];
+
+//     if (!hasChildren) {
+//       // For leaf nodes, return an array containing just the node
+//       nodeElements.push(
+//         renderProofNode(node, x, y, Math.min(availableWidth, 120))
+//       );
+//       return nodeElements;
+//     }
+
+//     const childCount = node.children.length;
+//     const childWidth = availableWidth / childCount;
+
+//     // Render children first (bottom-up approach)
+//     node.children.forEach((child, index) => {
+//       const childX =
+//         x - availableWidth / 2 + childWidth / 2 + index * childWidth;
+//       const childY = y - 80;
+//       const childElements = renderTree(child, childX, childY, childWidth - 20);
+//       nodeElements.push(...childElements);
+//     });
+
+//     // Calculate the span of children for the inference line
+//     const leftmostChildX = x - availableWidth / 2 + childWidth / 2;
+//     const rightmostChildX =
+//       x - availableWidth / 2 + childWidth / 2 + (childCount - 1) * childWidth;
+
+//     // Render vertical lines from children to inference line
+//     node.children.forEach((child, index) => {
+//       const childX =
+//         x - availableWidth / 2 + childWidth / 2 + index * childWidth;
+//       nodeElements.push(
+//         <line
+//           key={`vertical-${child.id}`}
+//           x1={childX}
+//           y1={y - 80 + 20}
+//           x2={childX}
+//           y2={y - 25}
+//           stroke="#666"
+//           strokeWidth={1}
+//         />
+//       );
+//     });
+
+//     // Render horizontal inference line
+//     nodeElements.push(
+//       <line
+//         key={`horizontal-${node.id}`}
+//         x1={leftmostChildX - 60}
+//         y1={y - 25}
+//         x2={rightmostChildX + 60}
+//         y2={y - 25}
+//         stroke="#333"
+//         strokeWidth={2}
+//       />
+//     );
+
+//     // Render the current node
+//     nodeElements.push(
+//       renderProofNode(node, x, y, Math.min(availableWidth, 200))
+//     );
+
+//     return nodeElements;
+//   };
+
+//   const dimensions = calculateTreeDimensions(node);
+//   const centerX = dimensions.width / 2;
+//   const centerY = dimensions.height - 40;
+
+//   return (
+//     <div className="w-full overflow-x-auto bg-gray-50 p-4 rounded-lg border">
+//       <svg
+//         width={Math.max(dimensions.width, 400)}
+//         height={Math.max(dimensions.height, 200)}
+//         className="mx-auto"
+//       >
+//         {renderTree(node, centerX, centerY, dimensions.width * 0.8)}
+//       </svg>
+//     </div>
+//   );
+// };
+
+// // ProofTree Component
+// const ProofTree = () => {
+//   const [rootNode, setRootNode] = useState(createProofTreeNode());
+//   const [selectedNodeId, setSelectedNodeId] = useState(null);
+//   const [generatedCode, setGeneratedCode] = useState(
+//     "Your code will appear here \n after you click on Generate Code button"
+//   );
+//   const [math_notation, setMathNotation] = useState(false);
+
+//   const handleOptionChange = (option) => {
+//     setMathNotation(option);
+//   };
+
+//   const [includePreamble, setIncludePreamble] = useState(false);
+//   const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
+
+//   const [treeName, setTreeName] = useState("");
+//   const [treeDescription, setTreeDescription] = useState("");
+//   const [isSaving, setIsSaving] = useState(false);
+
+//   const { user } = useAuth();
+//   const { id } = useParams();
+//   const navigate = useNavigate();
+//   const isEditMode = Boolean(id);
+
+//   const toggleMathModeForAllNodes = (node, mathMode) => {
+//     node.mathMode = mathMode;
+//     node.children.forEach((child) =>
+//       toggleMathModeForAllNodes(child, mathMode)
+//     );
+//   };
+
+//   const handleMathNotationChange = () => {
+//     const newMathMode = !math_notation;
+//     setMathNotation(newMathMode);
+
+//     const rootNodeCopy = JSON.parse(JSON.stringify(rootNode));
+//     toggleMathModeForAllNodes(rootNodeCopy, newMathMode);
+//     setRootNode(rootNodeCopy);
+//   };
+
+//   const toggleMathMode = (nodeId, isMathMode) => {
+//     const updateMathMode = (node) => {
+//       if (node.id === nodeId) {
+//         node.mathMode = isMathMode;
+//       } else {
+//         node.children.forEach(updateMathMode);
+//       }
+//     };
+//     updateMathMode(rootNode);
+//     setRootNode({ ...rootNode });
+//   };
+
+//   const addNode = (parentId) => {
+//     const stack = [rootNode];
+//     let found = false;
+
+//     while (stack.length > 0 && !found) {
+//       const currentNode = stack.pop();
+
+//       if (currentNode.id === parentId && currentNode.children.length < 5) {
+//         currentNode.children.push(createProofTreeNode());
+//         found = true;
+//       } else {
+//         currentNode.children.forEach((child) => stack.push(child));
+//       }
+//     }
+
+//     if (found) {
+//       setRootNode({ ...rootNode });
+//     } else {
+//       console.log("Parent node not found.");
+//     }
+//   };
+
+//   const removeNode = (nodeIdToRemove) => {
+//     const removeNodeRecursive = (currentNode, nodeIdToRemove) => {
+//       for (let i = 0; i < currentNode.children.length; i++) {
+//         if (currentNode.children[i].id === nodeIdToRemove) {
+//           currentNode.children.splice(i, 1);
+//           return true;
+//         }
+
+//         if (removeNodeRecursive(currentNode.children[i], nodeIdToRemove)) {
+//           return true;
+//         }
+//       }
+//       return false;
+//     };
+
+//     if (!removeNodeRecursive(rootNode, nodeIdToRemove)) {
+//       console.log("Node not found.");
+//     } else {
+//       setRootNode({ ...rootNode });
+//       if (selectedNodeId === nodeIdToRemove) {
+//         setSelectedNodeId(null);
+//       }
+//     }
+//   };
+
+//   const editNodeContent = (nodeId, newContent) => {
+//     const stack = [rootNode];
+//     while (stack.length > 0) {
+//       const currentNode = stack.pop();
+
+//       if (currentNode.id === nodeId) {
+//         currentNode.content = newContent;
+//         break;
+//       }
+
+//       currentNode.children.forEach((child) => stack.push(child));
+//     }
+
+//     setRootNode({ ...rootNode });
+//   };
+
+//   const editNodeRightLabel = (nodeId, newRightLabel) => {
+//     const stack = [rootNode];
+//     while (stack.length > 0) {
+//       const currentNode = stack.pop();
+
+//       if (currentNode.id === nodeId) {
+//         currentNode.rightLabel = newRightLabel;
+//         break;
+//       }
+
+//       currentNode.children.forEach((child) => stack.push(child));
+//     }
+
+//     setRootNode({ ...rootNode });
+//   };
+
+//   const findNodeById = (node, targetId) => {
+//     if (node.id === targetId) return node;
+//     for (const child of node.children) {
+//       const found = findNodeById(child, targetId);
+//       if (found) return found;
+//     }
+//     return null;
+//   };
+
+//   const selectedNode = selectedNodeId
+//     ? findNodeById(rootNode, selectedNodeId)
+//     : null;
+
+//   const generateLatexCode = (node) => {
+//     let code = "";
+
+//     const formatContent = (content, mathMode) => {
+//       const regex = /(\\[a-zA-Z]+){1}(\{[^}]*\})?/g;
+//       let formattedContent = content.replace(regex, (match) => `$${match}$`);
+//       if (mathMode) {
+//         formattedContent = `$${formattedContent.replace(/\$/g, "")}$`;
+//       }
+//       return formattedContent;
+//     };
+
+//     let childrenCode = node.children
+//       .map((child) => generateLatexCode(child))
+//       .join(" ");
+
+//     let nodeCommand = "";
+//     const contentInMathMode = formatContent(node.content, node.mathMode);
+
+//     switch (node.children.length) {
+//       case 0:
+//         nodeCommand = `\\AxiomC{${contentInMathMode}}`;
+//         break;
+//       case 1:
+//         nodeCommand = `\\UnaryInfC{${contentInMathMode}}`;
+//         break;
+//       case 2:
+//         nodeCommand = `\\BinaryInfC{${contentInMathMode}}`;
+//         break;
+//       case 3:
+//         nodeCommand = `\\TrinaryInfC{${contentInMathMode}}`;
+//         break;
+//       case 4:
+//         nodeCommand = `\\QuaternaryInfC{${contentInMathMode}}`;
+//         break;
+//       case 5:
+//         nodeCommand = `\\QuinaryInfC{${contentInMathMode}}`;
+//         break;
+//       default:
+//         console.log("Unsupported number of children");
+//         break;
+//     }
+
+//     if (node.rightLabel) {
+//       const rightLabelInMathMode = formatContent(
+//         node.rightLabel,
+//         node.mathMode
+//       );
+//       code = `${childrenCode} \\RightLabel{\\scriptsize{${rightLabelInMathMode}}}\n${nodeCommand}\n`;
+//     } else {
+//       code = `${childrenCode} ${nodeCommand}\n`;
+//     }
+
+//     return code;
+//   };
+
+//   const generateBtn = () => {
+//     const proofTreeCode = generateLatexCode(rootNode);
+
+//     let latexCode = "";
+
+//     if (includePreamble) {
+//       latexCode +=
+//         "\\documentclass{article}\n\\usepackage{bussproofs}\n\\begin{document}\n";
+//     }
+//     if (includeDocumentTags && !includePreamble) {
+//       latexCode += "\\usepackage{bussproofs}\n";
+//     }
+
+//     latexCode += "\\begin{prooftree}\n";
+//     latexCode += `${proofTreeCode}\n`;
+//     latexCode += "\\end{prooftree}\n";
+
+//     if (includePreamble) {
+//       latexCode += "\\end{document}";
+//     }
+
+//     setGeneratedCode(latexCode);
+//   };
+
+//   useEffect(() => {
+//     const loadProofTreeData = async () => {
+//       if (id && user) {
+//         try {
+//           const response = await proofTreeService.getProofTree(id);
+//           const loadedTree = response.data;
+
+//           setRootNode(loadedTree.treeData);
+//           setTreeName(loadedTree.name || "");
+//           setTreeDescription(loadedTree.description || "");
+//           setMathNotation(loadedTree.settings.math_notation);
+//           setIncludePreamble(loadedTree.settings.includePreamble);
+//           setIncludeDocumentTags(loadedTree.settings.includeDocumentTags);
+
+//           const findMaxId = (node) => {
+//             let maxId = node.id || 0;
+//             if (node.children) {
+//               node.children.forEach((child) => {
+//                 maxId = Math.max(maxId, findMaxId(child));
+//               });
+//             }
+//             return maxId;
+//           };
+//           nodeId = findMaxId(loadedTree.treeData) + 1;
+//         } catch (error) {
+//           console.error("Error loading proof tree:", error);
+//         }
+//       }
+//     };
+
+//     loadProofTreeData();
+//   }, [id, user]);
+
+//   const handleSave = async () => {
+//     if (!user || !rootNode) {
+//       alert("Please log in and create a proof tree first");
+//       return;
+//     }
+
+//     if (!treeName.trim()) {
+//       alert("Please enter a name for your proof tree");
+//       return;
+//     }
+
+//     setIsSaving(true);
+//     try {
+//       const treeToSave = {
+//         name: treeName,
+//         description: treeDescription,
+//         treeData: rootNode,
+//         settings: {
+//           math_notation,
+//           includePreamble,
+//           includeDocumentTags,
+//         },
+//         userId: user.id,
+//       };
+
+//       if (isEditMode) {
+//         await proofTreeService.updateProofTree(id, treeToSave);
+//         alert("Proof tree updated successfully!");
+//       } else {
+//         const response = await proofTreeService.saveProofTree(treeToSave);
+//         alert("Proof tree saved successfully!");
+//         navigate(`/proof-trees/edit/${response.data._id}`);
+//       }
+//     } catch (error) {
+//       console.error("Error saving proof tree:", error);
+//       alert("Failed to save proof tree. Please try again.");
+//     } finally {
+//       setIsSaving(false);
+//     }
+//   };
+
+//   return (
+//     <div className="flex flex-col items-center w-full max-w-6xl mx-auto p-4">
+//       <h1 className="text-3xl font-bold mb-8 text-center">Proof Trees</h1>
+
+//       <ProofTreeInstructions />
+
+//       {/* Tree Visualization Section */}
+//       <div className="w-full mb-6">
+//         <h2 className="text-lg font-semibold mb-3 text-gray-700">
+//           Tree Visualization
+//         </h2>
+//         <ProofTreeVisualizer
+//           node={rootNode}
+//           onNodeClick={setSelectedNodeId}
+//           selectedNodeId={selectedNodeId}
+//         />
+//       </div>
+
+//       {/* Node Editor */}
+//       {selectedNode && (
+//         <div className="w-full max-w-md bg-white p-5 rounded-lg shadow mb-6">
+//           <h3 className="text-lg font-semibold mb-3 text-gray-700">
+//             Edit Selected Node (ID: {selectedNode.id})
+//           </h3>
+
+//           <div className="space-y-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-1">
+//                 Node Content
+//               </label>
+//               <LatexInput
+//                 value={selectedNode.content}
+//                 onChange={(value) => editNodeContent(selectedNode.id, value)}
+//                 mathNotation={math_notation}
+//               />
+//             </div>
+
+//             {selectedNode.children.length > 0 && (
+//               <div>
+//                 <label className="block text-sm font-medium text-gray-700 mb-1">
+//                   Right Label
+//                 </label>
+//                 <LatexInput
+//                   value={selectedNode.rightLabel}
+//                   onChange={(value) =>
+//                     editNodeRightLabel(selectedNode.id, value)
+//                   }
+//                   mathNotation={math_notation}
+//                 />
+//               </div>
+//             )}
+
+//             <div className="flex gap-2">
+//               <button
+//                 onClick={() => addNode(selectedNode.id)}
+//                 disabled={selectedNode.children.length >= 5}
+//                 className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
+//               >
+//                 Add Child
+//               </button>
+
+//               {selectedNode.id !== rootNode.id && (
+//                 <button
+//                   onClick={() => removeNode(selectedNode.id)}
+//                   className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+//                 >
+//                   Remove Node
+//                 </button>
+//               )}
+//             </div>
+
+//             <div className="flex items-center">
+//               <input
+//                 type="checkbox"
+//                 checked={selectedNode.mathMode}
+//                 onChange={(e) =>
+//                   toggleMathMode(selectedNode.id, e.target.checked)
+//                 }
+//                 id={`math-mode-${selectedNode.id}`}
+//                 className="mr-2"
+//               />
+//               <label
+//                 htmlFor={`math-mode-${selectedNode.id}`}
+//                 className="text-sm text-gray-600"
+//               >
+//                 Math Mode for this node
+//               </label>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {!selectedNode && (
+//         <div className="text-center text-gray-500 mb-6 p-4 bg-gray-100 rounded-lg">
+//           Click on a node in the tree above to edit it
+//         </div>
+//       )}
+
+//       {/* Tree Configuration Section */}
+//       <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
+//         <h2 className="text-lg font-semibold mb-3 text-gray-700">
+//           Tree Configuration
+//         </h2>
+//         <div className="flex flex-wrap gap-4 items-center">
+//           <label className="flex items-center cursor-pointer">
+//             <input
+//               type="checkbox"
+//               id="math"
+//               name="math"
+//               value="math"
+//               checked={math_notation}
+//               onChange={handleMathNotationChange}
+//               className="mr-2"
+//             />
+//             <span className="text-sm text-gray-600 font-medium">
+//               Global Mathematical Font
+//             </span>
+//           </label>
+//         </div>
+//       </div>
+
+//       {/* Tree Metadata Section */}
+//       <div className="w-full bg-white p-5 rounded-lg shadow mb-8">
+//         <h3 className="text-lg font-semibold mb-3 text-gray-700">
+//           Proof Tree Information
+//         </h3>
+//         <div className="space-y-4">
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Tree Name *
+//             </label>
+//             <input
+//               type="text"
+//               value={treeName}
+//               onChange={(e) => setTreeName(e.target.value)}
+//               placeholder="Enter a name for your proof tree"
+//               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//               required
+//             />
+//           </div>
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Description (Optional)
+//             </label>
+//             <textarea
+//               value={treeDescription}
+//               onChange={(e) => setTreeDescription(e.target.value)}
+//               placeholder="Enter a description for your proof tree"
+//               rows={3}
+//               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//             />
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* LaTeX Settings */}
+//       <div className="w-full bg-gray-100 p-4 rounded-lg shadow-sm mb-8">
+//         <h3 className="text-lg font-semibold mb-3 text-gray-700">
+//           LaTeX Settings
+//         </h3>
+//         <div className="flex flex-wrap gap-6">
+//           <label className="flex items-center cursor-pointer">
+//             <input
+//               type="checkbox"
+//               id="includePreamble"
+//               checked={includePreamble}
+//               onChange={() => setIncludePreamble(!includePreamble)}
+//               className="mr-2"
+//             />
+//             <span className="text-sm text-gray-600 font-medium">
+//               Include whole LaTeX Preamble
+//             </span>
+//           </label>
+
+//           <label className="flex items-center cursor-pointer">
+//             <input
+//               type="checkbox"
+//               id="includeDocumentTags"
+//               checked={includeDocumentTags}
+//               onChange={() => setIncludeDocumentTags(!includeDocumentTags)}
+//               className="mr-2"
+//             />
+//             <span className="text-sm text-gray-600 font-medium">
+//               Include import of the bussproofs package
+//             </span>
+//           </label>
+//         </div>
+//       </div>
+
+//       {/* Generate Code Button */}
+//       <button
+//         onClick={generateBtn}
+//         className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 mb-8 transition-colors flex items-center"
+//       >
+//         <svg
+//           className="w-4 h-4 mr-2"
+//           fill="none"
+//           stroke="currentColor"
+//           viewBox="0 0 24 24"
+//         >
+//           <path
+//             strokeLinecap="round"
+//             strokeLinejoin="round"
+//             strokeWidth={2}
+//             d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+//           />
+//         </svg>
+//         <span>Generate LaTeX Code</span>
+//       </button>
+
+//       {/* Generated Code */}
+//       <GeneratedCode id="generatedCode" code={generatedCode} />
+
+//       {/* Save/Update Button */}
+//       <div className="mb-8">
+//         <button
+//           onClick={handleSave}
+//           disabled={!user || !rootNode || isSaving}
+//           className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center"
+//         >
+//           {isSaving ? (
+//             <>
+//               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+//               <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+//             </>
+//           ) : (
+//             <>
+//               <svg
+//                 className="w-4 h-4 mr-2"
+//                 fill="none"
+//                 stroke="currentColor"
+//                 viewBox="0 0 24 24"
+//               >
+//                 <path
+//                   strokeLinecap="round"
+//                   strokeLinejoin="round"
+//                   strokeWidth={2}
+//                   d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
+//                 />
+//               </svg>
+//               <span>
+//                 {isEditMode ? "Update Proof Tree" : "Save Proof Tree"}
+//               </span>
+//             </>
+//           )}
+//         </button>
+//         {!user && (
+//           <p className="text-sm text-red-500 mt-2">
+//             Please log in to save your proof tree
+//           </p>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default ProofTree;

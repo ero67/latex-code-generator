@@ -85,7 +85,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Define paths for WSL
 BACKEND_DIR="$SCRIPT_DIR/backend"
-FRONTEND_DIR="$SCRIPT_DIR/frontend"
+FRONTEND_DIR="$SCRIPT_DIR/new-frontend"
 
 # Verify directories exist
 if [ ! -d "$BACKEND_DIR" ]; then
