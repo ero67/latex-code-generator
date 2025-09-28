@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-// import "./index.css";
-import Cell from "../../Components/KarnaughMap/Cell";
+import Cell from "../../Components/KarnaughMap/Cell.jsx";
 import GeneratedCode from "../../Components/GeneratedCode";
 import ImplicantsList from "../../Components/KarnaughMap/ImplicantsList";
 import EdgeImplicantList from "../../Components/KarnaughMap/EdgeImplicantList";
@@ -9,7 +8,6 @@ import { karnaughMapService } from "../../services/karnaughmap.service";
 import { ToastContainer, toast } from "react-toastify";
 import Dropdown from "../../Components/Dropdown/DropDown";
 import { useNavigate, useParams } from "react-router-dom";
-import { createGlobalStyle } from "styled-components";
 import { useAuth } from "../../context/AuthContext";
 
 const BinaryColumnLabels = ({ size }) => {
@@ -1587,7 +1585,7 @@ const Kmap = () => {
               </button>
             </div>
           </div>
-          <div className="mt-6">
+          {/* <div className="mt-6">
             <h3 className="text-md font-semibold mb-2 text-gray-600">
               Or Import from LaTeX
             </h3>
@@ -1603,7 +1601,7 @@ const Kmap = () => {
             >
               Load from LaTeX
             </button>
-          </div>
+          </div> */}
         </div>
       )}
       {/* Implicant Actions Section - After Map Creation */}
