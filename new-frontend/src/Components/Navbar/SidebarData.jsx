@@ -1,36 +1,41 @@
-import React from 'react';
+import React from "react";
 // import * as FaIcons from 'react-icons/fa';
-import * as AiIcons from 'react-icons/ai';
+import * as AiIcons from "react-icons/ai";
 // import * as IoIcons from 'react-icons/io';
 import { FaTableCells } from "react-icons/fa6";
 import { BsTreeFill } from "react-icons/bs";
 import { BsTree } from "react-icons/bs";
-
+import { FaFileImage } from "react-icons/fa";
 
 export const SidebarData = [
   {
-    title: 'Home',
-    path: '/',
+    title: "Home",
+    path: "/",
     icon: <AiIcons.AiFillHome />,
-    cName: 'nav-text'
+    cName: "nav-text",
   },
   {
-    title: 'Karnaugh maps',
-    path: '/karnaugh-maps',
-    icon: <FaTableCells/>,
-    cName: 'nav-text'
+    title: "Karnaugh maps",
+    path: "/karnaugh-maps",
+    icon: <FaTableCells />,
+    cName: "nav-text",
   },
   {
-    title: 'Abstract syntax trees',
-    path: '/ast',
+    title: "Abstract syntax trees",
+    path: "/ast",
     icon: <BsTreeFill />,
-    cName: 'nav-text'
+    cName: "nav-text",
   },
   {
-    title: 'Proof trees',
-    path: '/proof-trees',
+    title: "Proof trees",
+    path: "/proof-trees",
     icon: <BsTree />,
-    cName: 'nav-text'
-  }
-  
+    cName: "nav-text",
+  },
+  {
+    title: "Image to LaTeX",
+    path: "/image-to-latex",
+    icon: <FaFileImage />,
+    cName: "nav-text",
+  },
 ];

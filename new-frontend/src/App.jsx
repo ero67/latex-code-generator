@@ -12,6 +12,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import KarnaughMapSelection from "./Pages/KarnaughMap/KarnaughMapSelection.jsx";
 import ProofTreeSelection from "./Pages/ProofTrees/ProofTreeSelection";
 import Analytics from "./Pages/Analytics";
+import ImageToLatex from "./Pages/ImageToLatex/ImageToLatex";
 import "./index.css";
 
 // Your original App component
@@ -61,6 +62,7 @@ function App() {
               element={<RegisterForm></RegisterForm>}
             ></Route>
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/image-to-latex" element={<ImageToLatex />} />
           </Routes>
         </div>
       </div>

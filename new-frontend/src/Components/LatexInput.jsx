@@ -1,8 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 
 const LATEX_COMMANDS = [
-  // '\RightArrow',
-  // '\LeftArrow',
   "\\to",
   "\\land",
   "\\lor",
@@ -14,118 +12,111 @@ const LATEX_COMMANDS = [
   "\\exists",
   "\\bot",
   "\\top",
-  // Add more commands as needed
+  "\\psi",
+  "\\phi",
+  "\\theta",
 ];
 
-const LatexInput = ({ value, onChange, mathNotation }) => {
+// ✨ FIX: The 'mathNotation' prop has been removed.
+const LatexInput = ({ value, onChange }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredCommands, setFilteredCommands] = useState([]);
-  const [focusIndex, setFocusIndex] = useState(-1);
+  const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault(); // Prevent scrolling
-        setFocusIndex((prevIndex) =>
-          Math.min(prevIndex + 1, filteredCommands.length - 1)
-        );
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault(); // Prevent scrolling
-        setFocusIndex((prevIndex) => Math.max(prevIndex - 1, 0));
-      } else if (e.key === "Enter" && focusIndex >= 0) {
-        e.preventDefault(); // Prevent form submission
-        handleCommandClick(filteredCommands[focusIndex]);
-      }
-    };
-
-    if (showSuggestions) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [showSuggestions, filteredCommands, focusIndex]);
 
   const handleInputChange = (e) => {
     const inputValue = e.target.value;
     onChange(inputValue);
 
-    if (inputValue.endsWith("\\")) {
-      setShowSuggestions(true);
-      setFilteredCommands(LATEX_COMMANDS); // Show all commands if just '\' is entered
-    } else {
-      const lastBackslashIndex = inputValue.lastIndexOf("\\");
-      if (lastBackslashIndex !== -1) {
-        // Show filtered commands based on input after last '\'
-        const query = inputValue.slice(lastBackslashIndex).toLowerCase();
-        const filtered = LATEX_COMMANDS.filter((command) =>
-          command.toLowerCase().startsWith(query)
-        );
+    const lastBackslashIndex = inputValue.lastIndexOf("\\");
+    if (lastBackslashIndex !== -1 && inputValue.length > lastBackslashIndex) {
+      const query = inputValue.substring(lastBackslashIndex);
+      const filtered = LATEX_COMMANDS.filter((command) =>
+        command.startsWith(query)
+      );
+
+      if (filtered.length > 0) {
         setFilteredCommands(filtered);
-        setShowSuggestions(filtered.length > 0);
+        setShowSuggestions(true);
+        setActiveIndex(0);
       } else {
         setShowSuggestions(false);
       }
+    } else {
+      setShowSuggestions(false);
     }
   };
 
-  const handleCommandClick = (command) => {
-    // Nájdi index posledného znaku '\' v aktuálnej hodnote
+  const selectCommand = (command) => {
     const lastBackslashIndex = value.lastIndexOf("\\");
+    const prefix = value.substring(0, lastBackslashIndex);
 
-    // Vytvor novú hodnotu s príkazom obaleným znakmi '$'
-    // Odstráň jeden znak '\' z príkazu a obaľ ho znakmi '$'
-    let newValue = "";
-    newValue =
-      lastBackslashIndex !== -1
-        ? `${value.substring(0, lastBackslashIndex)}${command}`
-        : `${value}${command}`;
-    // if(mathNotation === false){
-    //    newValue = lastBackslashIndex !== -1
-    //   ? `${value.substring(0, lastBackslashIndex)}$${command}$`
-    //   : `${value}$${command}$`;
-    // }else{
-    //    newValue = lastBackslashIndex !== -1
-    //   ? `${value.substring(0, lastBackslashIndex)}${command}`
-    //   : `${value}${command}`;
-    // }
-    onChange(newValue); // Aktualizuj hodnotu vstupného poľa s novým výberom
-    setShowSuggestions(false); // Skry návrhy
-    setFocusIndex(-1); // Resetuj index fokusu
-    inputRef.current.focus(); // Zameraj sa späť na vstup po výbere
+    // ✨ FIX: Always insert the raw command without any '$' delimiters.
+    const commandToInsert = command;
+
+    onChange(`${prefix}${commandToInsert} `); // Add a space for better UX
+
+    setShowSuggestions(false);
+    inputRef.current.focus();
+  };
+
+  const handleKeyDown = (e) => {
+    if (!showSuggestions) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev + 1) % filteredCommands.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex(
+        (prev) => (prev - 1 + filteredCommands.length) % filteredCommands.length
+      );
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      if (filteredCommands.length > 0) {
+        e.preventDefault();
+        selectCommand(filteredCommands[activeIndex]);
+      }
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
   };
 
   return (
-    <div>
+    <div className="relative w-full">
       <input
         ref={inputRef}
         type="text"
         value={value}
         onChange={handleInputChange}
-        onFocus={() => setShowSuggestions(value.endsWith("\\"))}
-        onBlur={() => {
-          // Delay hiding suggestions to allow click event to register
-          setTimeout(() => setShowSuggestions(false), 100);
-        }}
-        className="border border-gray-400 p-2 rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        onKeyDown={handleKeyDown}
+        onBlur={() => setShowSuggestions(false)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        role="combobox"
+        aria-expanded={showSuggestions}
+        aria-controls="latex-suggestions"
+        aria-activedescendant={
+          showSuggestions ? `latex-option-${activeIndex}` : undefined
+        }
       />
       {showSuggestions && (
-        <div>
+        <div
+          id="latex-suggestions"
+          role="listbox"
+          className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg"
+        >
           {filteredCommands.map((command, index) => (
             <div
               key={command}
-              onClick={() => handleCommandClick(command)}
-              onMouseEnter={() => setFocusIndex(index)}
-              onMouseLeave={() => setFocusIndex(-1)}
-              style={{
-                cursor: "pointer",
-                backgroundColor: focusIndex === index ? "#FFFFCC" : "white",
-                fontWeight: focusIndex === index ? "bold" : "normal", // Make text bold for focused command
-                padding: "1px", // Add some padding for better visibility
-                margin: "1px 0", // Add slight margin between suggestions
-              }}
+              id={`latex-option-${index}`}
+              role="option"
+              aria-selected={activeIndex === index}
+              onMouseDown={() => selectCommand(command)}
+              onMouseEnter={() => setActiveIndex(index)}
+              className={`px-3 py-1 cursor-pointer ${
+                activeIndex === index
+                  ? "bg-blue-500 text-white"
+                  : "text-gray-900"
+              }`}
             >
               {command}
             </div>
