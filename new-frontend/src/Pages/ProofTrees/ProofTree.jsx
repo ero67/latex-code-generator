@@ -1,8 +1,3 @@
-// NOTE DONE : PROOF TREES : right label nech ma mensiu velkost pisma jak nazvy v nodoch
-// NOTE DONE: PROOF TREES : dat na vyber ci generovat takto {$E \to B$} abo takto {E  $\to$  B}.
-//                     To znamena ze dat na vyber ci vsetko bude v matematickom pisme to znamena ze $takto$ alebo nie
-// NOTE DONE: PROOF TREES : namiesto tlacitok hore pre davanie specialnych znakov pridat ze ak napise "\" tak mu to da na vyber tie specialne znaky, jak taky autocomplete cca
-// NOTE DONE: PROOF TREES : podpora az 5tich potomkov https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
 import React, { useState, useEffect } from "react";
 import "../index.css";
 import GeneratedCode from "../../Components/GeneratedCode";
@@ -12,12 +7,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { proofTreeService } from "../../services/prooftree.service";
 import { useAuth } from "../../context/AuthContext";
 
-// ProofTreeNode Data Structure
+// --- DATA STRUCTURE ---
 let nodeId = 0;
-// const createProofTreeNode = (content = "", children = [], rightLabel = "") => {
-//   return { id: nodeId++, content, children, rightLabel };
-// };
-
 const createProofTreeNode = (
   content = "",
   children = [],
@@ -27,50 +18,221 @@ const createProofTreeNode = (
   return { id: nodeId++, content, children, rightLabel, mathMode };
 };
 
-// ProofTree Component
-const ProofTree = () => {
-  const [rootNode, setRootNode] = useState(createProofTreeNode());
-  const [generatedCode, setGeneratedCode] = useState(
-    "Your code will appear here \n after you click on Generate Code button"
-  );
-  // const [selectedNodeId, setSelectedNodeId] = useState(null);
-  const [math_notation, setMathNotation] = useState(false);
-
-  const handleOptionChange = (option) => {
-    setMathNotation(option);
+// --- (CORRECTED) SVG VISUALIZATION COMPONENT ---
+const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
+  const calculateTreeDimensions = (node) => {
+    if (!node.children || node.children.length === 0) {
+      return { width: 150, height: 50 };
+    }
+    const childDimensions = node.children.map(calculateTreeDimensions);
+    const totalChildWidth = childDimensions.reduce(
+      (sum, dim) => sum + dim.width,
+      0
+    );
+    const maxChildHeight = Math.max(
+      ...childDimensions.map((dim) => dim.height)
+    );
+    const horizontalPadding = (node.children.length - 1) * 20;
+    let width = Math.max(150, totalChildWidth + horizontalPadding);
+    if (node.rightLabel && node.children.length > 0) {
+      width += 150;
+    }
+    return {
+      width: width,
+      height: maxChildHeight + 80,
+    };
   };
 
+  const renderTree = (node, x, y, availableWidth) => {
+    const isSelected = selectedNodeId === node.id;
+    const hasChildren = node.children && node.children.length > 0;
+    const elements = [];
+    const nodeWidth = Math.min(availableWidth * 0.9, 200);
+
+    // ✨ FIX: Declare totalChildAreaWidth here, in the outer scope, with a default value.
+    let totalChildAreaWidth = 0;
+
+    if (hasChildren) {
+      const childY = y - 80;
+      const childCount = node.children.length;
+
+      // ✨ FIX: Assign the calculated value to the variable in the outer scope.
+      totalChildAreaWidth =
+        node.children.reduce(
+          (acc, child) => acc + calculateTreeDimensions(child).width,
+          0
+        ) +
+        (childCount - 1) * 20;
+
+      let currentChildRenderX = x - totalChildAreaWidth / 2;
+
+      node.children.forEach((child) => {
+        const childDim = calculateTreeDimensions(child);
+        const childCenterX = currentChildRenderX + childDim.width / 2;
+        elements.push(
+          ...renderTree(child, childCenterX, childY, childDim.width)
+        );
+        currentChildRenderX += childDim.width + 20;
+      });
+
+      elements.push(
+        <line
+          key={`hline-${node.id}`}
+          x1={x - totalChildAreaWidth / 2}
+          y1={y - 5}
+          x2={x + totalChildAreaWidth / 2}
+          y2={y - 5}
+          stroke="#333"
+          strokeWidth={2}
+        />
+      );
+    }
+
+    elements.push(
+      <g
+        key={`group-${node.id}`}
+        onClick={() => onNodeClick(node.id)}
+        className="cursor-pointer"
+      >
+        <rect
+          key={`rect-${node.id}`}
+          x={x - nodeWidth / 2}
+          y={y}
+          width={nodeWidth}
+          height={40}
+          fill={isSelected ? "#e3f2fd" : "#fff"}
+          stroke={isSelected ? "#1976d2" : "#ccc"}
+          strokeWidth={isSelected ? 2 : 1}
+          rx={5}
+        />
+        <text
+          key={`text-${node.id}`}
+          x={x}
+          y={y + 25}
+          textAnchor="middle"
+          className="text-sm font-mono select-none"
+          fill="#333"
+        >
+          {node.content || "[Empty]"}
+        </text>
+      </g>
+    );
+
+    // This logic will now work correctly because totalChildAreaWidth is in scope.
+    if (hasChildren && node.rightLabel) {
+      elements.push(
+        <text
+          key={`label-${node.id}`}
+          x={x + totalChildAreaWidth / 2 + 10}
+          y={y - 5}
+          textAnchor="start"
+          className="text-xs font-mono fill-gray-600"
+        >
+          ({node.rightLabel})
+        </text>
+      );
+    }
+
+    return elements;
+  };
+
+  const dimensions = calculateTreeDimensions(node);
+  const viewboxWidth = dimensions.width + 40;
+  const viewboxHeight = dimensions.height + 40;
+
+  return (
+    <div className="w-full overflow-x-auto bg-gray-50 p-4 rounded-lg border-2 border-dashed">
+      <svg
+        width={viewboxWidth}
+        height={viewboxHeight}
+        viewBox={`0 0 ${viewboxWidth} ${viewboxHeight}`}
+        className="mx-auto"
+      >
+        {renderTree(
+          node,
+          viewboxWidth / 2,
+          viewboxHeight - 60,
+          dimensions.width
+        )}
+      </svg>
+    </div>
+  );
+};
+// --- MAIN PROOFTREE COMPONENT ---
+const ProofTree = () => {
+  const [rootNode, setRootNode] = useState(createProofTreeNode());
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [generatedCode, setGeneratedCode] = useState(
+    "Your code will appear here after you click on Generate Code button"
+  );
+  const [math_notation, setMathNotation] = useState(false);
   const [includePreamble, setIncludePreamble] = useState(false);
   const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
-
   const [treeName, setTreeName] = useState("");
   const [treeDescription, setTreeDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const { user } = useAuth();
-  const { id } = useParams(); // Get tree ID from URL for edit mode
+  const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
 
-  const toggleMathModeForAllNodes = (node, mathMode) => {
-    node.mathMode = mathMode; // Set mathMode for the current node
-    node.children.forEach((child) =>
-      toggleMathModeForAllNodes(child, mathMode)
-    ); // Recursively set for children
+  // --- Tree Manipulation Functions (Unchanged) ---
+  const addNode = (parentId) => {
+    const stack = [rootNode];
+    while (stack.length > 0) {
+      const currentNode = stack.pop();
+      if (currentNode.id === parentId && currentNode.children.length < 5) {
+        currentNode.children.push(createProofTreeNode());
+        setRootNode({ ...rootNode });
+        return;
+      }
+      currentNode.children.forEach((child) => stack.push(child));
+    }
   };
 
-  const handleMathNotationChange = () => {
-    const newMathMode = !math_notation;
-    setMathNotation(newMathMode);
+  const removeNode = (nodeIdToRemove) => {
+    const removeNodeRecursive = (currentNode) => {
+      currentNode.children = currentNode.children.filter(
+        (child) => child.id !== nodeIdToRemove
+      );
+      currentNode.children.forEach(removeNodeRecursive);
+    };
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    removeNodeRecursive(newRoot);
+    setRootNode(newRoot);
+    if (selectedNodeId === nodeIdToRemove) {
+      setSelectedNodeId(null); // Deselect if removed
+    }
+  };
 
-    // Create a deep copy of rootNode to ensure immutability
-    const rootNodeCopy = JSON.parse(JSON.stringify(rootNode));
-    toggleMathModeForAllNodes(rootNodeCopy, newMathMode);
-    setRootNode(rootNodeCopy); // Update the rootNode with new mathMode settings
+  const editNodeContent = (nodeId, newContent) => {
+    const updateNode = (node) => {
+      if (node.id === nodeId) {
+        node.content = newContent;
+        return;
+      }
+      node.children.forEach(updateNode);
+    };
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    updateNode(newRoot);
+    setRootNode(newRoot);
+  };
+
+  const editNodeRightLabel = (nodeId, newRightLabel) => {
+    const updateNode = (node) => {
+      if (node.id === nodeId) {
+        node.rightLabel = newRightLabel;
+        return;
+      }
+      node.children.forEach(updateNode);
+    };
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    updateNode(newRoot);
+    setRootNode(newRoot);
   };
 
   const toggleMathMode = (nodeId, isMathMode) => {
-    // Logic to update the specific node's mathMode property
     const updateMathMode = (node) => {
       if (node.id === nodeId) {
         node.mathMode = isMathMode;
@@ -78,206 +240,96 @@ const ProofTree = () => {
         node.children.forEach(updateMathMode);
       }
     };
-    updateMathMode(rootNode);
-    setRootNode({ ...rootNode });
-  };
-  const addNode = (parentId) => {
-    const stack = [rootNode];
-    let found = false;
-
-    while (stack.length > 0 && !found) {
-      const currentNode = stack.pop();
-
-      if (currentNode.id === parentId && currentNode.children.length < 5) {
-        currentNode.children.push(createProofTreeNode());
-        found = true; // Node added, exit the loop
-      } else {
-        // Add children to the stack for further processing
-        currentNode.children.forEach((child) => stack.push(child));
-      }
-    }
-
-    if (found) {
-      setRootNode({ ...rootNode });
-    } else {
-      console.log("Parent node not found.");
-    }
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    updateMathMode(newRoot);
+    setRootNode(newRoot);
   };
 
-  const removeNode = (nodeIdToRemove) => {
-    const removeNodeRecursive = (currentNode, nodeIdToRemove) => {
-      for (let i = 0; i < currentNode.children.length; i++) {
-        if (currentNode.children[i].id === nodeIdToRemove) {
-          currentNode.children.splice(i, 1); // Remove the node
-          return true; // Node found and removed
-        }
+  const handleMathNotationChange = () => {
+    const newMathMode = !math_notation;
+    setMathNotation(newMathMode);
 
-        // Recurse into children
-        if (removeNodeRecursive(currentNode.children[i], nodeIdToRemove)) {
-          return true; // Node found and removed in deeper level
-        }
-      }
-      return false; // Node not found in this branch
+    const toggleAll = (node, mode) => {
+      node.mathMode = mode;
+      node.children.forEach((child) => toggleAll(child, mode));
     };
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    toggleAll(newRoot, newMathMode);
+    setRootNode(newRoot);
+  };
 
-    // Start the recursive removal process
-    if (!removeNodeRecursive(rootNode, nodeIdToRemove)) {
-      console.log("Node not found.");
-    } else {
-      setRootNode({ ...rootNode }); // Update state to trigger re-render
+  // --- Helper to find the selected node's data ---
+  const findNodeById = (node, targetId) => {
+    if (node.id === targetId) return node;
+    for (const child of node.children) {
+      const found = findNodeById(child, targetId);
+      if (found) return found;
     }
+    return null;
   };
 
-  // function to edit the content of a node based on its ID
-  const editNodeContent = (nodeId, newContent) => {
-    const stack = [rootNode];
-    while (stack.length > 0) {
-      const currentNode = stack.pop();
+  const selectedNode =
+    selectedNodeId !== null ? findNodeById(rootNode, selectedNodeId) : null;
 
-      if (currentNode.id === nodeId) {
-        currentNode.content = newContent;
-        break;
-      }
+  // In your ProofTree.jsx file...
 
-      // adding children to the stack... so they are processed
-      currentNode.children.forEach((child) => stack.push(child));
-    }
-
-    setRootNode({ ...rootNode });
-  };
-
-  const editNodeRightLabel = (nodeId, newRightLabel) => {
-    const stack = [rootNode];
-    while (stack.length > 0) {
-      const currentNode = stack.pop();
-
-      if (currentNode.id === nodeId) {
-        currentNode.rightLabel = newRightLabel;
-        break; // Stop the loop as we've found and updated the node
-      }
-
-      // Add children to the stack for further processing
-      currentNode.children.forEach((child) => stack.push(child));
-    }
-
-    setRootNode({ ...rootNode });
-  };
-
-  const renderTreeNode = (node, isRoot = true) => {
-    return (
-      <div className="proof-tree-node">
-        <div className="proof-tree-content">
-          <div className="node-input-group">
-            <label htmlFor={`node-content-${node.id}`}>Node Content</label>
-            <LatexInput
-              id={`node-content-${node.id}`}
-              value={node.content}
-              onChange={(value) => editNodeContent(node.id, value)}
-              mathNotation={math_notation}
-            />
-            {/* Checkbox for Math Mode */}
-          </div>
-
-          {node.children.length > 0 && (
-            <div className="node-input-group">
-              <label htmlFor={`node-right-label-${node.id}`}>Right Label</label>
-              <LatexInput
-                id={`node-right-label-${node.id}`}
-                value={node.rightLabel}
-                onChange={(value) => editNodeRightLabel(node.id, value)}
-                mathNotation={math_notation}
-              />
-            </div>
-          )}
-          <div className="node-action-buttons">
-            <button className="add-child-btn" onClick={() => addNode(node.id)}>
-              +
-            </button>
-            {!isRoot && ( // Conditionally show the Remove Node button
-              <button
-                className="remove-child-btn"
-                onClick={() => removeNode(node.id)}
-              >
-                <b>-</b>
-              </button>
-            )}
-
-            {/* <div> */}
-            <input
-              type="checkbox"
-              checked={node.mathMode}
-              onChange={(e) => toggleMathMode(node.id, e.target.checked)}
-              id={`math-mode-${node.id}`}
-            />
-            {/* <label htmlFor={`math-mode-${node.id}`}>Math Mode</label> */}
-            {/* </div> */}
-          </div>
-        </div>
-
-        <div className="proof-tree-children">
-          {node.children.map((child) => renderTreeNode(child, false))}{" "}
-          {/* Mark children as non-root */}
-        </div>
-      </div>
-    );
-  };
+  // In your ProofTree.jsx file...
 
   const generateLatexCode = (node) => {
-    let code = "";
-
-    // Improved function to conditionally wrap content in math mode
-    // and ensure LaTeX commands are always correctly formatted
+    // ✨ FIX: This helper function now correctly handles both global and local math modes.
     const formatContent = (content, mathMode) => {
-      // This regular expression finds LaTeX commands
-      const regex = /(\\[a-zA-Z]+){1}(\{[^}]*\})?/g; // Match commands, possibly followed by their arguments in {}
-      let formattedContent = content.replace(regex, (match) => `$${match}$`); // Wrap each found command with $...$
+      // Case 1: Global Math Mode is ON for this node.
+      // Wrap the entire content string in single '$' and we're done.
       if (mathMode) {
-        // If the entire content is in math mode, wrap everything once instead of individual components
-        formattedContent = `$${formattedContent.replace(/\$/g, "")}$`; // Remove inner $ signs and wrap the whole content
+        return `$${content}$`;
       }
-      return formattedContent;
+
+      // Case 2: Global Math Mode is OFF.
+      // We find all words that start with a '\' (like \lor, \land, etc.)
+      // and wrap just those words in '$' signs.
+      const regex = /(\\[a-zA-Z]+)/g;
+
+      // In the replacement string '$$$1$$', the '$$' creates a literal '$'
+      // and '$1' is the command that was found (e.g., \lor).
+      // This correctly turns 'b \lor c' into 'b $\lor$ c'.
+      return content.replace(regex, "$$$1$$");
     };
 
-    // Generate code for children first
     let childrenCode = node.children
       .map((child) => generateLatexCode(child))
       .join(" ");
 
-    // Determine the appropriate command based on the number of children
+    const contentFormatted = formatContent(node.content, node.mathMode);
     let nodeCommand = "";
-    const contentInMathMode = formatContent(node.content, node.mathMode); // Apply math mode if needed
 
     switch (node.children.length) {
       case 0:
-        nodeCommand = `\\AxiomC{${contentInMathMode}}`;
+        nodeCommand = `\\AxiomC{${contentFormatted}}`;
         break;
       case 1:
-        nodeCommand = `\\UnaryInfC{${contentInMathMode}}`;
+        nodeCommand = `\\UnaryInfC{${contentFormatted}}`;
         break;
       case 2:
-        nodeCommand = `\\BinaryInfC{${contentInMathMode}}`;
+        nodeCommand = `\\BinaryInfC{${contentFormatted}}`;
         break;
       case 3:
-        nodeCommand = `\\TrinaryInfC{${contentInMathMode}}`;
+        nodeCommand = `\\TrinaryInfC{${contentFormatted}}`;
         break;
       case 4:
-        nodeCommand = `\\QuaternaryInfC{${contentInMathMode}}`;
+        nodeCommand = `\\QuaternaryInfC{${contentFormatted}}`;
         break;
       case 5:
-        nodeCommand = `\\QuinaryInfC{${contentInMathMode}}`;
+        nodeCommand = `\\QuinaryInfC{${contentFormatted}}`;
         break;
       default:
-        console.log("Unsupported number of children");
         break;
     }
 
-    // If the node has a right label, adjust for math mode
+    let code = "";
     if (node.rightLabel) {
-      const rightLabelInMathMode = formatContent(
-        node.rightLabel,
-        node.mathMode
-      ); // Apply node's math mode to right label
-      code = `${childrenCode} \\RightLabel{\\scriptsize{${rightLabelInMathMode}}}\n${nodeCommand}\n`;
+      // Apply the same robust formatting to the right label.
+      const rightLabelFormatted = formatContent(node.rightLabel, node.mathMode);
+      code = `${childrenCode} \\RightLabel{\\scriptsize{${rightLabelFormatted}}}\n${nodeCommand}\n`;
     } else {
       code = `${childrenCode} ${nodeCommand}\n`;
     }
@@ -314,39 +366,6 @@ const ProofTree = () => {
 
     setGeneratedCode(latexCode); // Set the generated LaTeX code to state
   };
-  useEffect(() => {
-    const loadProofTreeData = async () => {
-      if (id && user) {
-        try {
-          const response = await proofTreeService.getProofTree(id);
-          const loadedTree = response.data;
-
-          setRootNode(loadedTree.treeData);
-          setTreeName(loadedTree.name || "");
-          setTreeDescription(loadedTree.description || "");
-          setMathNotation(loadedTree.settings.math_notation);
-          setIncludePreamble(loadedTree.settings.includePreamble);
-          setIncludeDocumentTags(loadedTree.settings.includeDocumentTags);
-
-          // Find highest node ID to continue numbering
-          const findMaxId = (node) => {
-            let maxId = node.id || 0;
-            if (node.children) {
-              node.children.forEach((child) => {
-                maxId = Math.max(maxId, findMaxId(child));
-              });
-            }
-            return maxId;
-          };
-          nodeId = findMaxId(loadedTree.treeData) + 1;
-        } catch (error) {
-          console.error("Error loading proof tree:", error);
-        }
-      }
-    };
-
-    loadProofTreeData();
-  }, [id, user]);
 
   const handleSave = async () => {
     if (!user || !rootNode) {
@@ -392,79 +411,148 @@ const ProofTree = () => {
     }
   };
 
+  useEffect(() => {
+    const loadProofTreeData = async () => {
+      if (id && user) {
+        try {
+          const response = await proofTreeService.getProofTree(id);
+          const loadedTree = response.data;
+
+          setRootNode(loadedTree.treeData);
+          setTreeName(loadedTree.name || "");
+          setTreeDescription(loadedTree.description || "");
+          setMathNotation(loadedTree.settings.math_notation);
+          setIncludePreamble(loadedTree.settings.includePreamble);
+          setIncludeDocumentTags(loadedTree.settings.includeDocumentTags);
+
+          // Find highest node ID to continue numbering
+          const findMaxId = (node) => {
+            let maxId = node.id || 0;
+            if (node.children) {
+              node.children.forEach((child) => {
+                maxId = Math.max(maxId, findMaxId(child));
+              });
+            }
+            return maxId;
+          };
+          nodeId = findMaxId(loadedTree.treeData) + 1;
+        } catch (error) {
+          console.error("Error loading proof tree:", error);
+        }
+      }
+    };
+
+    loadProofTreeData();
+  }, [id, user]);
+
   return (
-    <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">Proof Trees</h1>
-
+    <div className="flex flex-col items-center w-full max-w-6xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-8 text-center">
+        Proof Tree Builder
+      </h1>
       <ProofTreeInstructions />
+      {/* --- 1. Tree Visualization Section --- */}
+      <div className="w-full mb-6">
+        <h2 className="text-lg font-semibold mb-3 text-gray-700">
+          Tree Visualization
+        </h2>
+        <ProofTreeVisualizer
+          node={rootNode}
+          onNodeClick={setSelectedNodeId}
+          selectedNodeId={selectedNodeId}
+        />
+      </div>
+      {/* --- 2. Node Editor Panel --- */}
+      {selectedNode ? (
+        <div className="w-full max-w-2xl bg-white p-5 rounded-lg shadow-md mb-6 transition-all duration-300">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">
+            Edit Selected Node (ID: {selectedNode.id})
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Node Content
+              </label>
+              <LatexInput
+                value={selectedNode.content}
+                onChange={(value) => editNodeContent(selectedNode.id, value)}
+                mathNotation={math_notation}
+              />
+            </div>
 
-      {/* Tree Configuration Section */}
+            {selectedNode.children.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Right Label
+                </label>
+                <LatexInput
+                  value={selectedNode.rightLabel}
+                  onChange={(value) =>
+                    editNodeRightLabel(selectedNode.id, value)
+                  }
+                  mathNotation={math_notation}
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => addNode(selectedNode.id)}
+                  disabled={selectedNode.children.length >= 5}
+                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-gray-300 text-sm font-medium"
+                >
+                  Add Child
+                </button>
+
+                {selectedNode.id !== rootNode.id && (
+                  <button
+                    onClick={() => removeNode(selectedNode.id)}
+                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 text-sm font-medium"
+                  >
+                    Remove Node
+                  </button>
+                )}
+              </div>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedNode.mathMode}
+                  onChange={(e) =>
+                    toggleMathMode(selectedNode.id, e.target.checked)
+                  }
+                  id={`math-mode-${selectedNode.id}`}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-600 font-medium">
+                  Math Mode
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center text-gray-500 mb-6 p-4 bg-gray-100 rounded-lg">
+          Click on a node in the tree above to edit it
+        </div>
+      )}
+      {/* --- 3. Configuration & Other Sections (Largely Unchanged) --- */}
       <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
         <h2 className="text-lg font-semibold mb-3 text-gray-700">
           Tree Configuration
         </h2>
-        <div className="flex flex-wrap gap-4 items-center">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              id="math"
-              name="math"
-              value="math"
-              checked={math_notation}
-              onChange={handleMathNotationChange}
-              className="mr-2"
-            />
-            <span className="text-sm text-gray-600 font-medium">
-              Global Mathematical Font
-            </span>
-          </label>
-        </div>
+        <label className="flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={math_notation}
+            onChange={handleMathNotationChange}
+            className="mr-2"
+          />
+          <span className="text-sm text-gray-600 font-medium">
+            Global Math Mode
+          </span>
+        </label>
       </div>
-
-      {/* Tree Builder Section */}
-      <div className="w-full mb-8 bg-white p-5 rounded-lg shadow">
-        <h2 className="text-lg font-semibold mb-3 text-gray-700">
-          Tree Structure
-        </h2>
-        <div className="bg-gray-50 p-4 rounded-md border-2 border-dashed border-gray-300 min-h-[200px]">
-          {renderTreeNode(rootNode)}
-        </div>
-      </div>
-
-      {/* Tree Metadata Section */}
-      <div className="w-full bg-white p-5 rounded-lg shadow mb-8">
-        <h3 className="text-lg font-semibold mb-3 text-gray-700">
-          Proof Tree Information
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tree Name *
-            </label>
-            <input
-              type="text"
-              value={treeName}
-              onChange={(e) => setTreeName(e.target.value)}
-              placeholder="Enter a name for your proof tree"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description (Optional)
-            </label>
-            <textarea
-              value={treeDescription}
-              onChange={(e) => setTreeDescription(e.target.value)}
-              placeholder="Enter a description for your proof tree"
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-      </div>
-
       {/* LaTeX Settings */}
       <div className="w-full bg-gray-100 p-4 rounded-lg shadow-sm mb-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">
@@ -498,7 +586,6 @@ const ProofTree = () => {
           </label>
         </div>
       </div>
-
       {/* Generate Code Button */}
       <button
         onClick={generateBtn}
@@ -519,10 +606,41 @@ const ProofTree = () => {
         </svg>
         <span>Generate LaTeX Code</span>
       </button>
-
       {/* Generated Code */}
       <GeneratedCode id="generatedCode" code={generatedCode} />
-
+      // {/* Tree Metadata Section */}
+      <div className="w-full bg-white p-5 rounded-lg shadow mb-8">
+        <h3 className="text-lg font-semibold mb-3 text-gray-700">
+          Proof Tree Information
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tree Name *
+            </label>
+            <input
+              type="text"
+              value={treeName}
+              onChange={(e) => setTreeName(e.target.value)}
+              placeholder="Enter a name for your proof tree"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description (Optional)
+            </label>
+            <textarea
+              value={treeDescription}
+              onChange={(e) => setTreeDescription(e.target.value)}
+              placeholder="Enter a description for your proof tree"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      </div>
       {/* Save/Update Button */}
       <div className="mb-8">
         <button
@@ -567,6 +685,12 @@ const ProofTree = () => {
 };
 
 export default ProofTree;
+
+// // NOTE DONE : PROOF TREES : right label nech ma mensiu velkost pisma jak nazvy v nodoch
+// // NOTE DONE: PROOF TREES : dat na vyber ci generovat takto {$E \to B$} abo takto {E  $\to$  B}.
+// //                     To znamena ze dat na vyber ci vsetko bude v matematickom pisme to znamena ze $takto$ alebo nie
+// // NOTE DONE: PROOF TREES : namiesto tlacitok hore pre davanie specialnych znakov pridat ze ak napise "\" tak mu to da na vyber tie specialne znaky, jak taky autocomplete cca
+// // NOTE DONE: PROOF TREES : podpora az 5tich potomkov https://mathweb.ucsd.edu/~sbuss/ResearchWeb/bussproofs/BussGuide2_Smith2012.pdf
 // import React, { useState, useEffect } from "react";
 // import "../index.css";
 // import GeneratedCode from "../../Components/GeneratedCode";
@@ -578,6 +702,9 @@ export default ProofTree;
 
 // // ProofTreeNode Data Structure
 // let nodeId = 0;
+// // const createProofTreeNode = (content = "", children = [], rightLabel = "") => {
+// //   return { id: nodeId++, content, children, rightLabel };
+// // };
 
 // const createProofTreeNode = (
 //   content = "",
@@ -588,189 +715,13 @@ export default ProofTree;
 //   return { id: nodeId++, content, children, rightLabel, mathMode };
 // };
 
-// // Tree Visualization Component
-// const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
-//   const calculateTreeDimensions = (node) => {
-//     if (!node.children || node.children.length === 0) {
-//       return { width: 120, height: 40 };
-//     }
-
-//     const childDimensions = node.children.map(calculateTreeDimensions);
-//     const totalChildWidth = childDimensions.reduce(
-//       (sum, dim) => sum + dim.width,
-//       0
-//     );
-//     const maxChildHeight = Math.max(
-//       ...childDimensions.map((dim) => dim.height)
-//     );
-
-//     return {
-//       width: Math.max(120, totalChildWidth + (node.children.length - 1) * 20),
-//       height: maxChildHeight + 80,
-//     };
-//   };
-
-//   const renderProofNode = (node, x, y, width) => {
-//     const isSelected = selectedNodeId === node.id;
-//     const hasChildren = node.children && node.children.length > 0;
-
-//     const elements = [];
-
-//     // Node content box
-//     elements.push(
-//       <rect
-//         key={`rect-${node.id}`}
-//         x={x - width / 2}
-//         y={y - 20}
-//         width={width}
-//         height={40}
-//         fill={isSelected ? "#e3f2fd" : "white"}
-//         stroke={isSelected ? "#1976d2" : "#ccc"}
-//         strokeWidth={isSelected ? 2 : 1}
-//         rx={4}
-//         className="cursor-pointer hover:fill-gray-50"
-//         onClick={() => onNodeClick(node.id)}
-//       />
-//     );
-
-//     // Node content text
-//     elements.push(
-//       <text
-//         key={`text-${node.id}`}
-//         x={x}
-//         y={y + 5}
-//         textAnchor="middle"
-//         className="text-sm font-mono select-none pointer-events-none"
-//         fill="#333"
-//       >
-//         {node.content || "empty"}
-//       </text>
-//     );
-
-//     // Right label
-//     if (hasChildren && node.rightLabel) {
-//       elements.push(
-//         <text
-//           key={`label-${node.id}`}
-//           x={x + width / 2 + 10}
-//           y={y + 5}
-//           textAnchor="start"
-//           className="text-xs font-mono fill-gray-600"
-//         >
-//           ({node.rightLabel})
-//         </text>
-//       );
-//     }
-
-//     // Horizontal line above node (inference line)
-//     if (hasChildren) {
-//       elements.push(
-//         <line
-//           key={`inference-${node.id}`}
-//           x1={x - width / 2}
-//           y1={y - 25}
-//           x2={x + width / 2}
-//           y2={y - 25}
-//           stroke="#333"
-//           strokeWidth={2}
-//         />
-//       );
-//     }
-
-//     return elements;
-//   };
-
-//   const renderTree = (node, x, y, availableWidth) => {
-//     const hasChildren = node.children && node.children.length > 0;
-//     const nodeElements = [];
-
-//     if (!hasChildren) {
-//       // For leaf nodes, return an array containing just the node
-//       nodeElements.push(
-//         renderProofNode(node, x, y, Math.min(availableWidth, 120))
-//       );
-//       return nodeElements;
-//     }
-
-//     const childCount = node.children.length;
-//     const childWidth = availableWidth / childCount;
-
-//     // Render children first (bottom-up approach)
-//     node.children.forEach((child, index) => {
-//       const childX =
-//         x - availableWidth / 2 + childWidth / 2 + index * childWidth;
-//       const childY = y - 80;
-//       const childElements = renderTree(child, childX, childY, childWidth - 20);
-//       nodeElements.push(...childElements);
-//     });
-
-//     // Calculate the span of children for the inference line
-//     const leftmostChildX = x - availableWidth / 2 + childWidth / 2;
-//     const rightmostChildX =
-//       x - availableWidth / 2 + childWidth / 2 + (childCount - 1) * childWidth;
-
-//     // Render vertical lines from children to inference line
-//     node.children.forEach((child, index) => {
-//       const childX =
-//         x - availableWidth / 2 + childWidth / 2 + index * childWidth;
-//       nodeElements.push(
-//         <line
-//           key={`vertical-${child.id}`}
-//           x1={childX}
-//           y1={y - 80 + 20}
-//           x2={childX}
-//           y2={y - 25}
-//           stroke="#666"
-//           strokeWidth={1}
-//         />
-//       );
-//     });
-
-//     // Render horizontal inference line
-//     nodeElements.push(
-//       <line
-//         key={`horizontal-${node.id}`}
-//         x1={leftmostChildX - 60}
-//         y1={y - 25}
-//         x2={rightmostChildX + 60}
-//         y2={y - 25}
-//         stroke="#333"
-//         strokeWidth={2}
-//       />
-//     );
-
-//     // Render the current node
-//     nodeElements.push(
-//       renderProofNode(node, x, y, Math.min(availableWidth, 200))
-//     );
-
-//     return nodeElements;
-//   };
-
-//   const dimensions = calculateTreeDimensions(node);
-//   const centerX = dimensions.width / 2;
-//   const centerY = dimensions.height - 40;
-
-//   return (
-//     <div className="w-full overflow-x-auto bg-gray-50 p-4 rounded-lg border">
-//       <svg
-//         width={Math.max(dimensions.width, 400)}
-//         height={Math.max(dimensions.height, 200)}
-//         className="mx-auto"
-//       >
-//         {renderTree(node, centerX, centerY, dimensions.width * 0.8)}
-//       </svg>
-//     </div>
-//   );
-// };
-
 // // ProofTree Component
 // const ProofTree = () => {
 //   const [rootNode, setRootNode] = useState(createProofTreeNode());
-//   const [selectedNodeId, setSelectedNodeId] = useState(null);
 //   const [generatedCode, setGeneratedCode] = useState(
 //     "Your code will appear here \n after you click on Generate Code button"
 //   );
+//   // const [selectedNodeId, setSelectedNodeId] = useState(null);
 //   const [math_notation, setMathNotation] = useState(false);
 
 //   const handleOptionChange = (option) => {
@@ -785,27 +736,29 @@ export default ProofTree;
 //   const [isSaving, setIsSaving] = useState(false);
 
 //   const { user } = useAuth();
-//   const { id } = useParams();
+//   const { id } = useParams(); // Get tree ID from URL for edit mode
 //   const navigate = useNavigate();
 //   const isEditMode = Boolean(id);
 
 //   const toggleMathModeForAllNodes = (node, mathMode) => {
-//     node.mathMode = mathMode;
+//     node.mathMode = mathMode; // Set mathMode for the current node
 //     node.children.forEach((child) =>
 //       toggleMathModeForAllNodes(child, mathMode)
-//     );
+//     ); // Recursively set for children
 //   };
 
 //   const handleMathNotationChange = () => {
 //     const newMathMode = !math_notation;
 //     setMathNotation(newMathMode);
 
+//     // Create a deep copy of rootNode to ensure immutability
 //     const rootNodeCopy = JSON.parse(JSON.stringify(rootNode));
 //     toggleMathModeForAllNodes(rootNodeCopy, newMathMode);
-//     setRootNode(rootNodeCopy);
+//     setRootNode(rootNodeCopy); // Update the rootNode with new mathMode settings
 //   };
 
 //   const toggleMathMode = (nodeId, isMathMode) => {
+//     // Logic to update the specific node's mathMode property
 //     const updateMathMode = (node) => {
 //       if (node.id === nodeId) {
 //         node.mathMode = isMathMode;
@@ -816,7 +769,6 @@ export default ProofTree;
 //     updateMathMode(rootNode);
 //     setRootNode({ ...rootNode });
 //   };
-
 //   const addNode = (parentId) => {
 //     const stack = [rootNode];
 //     let found = false;
@@ -826,8 +778,9 @@ export default ProofTree;
 
 //       if (currentNode.id === parentId && currentNode.children.length < 5) {
 //         currentNode.children.push(createProofTreeNode());
-//         found = true;
+//         found = true; // Node added, exit the loop
 //       } else {
+//         // Add children to the stack for further processing
 //         currentNode.children.forEach((child) => stack.push(child));
 //       }
 //     }
@@ -843,27 +796,27 @@ export default ProofTree;
 //     const removeNodeRecursive = (currentNode, nodeIdToRemove) => {
 //       for (let i = 0; i < currentNode.children.length; i++) {
 //         if (currentNode.children[i].id === nodeIdToRemove) {
-//           currentNode.children.splice(i, 1);
-//           return true;
+//           currentNode.children.splice(i, 1); // Remove the node
+//           return true; // Node found and removed
 //         }
 
+//         // Recurse into children
 //         if (removeNodeRecursive(currentNode.children[i], nodeIdToRemove)) {
-//           return true;
+//           return true; // Node found and removed in deeper level
 //         }
 //       }
-//       return false;
+//       return false; // Node not found in this branch
 //     };
 
+//     // Start the recursive removal process
 //     if (!removeNodeRecursive(rootNode, nodeIdToRemove)) {
 //       console.log("Node not found.");
 //     } else {
-//       setRootNode({ ...rootNode });
-//       if (selectedNodeId === nodeIdToRemove) {
-//         setSelectedNodeId(null);
-//       }
+//       setRootNode({ ...rootNode }); // Update state to trigger re-render
 //     }
 //   };
 
+//   // function to edit the content of a node based on its ID
 //   const editNodeContent = (nodeId, newContent) => {
 //     const stack = [rootNode];
 //     while (stack.length > 0) {
@@ -874,6 +827,7 @@ export default ProofTree;
 //         break;
 //       }
 
+//       // adding children to the stack... so they are processed
 //       currentNode.children.forEach((child) => stack.push(child));
 //     }
 
@@ -887,46 +841,99 @@ export default ProofTree;
 
 //       if (currentNode.id === nodeId) {
 //         currentNode.rightLabel = newRightLabel;
-//         break;
+//         break; // Stop the loop as we've found and updated the node
 //       }
 
+//       // Add children to the stack for further processing
 //       currentNode.children.forEach((child) => stack.push(child));
 //     }
 
 //     setRootNode({ ...rootNode });
 //   };
 
-//   const findNodeById = (node, targetId) => {
-//     if (node.id === targetId) return node;
-//     for (const child of node.children) {
-//       const found = findNodeById(child, targetId);
-//       if (found) return found;
-//     }
-//     return null;
-//   };
+//   const renderTreeNode = (node, isRoot = true) => {
+//     return (
+//       <div className="proof-tree-node">
+//         <div className="proof-tree-content">
+//           <div className="node-input-group">
+//             <label htmlFor={`node-content-${node.id}`}>Node Content</label>
+//             <LatexInput
+//               id={`node-content-${node.id}`}
+//               value={node.content}
+//               onChange={(value) => editNodeContent(node.id, value)}
+//               mathNotation={math_notation}
+//             />
+//             {/* Checkbox for Math Mode */}
+//           </div>
 
-//   const selectedNode = selectedNodeId
-//     ? findNodeById(rootNode, selectedNodeId)
-//     : null;
+//           {node.children.length > 0 && (
+//             <div className="node-input-group">
+//               <label htmlFor={`node-right-label-${node.id}`}>Right Label</label>
+//               <LatexInput
+//                 id={`node-right-label-${node.id}`}
+//                 value={node.rightLabel}
+//                 onChange={(value) => editNodeRightLabel(node.id, value)}
+//                 mathNotation={math_notation}
+//               />
+//             </div>
+//           )}
+//           <div className="node-action-buttons">
+//             <button className="add-child-btn" onClick={() => addNode(node.id)}>
+//               +
+//             </button>
+//             {!isRoot && ( // Conditionally show the Remove Node button
+//               <button
+//                 className="remove-child-btn"
+//                 onClick={() => removeNode(node.id)}
+//               >
+//                 <b>-</b>
+//               </button>
+//             )}
+
+//             {/* <div> */}
+//             <input
+//               type="checkbox"
+//               checked={node.mathMode}
+//               onChange={(e) => toggleMathMode(node.id, e.target.checked)}
+//               id={`math-mode-${node.id}`}
+//             />
+//             {/* <label htmlFor={`math-mode-${node.id}`}>Math Mode</label> */}
+//             {/* </div> */}
+//           </div>
+//         </div>
+
+//         <div className="proof-tree-children">
+//           {node.children.map((child) => renderTreeNode(child, false))}{" "}
+//           {/* Mark children as non-root */}
+//         </div>
+//       </div>
+//     );
+//   };
 
 //   const generateLatexCode = (node) => {
 //     let code = "";
 
+//     // Improved function to conditionally wrap content in math mode
+//     // and ensure LaTeX commands are always correctly formatted
 //     const formatContent = (content, mathMode) => {
-//       const regex = /(\\[a-zA-Z]+){1}(\{[^}]*\})?/g;
-//       let formattedContent = content.replace(regex, (match) => `$${match}$`);
+//       // This regular expression finds LaTeX commands
+//       const regex = /(\\[a-zA-Z]+){1}(\{[^}]*\})?/g; // Match commands, possibly followed by their arguments in {}
+//       let formattedContent = content.replace(regex, (match) => `$${match}$`); // Wrap each found command with $...$
 //       if (mathMode) {
-//         formattedContent = `$${formattedContent.replace(/\$/g, "")}$`;
+//         // If the entire content is in math mode, wrap everything once instead of individual components
+//         formattedContent = `$${formattedContent.replace(/\$/g, "")}$`; // Remove inner $ signs and wrap the whole content
 //       }
 //       return formattedContent;
 //     };
 
+//     // Generate code for children first
 //     let childrenCode = node.children
 //       .map((child) => generateLatexCode(child))
 //       .join(" ");
 
+//     // Determine the appropriate command based on the number of children
 //     let nodeCommand = "";
-//     const contentInMathMode = formatContent(node.content, node.mathMode);
+//     const contentInMathMode = formatContent(node.content, node.mathMode); // Apply math mode if needed
 
 //     switch (node.children.length) {
 //       case 0:
@@ -952,11 +959,12 @@ export default ProofTree;
 //         break;
 //     }
 
+//     // If the node has a right label, adjust for math mode
 //     if (node.rightLabel) {
 //       const rightLabelInMathMode = formatContent(
 //         node.rightLabel,
 //         node.mathMode
-//       );
+//       ); // Apply node's math mode to right label
 //       code = `${childrenCode} \\RightLabel{\\scriptsize{${rightLabelInMathMode}}}\n${nodeCommand}\n`;
 //     } else {
 //       code = `${childrenCode} ${nodeCommand}\n`;
@@ -966,10 +974,11 @@ export default ProofTree;
 //   };
 
 //   const generateBtn = () => {
-//     const proofTreeCode = generateLatexCode(rootNode);
+//     const proofTreeCode = generateLatexCode(rootNode); // This function generates the LaTeX code for the tree
 
-//     let latexCode = "";
+//     let latexCode = ""; // Initialize the LaTeX code string
 
+//     // Check if the preamble should be included
 //     if (includePreamble) {
 //       latexCode +=
 //         "\\documentclass{article}\n\\usepackage{bussproofs}\n\\begin{document}\n";
@@ -978,17 +987,21 @@ export default ProofTree;
 //       latexCode += "\\usepackage{bussproofs}\n";
 //     }
 
+//     // Add the proof tree environment with the code
+
 //     latexCode += "\\begin{prooftree}\n";
-//     latexCode += `${proofTreeCode}\n`;
+
+//     latexCode += `${proofTreeCode}\n`; // Add the main proof tree code
+
 //     latexCode += "\\end{prooftree}\n";
 
+//     // Check if document end tags should be included
 //     if (includePreamble) {
 //       latexCode += "\\end{document}";
 //     }
 
-//     setGeneratedCode(latexCode);
+//     setGeneratedCode(latexCode); // Set the generated LaTeX code to state
 //   };
-
 //   useEffect(() => {
 //     const loadProofTreeData = async () => {
 //       if (id && user) {
@@ -1003,6 +1016,7 @@ export default ProofTree;
 //           setIncludePreamble(loadedTree.settings.includePreamble);
 //           setIncludeDocumentTags(loadedTree.settings.includeDocumentTags);
 
+//           // Find highest node ID to continue numbering
 //           const findMaxId = (node) => {
 //             let maxId = node.id || 0;
 //             if (node.children) {
@@ -1048,11 +1062,14 @@ export default ProofTree;
 //       };
 
 //       if (isEditMode) {
+//         // Update existing proof tree
 //         await proofTreeService.updateProofTree(id, treeToSave);
 //         alert("Proof tree updated successfully!");
 //       } else {
+//         // Create new proof tree
 //         const response = await proofTreeService.saveProofTree(treeToSave);
 //         alert("Proof tree saved successfully!");
+//         // Navigate to edit mode with the new tree ID
 //         navigate(`/proof-trees/edit/${response.data._id}`);
 //       }
 //     } catch (error) {
@@ -1064,102 +1081,10 @@ export default ProofTree;
 //   };
 
 //   return (
-//     <div className="flex flex-col items-center w-full max-w-6xl mx-auto p-4">
+//     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
 //       <h1 className="text-3xl font-bold mb-8 text-center">Proof Trees</h1>
 
 //       <ProofTreeInstructions />
-
-//       {/* Tree Visualization Section */}
-//       <div className="w-full mb-6">
-//         <h2 className="text-lg font-semibold mb-3 text-gray-700">
-//           Tree Visualization
-//         </h2>
-//         <ProofTreeVisualizer
-//           node={rootNode}
-//           onNodeClick={setSelectedNodeId}
-//           selectedNodeId={selectedNodeId}
-//         />
-//       </div>
-
-//       {/* Node Editor */}
-//       {selectedNode && (
-//         <div className="w-full max-w-md bg-white p-5 rounded-lg shadow mb-6">
-//           <h3 className="text-lg font-semibold mb-3 text-gray-700">
-//             Edit Selected Node (ID: {selectedNode.id})
-//           </h3>
-
-//           <div className="space-y-4">
-//             <div>
-//               <label className="block text-sm font-medium text-gray-700 mb-1">
-//                 Node Content
-//               </label>
-//               <LatexInput
-//                 value={selectedNode.content}
-//                 onChange={(value) => editNodeContent(selectedNode.id, value)}
-//                 mathNotation={math_notation}
-//               />
-//             </div>
-
-//             {selectedNode.children.length > 0 && (
-//               <div>
-//                 <label className="block text-sm font-medium text-gray-700 mb-1">
-//                   Right Label
-//                 </label>
-//                 <LatexInput
-//                   value={selectedNode.rightLabel}
-//                   onChange={(value) =>
-//                     editNodeRightLabel(selectedNode.id, value)
-//                   }
-//                   mathNotation={math_notation}
-//                 />
-//               </div>
-//             )}
-
-//             <div className="flex gap-2">
-//               <button
-//                 onClick={() => addNode(selectedNode.id)}
-//                 disabled={selectedNode.children.length >= 5}
-//                 className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
-//               >
-//                 Add Child
-//               </button>
-
-//               {selectedNode.id !== rootNode.id && (
-//                 <button
-//                   onClick={() => removeNode(selectedNode.id)}
-//                   className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-//                 >
-//                   Remove Node
-//                 </button>
-//               )}
-//             </div>
-
-//             <div className="flex items-center">
-//               <input
-//                 type="checkbox"
-//                 checked={selectedNode.mathMode}
-//                 onChange={(e) =>
-//                   toggleMathMode(selectedNode.id, e.target.checked)
-//                 }
-//                 id={`math-mode-${selectedNode.id}`}
-//                 className="mr-2"
-//               />
-//               <label
-//                 htmlFor={`math-mode-${selectedNode.id}`}
-//                 className="text-sm text-gray-600"
-//               >
-//                 Math Mode for this node
-//               </label>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-
-//       {!selectedNode && (
-//         <div className="text-center text-gray-500 mb-6 p-4 bg-gray-100 rounded-lg">
-//           Click on a node in the tree above to edit it
-//         </div>
-//       )}
 
 //       {/* Tree Configuration Section */}
 //       <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
@@ -1181,6 +1106,16 @@ export default ProofTree;
 //               Global Mathematical Font
 //             </span>
 //           </label>
+//         </div>
+//       </div>
+
+//       {/* Tree Builder Section */}
+//       <div className="w-full mb-8 bg-white p-5 rounded-lg shadow">
+//         <h2 className="text-lg font-semibold mb-3 text-gray-700">
+//           Tree Structure
+//         </h2>
+//         <div className="bg-gray-50 p-4 rounded-md border-2 border-dashed border-gray-300 min-h-[200px]">
+//           {renderTreeNode(rootNode)}
 //         </div>
 //       </div>
 
@@ -1318,5 +1253,3 @@ export default ProofTree;
 //     </div>
 //   );
 // };
-
-// export default ProofTree;
