@@ -8,7 +8,7 @@ COPY . .
 # NOTE: Use development build for local testing, production build for deployment
 # For local development, use: RUN npm run build:dev
 # For production deployment, use: RUN npm run build
-RUN npm run build:dev 
+RUN npm run build
 
 # Stage 2: Serve the application using Nginx
 FROM nginx:stable-alpine
