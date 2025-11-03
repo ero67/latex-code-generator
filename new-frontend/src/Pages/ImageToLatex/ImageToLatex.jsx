@@ -9,7 +9,26 @@ const ImageToLatex = () => {
   const [error, setError] = useState("");
 
   const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError("Please select an image file.");
+        setSelectedFile(null);
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        setError("File size must be less than 10MB.");
+        setSelectedFile(null);
+        return;
+      }
+      
+      setError(""); // Clear any previous errors
+      setSelectedFile(file);
+    }
   };
 
   const handleStructureChange = (event) => {
@@ -32,10 +51,28 @@ const ImageToLatex = () => {
         selectedFile,
         structureType
       );
-      setLatexCode(response.data.latex);
+      
+      if (response.data.status === "success") {
+        setLatexCode(response.data.latex);
+        if (response.data.message) {
+          console.log("Server message:", response.data.message);
+        }
+      } else {
+        setError(response.data.message || "Failed to generate LaTeX. Please try again.");
+      }
     } catch (err) {
-      setError("Failed to generate LaTeX. Please try again.");
-      console.error(err);
+      console.error("Upload error:", err);
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.status === 400) {
+        setError("Invalid file or missing structure type. Please check your input.");
+      } else if (err.response?.status === 500) {
+        setError("Server error. Please try again later.");
+      } else if (err.code === 'NETWORK_ERROR' || !err.response) {
+        setError("Network error. Please check your connection and try again.");
+      } else {
+        setError("Failed to generate LaTeX. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

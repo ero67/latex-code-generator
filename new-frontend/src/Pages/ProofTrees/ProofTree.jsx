@@ -3,6 +3,7 @@ import "../index.css";
 import GeneratedCode from "../../Components/GeneratedCode";
 import LatexInput from "../../Components/LatexInput";
 import ProofTreeInstructions from "../../Components/ProofTree/ProofTreeInstructions";
+import LatexImportModal from "../../Components/ProofTree/LatexImportModal";
 import { useParams, useNavigate } from "react-router-dom";
 import { proofTreeService } from "../../services/prooftree.service";
 import { useAuth } from "../../context/AuthContext";
@@ -171,6 +172,7 @@ const ProofTree = () => {
   const [treeName, setTreeName] = useState("");
   const [treeDescription, setTreeDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const { user } = useAuth();
   const { id } = useParams();
@@ -270,10 +272,6 @@ const ProofTree = () => {
 
   const selectedNode =
     selectedNodeId !== null ? findNodeById(rootNode, selectedNodeId) : null;
-
-  // In your ProofTree.jsx file...
-
-  // In your ProofTree.jsx file...
 
   const generateLatexCode = (node) => {
     // ✨ FIX: This helper function now correctly handles both global and local math modes.
@@ -409,6 +407,48 @@ const ProofTree = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleImport = (importedNode) => {
+    if (importedNode) {
+      // Reset nodeId to continue from the imported tree's max ID
+      const findMaxId = (node) => {
+        let maxId = node.id || 0;
+        if (node.children) {
+          node.children.forEach((child) => {
+            maxId = Math.max(maxId, findMaxId(child));
+          });
+        }
+        return maxId;
+      };
+      nodeId = findMaxId(importedNode) + 1;
+
+      setRootNode(importedNode);
+      setSelectedNodeId(null);
+      alert("Proof tree imported successfully!");
+    }
+  };
+
+  const handleExport = () => {
+    if (!rootNode) {
+      alert("No proof tree to export");
+      return;
+    }
+
+    // Generate the LaTeX code
+    generateBtn();
+
+    // Copy to clipboard
+    navigator.clipboard
+      .writeText(generatedCode)
+      .then(() => {
+        alert("LaTeX code copied to clipboard!");
+      })
+      .catch(() => {
+        alert(
+          "Failed to copy to clipboard. Please manually copy the generated code."
+        );
+      });
   };
 
   useEffect(() => {
@@ -586,26 +626,68 @@ const ProofTree = () => {
           </label>
         </div>
       </div>
-      {/* Generate Code Button */}
-      <button
-        onClick={generateBtn}
-        className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 mb-8 transition-colors flex items-center"
-      >
-        <svg
-          className="w-4 h-4 mr-2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {/* Import/Export and Generate Code Buttons */}
+      <div className="flex flex-wrap gap-4 justify-center mb-8">
+        <button
+          onClick={() => setShowImportModal(true)}
+          className="bg-blue-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-          />
-        </svg>
-        <span>Generate LaTeX Code</span>
-      </button>
+          <svg
+            className="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+            />
+          </svg>
+          <span>Import LaTeX</span>
+        </button>
+
+        <button
+          onClick={handleExport}
+          className="bg-purple-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-600 transition-colors flex items-center"
+        >
+          <svg
+            className="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+            />
+          </svg>
+          <span>Export LaTeX</span>
+        </button>
+
+        <button
+          onClick={generateBtn}
+          className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 transition-colors flex items-center"
+        >
+          <svg
+            className="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+            />
+          </svg>
+          <span>Generate LaTeX Code</span>
+        </button>
+      </div>
       {/* Generated Code */}
       <GeneratedCode id="generatedCode" code={generatedCode} />
       // {/* Tree Metadata Section */}
@@ -680,6 +762,12 @@ const ProofTree = () => {
           </p>
         )}
       </div>
+      {/* Import Modal */}
+      <LatexImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImport}
+      />
     </div>
   );
 };
