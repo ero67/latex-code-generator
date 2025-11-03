@@ -1,21 +1,17 @@
-# Docker Compose Version
 version: "3.8"
 
-# Defines the shared network for all services
 networks:
   app-network:
     driver: bridge
 
-# Defines all the services (containers) for your application
 services:
-  # Frontend Service (React, Vue, Angular, etc.)
   frontend:
     build:
-      context: ./new-frontend # Path to your frontend code
+      context: ./new-frontend
       dockerfile: Dockerfile
     container_name: latex-frontend
     ports:
-      - "80:80" # Exposes the frontend to the web on the standard HTTP port
+      - "80:80"
     restart: always
     networks:
       - app-network
@@ -23,22 +19,23 @@ services:
   # Backend Service (Node.js API)
   backend:
     build:
-      context: ./backend # Path to your backend code
+      context: ./backend
       dockerfile: Dockerfile
     container_name: latex-backend
     ports:
-      - "3001:3001" # Exposes the API port for the frontend to call
+      - "3001:3001"
     restart: always
     environment:
       - PORT=3001
-      # This is the connection string read by process.env.MONGO_URI in your code.
-      # It connects to the 'latex_db_instance' service and uses the 'latex-app' database.
       - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@latex_db_instance:27017/latex-app?authSource=admin
       - JWT_SECRET=${JWT_SECRET}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PREPROCESS_URL=http://python-preprocess:8000/preprocess
     depends_on:
-      # Ensures the database is healthy before the backend starts
       latex_db_instance:
         condition: service_healthy
+      python-preprocess:
+        condition: service_started
     networks:
       - app-network
 
@@ -47,17 +44,13 @@ services:
     image: mongo:latest
     container_name: latex_db_instance
     restart: always
-    # IMPORTANT: No 'ports' section here. The database is not exposed to the public internet for security.
     environment:
-      # These credentials are used to initialize the database
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     volumes:
-      # Persists database data on the host machine
       - mongodb_data:/data/db
     networks:
       - app-network
-    # Healthcheck ensures the database is responsive before other services connect
     healthcheck:
       test: |
         mongosh --host latex_db_instance \
@@ -70,20 +63,16 @@ services:
       retries: 5
       start_period: 40s
 
-  # Database Management UI (Mongo Express)
   mongo-express:
     image: mongo-express:latest
     container_name: mongo-express
     restart: always
     ports:
-      - "8081:8081" # Exposes the management UI on a private port
+      - "8081:8081"
     environment:
-      # Tells Mongo Express which server to connect to
       ME_CONFIG_MONGODB_SERVER: latex_db_instance
-      # Admin credentials for Mongo Express to log in to MongoDB
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD}
-      # Login credentials for accessing the Mongo Express web page itself
       ME_CONFIG_BASICAUTH_USERNAME: ${ME_USERNAME}
       ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASSWORD}
     depends_on:
@@ -92,6 +81,17 @@ services:
     networks:
       - app-network
 
-# Defines the persistent volume for MongoDB data
+  # Python preprocessing service (FastAPI + OpenCV)
+  python-preprocess:
+    build:
+      context: ./python-preprocess
+      dockerfile: Dockerfile
+    container_name: latex-preprocess
+    restart: always
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+
 volumes:
   mongodb_data:
