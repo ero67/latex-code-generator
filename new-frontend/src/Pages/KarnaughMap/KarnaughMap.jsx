@@ -9,6 +9,8 @@ import { ToastContainer, toast } from "react-toastify";
 import Dropdown from "../../Components/Dropdown/DropDown";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import LatexImportModal from "../../Components/KarnaughMap/LatexImportModal";
+import { validateKmapLatex, parseKmapLatex } from "../../utils/kmapParser";
 
 const BinaryColumnLabels = ({ size }) => {
   // Generate binary labels based on size with proper Gray code ordering
@@ -149,6 +151,7 @@ const Kmap = () => {
 
   const [activeImplicantIndex, setActiveImplicantIndex] = useState(null);
   const [activeImplicantType, setActiveImplicantType] = useState(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const [rows, cols] = tableSize.split("x").map(Number);
   const rowVarsCount = Math.floor(Math.log2(rows));
@@ -998,113 +1001,83 @@ const Kmap = () => {
     addEdgeImplicantCellIndexes([]);
   };
 
-  const parseLatexCode = (latex) => {
+  // Import handler that mirrors DB-load logic using structured parse
+  const handleImportFromLatex = (parsed) => {
     try {
-      // 1. Parse map size and variables
-      const mapHeaderRegex =
-        /\\begin{karnaugh-map}\[(\d+)\]\[(\d+)\](?:\[1\]\[([^\]]*)\]\[([^\]]*)\])?/;
-      const headerMatch = latex.match(mapHeaderRegex);
-      if (!headerMatch) {
-        toast.error("Could not parse Karnaugh map dimensions from LaTeX.");
-        return;
-      }
+      // Size and variables - set these first
+      const mapSize = parsed.tableSize;
+      setCornerImplicantDisabled(mapSize !== "4x4");
+      setTableSize(mapSize);
+      setCustomVariablesAllowed(parsed.customVariablesAllowed);
+      setVariables(parsed.customVariablesValues);
 
-      const cols = parseInt(headerMatch[1], 10);
-      const rows = parseInt(headerMatch[2], 10);
-      const newSize = `${rows}x${cols}`;
-      setTableSize(newSize);
+      // Cells - set state first, then fill DOM cells after render
+      setCellValues(parsed.cellValues);
 
-      if (headerMatch[3] !== undefined && headerMatch[4] !== undefined) {
-        setCustomVariablesAllowed(true);
-        const colVars = headerMatch[3].split("][").reverse();
-        const rowVars = headerMatch[4].split("][").reverse();
-        setVariables([...rowVars, ...colVars]);
-      } else {
-        setCustomVariablesAllowed(false);
-        const totalVars = Math.ceil(Math.log2(rows * cols));
-        setVariables(Array(totalVars).fill(""));
-      }
+      // Implicants (karnaugh-map package indices)
+      addImplicant(parsed.implicants || []);
+      addEdgeImplicant(parsed.edgeImplicants || []);
 
-      // 2. Parse manual terms
-      const manualTermsRegex = /\\manualterms{([^}]*)}/;
-      const termsMatch = latex.match(manualTermsRegex);
-      if (!termsMatch) {
-        toast.error("Could not find \\manualterms in the LaTeX code.");
-        return;
-      }
-
-      const terms = termsMatch[1].split(",");
-      const grayMap = {
-        "4x4": [
-          [0, 1, 3, 2],
-          [4, 5, 7, 6],
-          [12, 13, 15, 14],
-          [8, 9, 11, 10],
-        ],
-        "2x4": [
-          [0, 1, 3, 2],
-          [4, 5, 7, 6],
-        ],
-        "2x2": [
-          [0, 1],
-          [2, 3],
-        ],
-        "2x1": [[0], [1]],
+      // Derive drawing indices from imported implicants
+      const [rows, cols] = parsed.tableSize.split("x").map(Number);
+      const getIndexMap = (r, c) => {
+        if (r === 4 && c === 4) return [[0,1,3,2],[4,5,7,6],[12,13,15,14],[8,9,11,10]];
+        if (r === 2 && c === 4) return [[0,1,3,2],[4,5,7,6]];
+        if (r === 2 && c === 2) return [[0,1],[2,3]];
+        if (r === 2 && c === 1) return [[0],[1]];
+        return null;
       };
-      const indexMap = grayMap[newSize];
-      const newCellValues = Array(rows * cols).fill("");
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const flatIndex = r * cols + c;
-          const termIndex = indexMap[r][c];
-          if (terms[termIndex]) {
-            newCellValues[flatIndex] = terms[termIndex];
+      const indexMap = getIndexMap(rows, cols);
+
+      const mapIndexToRowCol = (idx) => {
+        for (let r = 0; r < indexMap.length; r++) {
+          for (let c = 0; c < indexMap[r].length; c++) {
+            if (indexMap[r][c] === idx) return { row: r, col: c };
           }
         }
-      }
-      setCellValues(newCellValues);
+        return null;
+      };
 
-      // 3. Parse implicants
-      const implicantRegex = /\\implicant{(\d+)}{(\d+)}/g;
-      let match;
-      const newImplicants = [];
-      while ((match = implicantRegex.exec(latex)) !== null) {
-        newImplicants.push([parseInt(match[1], 10), parseInt(match[2], 10)]);
-      }
-      addImplicant(newImplicants);
-
-      // 4. Parse edge implicants
-      const edgeImplicantRegex = /\\implicantedge{(\d+)}{(\d+)}{(\d+)}{(\d+)}/g;
-      const newEdgeImplicants = [];
-      while ((match = edgeImplicantRegex.exec(latex)) !== null) {
-        const implicant = [
-          parseInt(match[1], 10),
-          parseInt(match[2], 10),
-          parseInt(match[3], 10),
-          parseInt(match[4], 10),
-        ];
-        // The package uses 2 values for a 2-cell implicant, we store 4
-        if (implicant[0] === implicant[1] && implicant[2] === implicant[3]) {
-          newEdgeImplicants.push([implicant[0], implicant[2]]);
-        } else {
-          newEdgeImplicants.push(implicant);
+      const buildRectCells = (aIdx, bIdx) => {
+        const a = mapIndexToRowCol(aIdx);
+        const b = mapIndexToRowCol(bIdx);
+        if (!a || !b) return [];
+        const topLeft = { row: Math.min(a.row, b.row), col: Math.min(a.col, b.col) };
+        const bottomRight = { row: Math.max(a.row, b.row), col: Math.max(a.col, b.col) };
+        const cells = [];
+        for (let r = topLeft.row; r <= bottomRight.row; r++) {
+          for (let c = topLeft.col; c <= bottomRight.col; c++) {
+            cells.push({ row: r, col: c });
+          }
         }
-      }
-      addEdgeImplicant(newEdgeImplicants);
+        return cells;
+      };
 
-      // 5. Parse corner implicant
-      if (/\\implicantcorner/.test(latex)) {
-        addImplicantCorner(true);
-      }
+      const importedImplicantCells = (parsed.implicants || []).map(([a,b]) => buildRectCells(a,b));
 
-      toast.success("Karnaugh map loaded from LaTeX!");
-      // This will switch to the edit view
+      const importedEdgeCells = (parsed.edgeImplicants || []).map((arr) => {
+        // Map each package index to row/col; keep order
+        return arr.map((idx) => mapIndexToRowCol(idx)).filter(Boolean);
+      });
+
+      addImplicantCellIndexes(importedImplicantCells);
+      addEdgeImplicantCellIndexes(importedEdgeCells);
+
+      // Corner implicant flag
+      addImplicantCorner(parsed.cornerImplicant === true);
+
+      // Switch to edit view and fill cells similar to DB load
       setTimeout(() => {
+        // Fill cells using the same method as DB load
+        fillCellsOnEdit(parsed.cellValues);
         handleDisable();
+        if (parsed.cornerImplicant && parsed.tableSize === "4x4") {
+          // Add the visual corner implicant rectangles if applicable
+          addCornerImplicant();
+        }
       }, 100);
-    } catch (error) {
-      console.error("Failed to parse LaTeX:", error);
-      toast.error("An error occurred while parsing the LaTeX code.");
+    } catch (e) {
+      toast.error("Failed to apply imported LaTeX");
     }
   };
 
@@ -1483,6 +1456,30 @@ const Kmap = () => {
     }
   }, [fetchedKarnaughMap]);
 
+  // Auto-import LaTeX code from Image-to-LaTeX page
+  useEffect(() => {
+    // Only auto-import on create pages (not edit pages)
+    if (isEditMode) {
+      return;
+    }
+
+    const storageKey = "pendingLatexImport_Karnaugh Map";
+    const pendingLatexCode = sessionStorage.getItem(storageKey);
+
+    if (pendingLatexCode) {
+      try {
+        const parsed = parseKmapLatex(pendingLatexCode);
+        handleImportFromLatex(parsed);
+        sessionStorage.removeItem(storageKey);
+        toast.success("LaTeX code imported successfully from Image-to-LaTeX!");
+      } catch (error) {
+        console.error("Error auto-importing LaTeX code:", error);
+        toast.error(`Error importing LaTeX code: ${error.message}`);
+        sessionStorage.removeItem(storageKey);
+      }
+    }
+  }, [isEditMode]);
+
   useEffect(() => {
     drawImplicants(implicantCellIndexes);
   }, [disabled, implicantCellIndexes, edgeimplicantCellIndexes]);
@@ -1584,24 +1581,17 @@ const Kmap = () => {
                 <span>Create Map</span>
               </button>
             </div>
-          </div>
-          {/* <div className="mt-6">
-            <h3 className="text-md font-semibold mb-2 text-gray-600">
-              Or Import from LaTeX
-            </h3>
-            <textarea
-              value={latexInput}
-              onChange={(e) => setLatexInput(e.target.value)}
-              placeholder="Paste your LaTeX code for a karnaugh-map here..."
-              className="w-full h-32 p-2 border border-gray-300 rounded-md font-mono text-sm"
-            />
             <button
-              onClick={() => parseLatexCode(latexInput)}
-              className="mt-2 px-4 h-10 bg-teal-600 text-white font-medium rounded hover:bg-teal-700 transition-colors"
+              onClick={() => setShowImportModal(true)}
+              className="px-4 h-10 bg-teal-600 text-white font-medium rounded hover:bg-teal-700 transition-colors flex items-center"
+              data-umami-event="Import Karnaugh Map from LaTeX button"
             >
-              Load from LaTeX
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+              Import from LaTeX
             </button>
-          </div> */}
+          </div>
         </div>
       )}
       {/* Implicant Actions Section - After Map Creation */}
@@ -1758,6 +1748,7 @@ const Kmap = () => {
         onClick={generateCodeLaTeX}
         disabled={!disabled}
         className="bg-green-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-600 mb-8"
+        data-umami-event="Generate Karnaugh Map LaTeX button"
       >
         Generate code
       </button>
@@ -1769,6 +1760,7 @@ const Kmap = () => {
             onClick={handleSave}
             className="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
             disabled={!user}
+            data-umami-event="Save Karnaugh Map button"
           >
             Save Karnaugh Map
           </button>
@@ -1780,11 +1772,17 @@ const Kmap = () => {
             onClick={handleSave}
             className="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
             disabled={!user}
+            data-umami-event="Update Karnaugh Map button"
           >
             Update Karnaugh Map
           </button>
         </div>
       )}
+      <LatexImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportFromLatex}
+      />
     </div>
   );
 };

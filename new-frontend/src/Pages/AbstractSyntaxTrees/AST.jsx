@@ -7,9 +7,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import GeneratedCode from "../../Components/GeneratedCode";
+import LatexImportModal from "../../Components/AST/LatexImportModal";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
+import { parseAstLatex } from "../../utils/astParser";
 
 const SyntaxTreeD3 = () => {
   const [treeData, setTreeData] = useState(null);
@@ -36,6 +39,7 @@ const SyntaxTreeD3 = () => {
   const [treeName, setTreeName] = useState("");
   const [treeDescription, setTreeDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const { user } = useAuth();
   const { id } = useParams(); // Get tree ID from URL for edit mode
   const navigate = useNavigate();
@@ -474,6 +478,30 @@ const SyntaxTreeD3 = () => {
     loadTreeData();
   }, [id, user]);
 
+  // Auto-import LaTeX code from Image-to-LaTeX page
+  useEffect(() => {
+    // Only auto-import on create pages (not edit pages)
+    if (isEditMode) {
+      return;
+    }
+
+    const storageKey = "pendingLatexImport_Abstract Syntax Tree";
+    const pendingLatexCode = sessionStorage.getItem(storageKey);
+
+    if (pendingLatexCode) {
+      try {
+        const tree = parseAstLatex(pendingLatexCode);
+        handleImportFromLatex(tree);
+        sessionStorage.removeItem(storageKey);
+        toast.success("LaTeX code imported successfully from Image-to-LaTeX!");
+      } catch (error) {
+        console.error("Error auto-importing LaTeX code:", error);
+        toast.error(`Error importing LaTeX code: ${error.message}`);
+        sessionStorage.removeItem(storageKey);
+      }
+    }
+  }, [isEditMode]);
+
   const handleOrientationClick = () => {
     if (indexOfOrientation === 0) {
       setIndexOfOrientation(1);
@@ -529,6 +557,24 @@ const SyntaxTreeD3 = () => {
       setHeight(100);
       setTreeData({ value: rootValue, children: [], label: "" });
     }
+  };
+
+  const handleImportFromLatex = (tree) => {
+    // Expect tree: { value, children: [...] }
+    setTreeData(tree);
+    // Reset nodeId to avoid id collisions when user adds new nodes
+    const assignIds = (node, nextId = 0) => {
+      node.id = nextId;
+      let maxId = nextId;
+      if (node.children) {
+        node.children.forEach((child) => {
+          maxId = Math.max(maxId, assignIds(child, maxId + 1));
+        });
+      }
+      return maxId;
+    };
+    const maxId = assignIds(tree, 0);
+    setNodeId(maxId + 1);
   };
 
   const generateLatexCode = (node, parentLabel = "") => {
@@ -721,6 +767,16 @@ const SyntaxTreeD3 = () => {
             </svg>
             <span>Create New Tree</span>
           </button>
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="px-6 py-2 bg-teal-600 text-white font-medium rounded hover:bg-teal-700 transition-colors flex items-center"
+            data-umami-event="Import AST from LaTeX button"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+            </svg>
+            <span>Import from LaTeX</span>
+          </button>
 
           <label className="flex items-center cursor-pointer">
             <input
@@ -759,6 +815,11 @@ const SyntaxTreeD3 = () => {
           </button>
         </div>
       </div>
+      <LatexImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportFromLatex}
+      />
 
       {/* Tree Visualization Container */}
       <div className="w-full mb-8 bg-white p-5 rounded-lg shadow">
@@ -815,6 +876,7 @@ const SyntaxTreeD3 = () => {
         id="generateBtn"
         onClick={handleGenerateLatex}
         className="bg-green-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-600 mb-8 transition-colors flex items-center"
+        data-umami-event="Generate AST LaTeX button"
       >
         <svg
           className="w-4 h-4 mr-2"
@@ -874,6 +936,7 @@ const SyntaxTreeD3 = () => {
           onClick={handleSave}
           disabled={!user || !treeData || isSaving}
           className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center"
+          data-umami-event={isEditMode ? "Update AST button" : "Save AST button"}
         >
           {isSaving ? (
             <>

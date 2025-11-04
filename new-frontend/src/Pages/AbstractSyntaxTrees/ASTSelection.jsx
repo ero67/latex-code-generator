@@ -87,6 +87,7 @@ const ASTSelection = () => {
           <Link
             to="/ast/create"
             className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
+            data-umami-event="Create new AST button"
           >
             Create New Tree
           </Link>
@@ -107,6 +108,7 @@ const ASTSelection = () => {
                 .scrollIntoView({ behavior: "smooth" })
             }
             className="block w-full py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded text-center transition-colors"
+            data-umami-event="View saved ASTs button"
           >
             View Saved Trees
           </button>
@@ -132,6 +134,7 @@ const ASTSelection = () => {
             <Link
               to="/ast/create"
               className="inline-block mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
+              data-umami-event="Create your first AST button"
             >
               Create Your First Tree
             </Link>
@@ -175,12 +178,14 @@ const ASTSelection = () => {
                   <button
                     onClick={() => handleEditTree(tree._id)}
                     className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center text-sm transition-colors"
+                    data-umami-event="Edit AST button"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDeleteTree(tree._id)}
                     className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-sm transition-colors"
+                    data-umami-event="Delete AST button"
                   >
                     Delete
                   </button>
