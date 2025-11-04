@@ -7,6 +7,8 @@ import LatexImportModal from "../../Components/ProofTree/LatexImportModal";
 import { useParams, useNavigate } from "react-router-dom";
 import { proofTreeService } from "../../services/prooftree.service";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
+import { parseLatexToProofTree } from "../../utils/latexParser";
 
 // --- DATA STRUCTURE ---
 let nodeId = 0;
@@ -429,28 +431,6 @@ const ProofTree = () => {
     }
   };
 
-  const handleExport = () => {
-    if (!rootNode) {
-      alert("No proof tree to export");
-      return;
-    }
-
-    // Generate the LaTeX code
-    generateBtn();
-
-    // Copy to clipboard
-    navigator.clipboard
-      .writeText(generatedCode)
-      .then(() => {
-        alert("LaTeX code copied to clipboard!");
-      })
-      .catch(() => {
-        alert(
-          "Failed to copy to clipboard. Please manually copy the generated code."
-        );
-      });
-  };
-
   useEffect(() => {
     const loadProofTreeData = async () => {
       if (id && user) {
@@ -484,6 +464,36 @@ const ProofTree = () => {
 
     loadProofTreeData();
   }, [id, user]);
+
+  // Auto-import LaTeX code from Image-to-LaTeX page
+  useEffect(() => {
+    // Only auto-import on create pages (not edit pages)
+    if (isEditMode) {
+      return;
+    }
+
+    const storageKey = "pendingLatexImport_Proof Tree";
+    const pendingLatexCode = sessionStorage.getItem(storageKey);
+
+    if (pendingLatexCode) {
+      try {
+        const parseResult = parseLatexToProofTree(pendingLatexCode);
+        
+        if (parseResult.success && parseResult.rootNode) {
+          handleImport(parseResult.rootNode);
+          sessionStorage.removeItem(storageKey);
+          toast.success("LaTeX code imported successfully from Image-to-LaTeX!");
+        } else {
+          toast.error(`Failed to import LaTeX code: ${parseResult.message || "Invalid code"}`);
+          sessionStorage.removeItem(storageKey);
+        }
+      } catch (error) {
+        console.error("Error auto-importing LaTeX code:", error);
+        toast.error(`Error importing LaTeX code: ${error.message}`);
+        sessionStorage.removeItem(storageKey);
+      }
+    }
+  }, [isEditMode]);
 
   return (
     <div className="flex flex-col items-center w-full max-w-6xl mx-auto p-4">
@@ -631,6 +641,7 @@ const ProofTree = () => {
         <button
           onClick={() => setShowImportModal(true)}
           className="bg-blue-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center"
+          data-umami-event="Import Proof Tree from LaTeX button"
         >
           <svg
             className="w-4 h-4 mr-2"
@@ -647,30 +658,10 @@ const ProofTree = () => {
           </svg>
           <span>Import LaTeX</span>
         </button>
-
-        <button
-          onClick={handleExport}
-          className="bg-purple-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-600 transition-colors flex items-center"
-        >
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-            />
-          </svg>
-          <span>Export LaTeX</span>
-        </button>
-
         <button
           onClick={generateBtn}
           className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 transition-colors flex items-center"
+          data-umami-event="Generate Proof Tree LaTeX button"
         >
           <svg
             className="w-4 h-4 mr-2"
@@ -690,7 +681,7 @@ const ProofTree = () => {
       </div>
       {/* Generated Code */}
       <GeneratedCode id="generatedCode" code={generatedCode} />
-      // {/* Tree Metadata Section */}
+      {/* Tree Metadata Section */}
       <div className="w-full bg-white p-5 rounded-lg shadow mb-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">
           Proof Tree Information
@@ -729,6 +720,7 @@ const ProofTree = () => {
           onClick={handleSave}
           disabled={!user || !rootNode || isSaving}
           className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center"
+          data-umami-event={isEditMode ? "Update Proof Tree button" : "Save Proof Tree button"}
         >
           {isSaving ? (
             <>

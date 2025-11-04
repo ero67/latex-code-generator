@@ -102,6 +102,7 @@ const ProofTreeSelection = () => {
           <Link
             to="/proof-trees/create"
             className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
+            data-umami-event="Create new proof tree button"
           >
             Create New Proof Tree
           </Link>
@@ -123,6 +124,7 @@ const ProofTreeSelection = () => {
                 .scrollIntoView({ behavior: "smooth" })
             }
             className="block w-full py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded text-center transition-colors"
+            data-umami-event="View saved proof trees button"
           >
             View Saved Trees
           </button>
@@ -152,6 +154,7 @@ const ProofTreeSelection = () => {
             <Link
               to="/proof-trees/create"
               className="inline-block mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
+              data-umami-event="Create your first proof tree button"
             >
               Create Your First Proof Tree
             </Link>
@@ -193,12 +196,14 @@ const ProofTreeSelection = () => {
                   <button
                     onClick={() => handleEditTree(tree._id)}
                     className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center text-sm transition-colors"
+                    data-umami-event="Edit proof tree button"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDeleteTree(tree._id)}
                     className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-sm transition-colors"
+                    data-umami-event="Delete proof tree button"
                   >
                     Delete
                   </button>

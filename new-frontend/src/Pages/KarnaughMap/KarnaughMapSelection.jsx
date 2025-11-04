@@ -65,6 +65,7 @@ const KarnaughMapSelection = () => {
           <Link
             to="/karnaugh-maps/create"
             className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
+            data-umami-event="Create new map button"
           >
             Create New Map
           </Link>
@@ -85,6 +86,7 @@ const KarnaughMapSelection = () => {
                 .scrollIntoView({ behavior: "smooth" })
             }
             className="block w-full py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded text-center transition-colors"
+            data-umami-event="View saved maps button"
           >
             View Saved Maps
           </button>
@@ -110,6 +112,7 @@ const KarnaughMapSelection = () => {
             <Link
               to="/karnaugh-maps/create"
               className="inline-block mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
+              data-umami-event="Create your first map button"
             >
               Create Your First Map
             </Link>
@@ -137,12 +140,14 @@ const KarnaughMapSelection = () => {
                 <button
                   onClick={() => handleEditMap(map._id)}
                   className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center text-sm transition-colors"
+                  data-umami-event="Edit Karnaugh Map button"
                 >
                   Edit Map
                 </button>
                 <button
                   onClick={() => handleDeleteMap(map._id)}
                   className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-sm transition-colors"
+                  data-umami-event="Delete Karnaugh Map button"
                 >
                   Delete
                 </button>
