@@ -33,6 +33,7 @@ function Analytics() {
   const [error, setError] = useState("");
   const [timeRange, setTimeRange] = useState(7); // days
   const [eventDetails, setEventDetails] = useState([]);
+  const [pages, setPages] = useState([]);
 
   useEffect(() => {
     async function fetchAnalytics() {
@@ -182,6 +183,27 @@ function Analytics() {
         );
         const statsData = await statsRes.json();
         setStats(statsData);
+
+        // Pages - fetch frequently visited pages
+        try {
+          const pagesRes = await fetch(
+            `${BASE_URL}/pages?startAt=${daysAgo}&endAt=${now}&unit=${unit}&timezone=${timezone}`,
+            { headers }
+          );
+          if (pagesRes.ok) {
+            const pagesData = await pagesRes.json();
+            // Format pages data for bar chart
+            const formattedPages = (pagesData.pages || pagesData || []).map((page) => ({
+              name: page.x || page.url || page.pathname || 'Unknown',
+              views: page.y || page.pageviews || page.views || 0,
+              visitors: page.visitors || 0,
+            })).sort((a, b) => b.views - a.views).slice(0, 10);
+            setPages(formattedPages);
+          }
+        } catch (err) {
+          console.warn("Error fetching pages:", err);
+          setPages([]);
+        }
 
         setLoading(false);
       } catch (err) {
@@ -394,10 +416,10 @@ function Analytics() {
                       <Pie
                         data={topEvents.slice(0, 8)}
                         cx="50%"
-                        cy="50%"
+                        cy="45%"
                         labelLine={false}
-                        label={({ name, percent }) => `${name.substring(0, 15)}${name.length > 15 ? '...' : ''} (${(percent * 100).toFixed(0)}%)`}
-                        outerRadius={80}
+                        label={false}
+                        outerRadius={100}
                         fill="#8884d8"
                         dataKey="count"
                       >
@@ -405,7 +427,39 @@ function Analytics() {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#fff', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          padding: '6px 10px',
+                          fontSize: '12px'
+                        }}
+                        itemStyle={{ 
+                          padding: '2px 0',
+                          fontSize: '12px'
+                        }}
+                        labelStyle={{
+                          fontSize: '11px',
+                          marginBottom: '4px',
+                          fontWeight: '600'
+                        }}
+                        formatter={(value, name, props) => [
+                          `${value} occurrences`,
+                          props.payload.name
+                        ]}
+                      />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry) => (
+                          <span style={{ color: entry.color, fontSize: '12px' }}>
+                            {value.length > 20 ? `${value.substring(0, 20)}...` : value}
+                          </span>
+                        )}
+                        wrapperStyle={{ paddingTop: '20px' }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
