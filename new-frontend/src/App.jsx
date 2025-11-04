@@ -13,6 +13,8 @@ import KarnaughMapSelection from "./Pages/KarnaughMap/KarnaughMapSelection.jsx";
 import ProofTreeSelection from "./Pages/ProofTrees/ProofTreeSelection";
 import Analytics from "./Pages/Analytics";
 import ImageToLatex from "./Pages/ImageToLatex/ImageToLatex";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
 
 // Your original App component
@@ -65,6 +67,18 @@ function App() {
             <Route path="/image-to-latex" element={<ImageToLatex />} />
           </Routes>
         </div>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
       </div>
     </AuthProvider>
   );
