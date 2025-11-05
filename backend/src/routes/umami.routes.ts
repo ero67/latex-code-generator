@@ -11,9 +11,11 @@ const UMAMI_URL = process.env.UMAMI_URL || "http://localhost:9000";
 const proxyToUmami: RequestHandler = async (req, res) => {
   try {
     // Remove /api/umami prefix, keep the rest (which already includes /api)
+    // req.originalUrl already includes the query string, so we don't need to add it again
     const umamiPath = req.originalUrl.replace("/api/umami", "");
-    const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
-    const url = `${UMAMI_URL}${umamiPath}${queryString ? `?${queryString}` : ""}`;
+    const url = `${UMAMI_URL}${umamiPath}`;
+    
+    console.log(`[Umami Proxy] Proxying ${req.method} ${req.originalUrl} -> ${url}`);
     
     // Prepare headers
     const headers: Record<string, string> = {
@@ -44,6 +46,10 @@ const proxyToUmami: RequestHandler = async (req, res) => {
     res.status(response.status).json(response.data);
   } catch (error: any) {
     console.error("Umami proxy error:", error);
+    console.error("Request URL:", error.config?.url);
+    console.error("Response status:", error.response?.status);
+    console.error("Response data:", error.response?.data);
+    
     const status = error.response?.status || 500;
     const data = error.response?.data || {
       status: "error",
