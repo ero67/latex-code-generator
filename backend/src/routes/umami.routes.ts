@@ -10,8 +10,8 @@ const UMAMI_URL = process.env.UMAMI_URL || "http://localhost:9000";
 // Proxy function to forward requests to Umami
 const proxyToUmami: RequestHandler = async (req, res) => {
   try {
-    // Remove /api/umami prefix and add /api prefix for Umami API
-    const umamiPath = req.originalUrl.replace("/api/umami", "/api");
+    // Remove /api/umami prefix, keep the rest (which already includes /api)
+    const umamiPath = req.originalUrl.replace("/api/umami", "");
     const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
     const url = `${UMAMI_URL}${umamiPath}${queryString ? `?${queryString}` : ""}`;
     
