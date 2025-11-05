@@ -7,6 +7,7 @@ import { karnaughMapRoutes } from "./routes/karnaughmap.routes";
 import { abstractSyntaxTreeRoutes } from "./routes/abstractsyntaxtrees.routes";
 import { proofTreeRoutes } from "./routes/prooftree.routes";
 import { imageToLatexRoutes } from "./routes/imagetolatex.routes";
+import { umamiRoutes } from "./routes/umami.routes";
 
 // Initialize express
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/karnaughmap", karnaughMapRoutes);
 app.use("/api/ast", abstractSyntaxTreeRoutes);
 app.use("/api/prooftree", proofTreeRoutes);
 app.use("/api/imagetolatex", imageToLatexRoutes);
+app.use("/api/umami", umamiRoutes); // Proxy for Umami API
 
 // Basic error handling
 app.use(
