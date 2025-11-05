@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 const KarnaughMapSelection = () => {
   const [savedMaps, setSavedMaps] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,7 +18,7 @@ const KarnaughMapSelection = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:3001/api/karnaughmap?userId=${user.id}`
+          `${API_URL}/karnaughmap?userId=${user.id}`
         );
         setSavedMaps(response.data.data);
         setLoading(false);
@@ -39,7 +41,7 @@ const KarnaughMapSelection = () => {
   const handleDeleteMap = async (mapId) => {
     if (window.confirm("Are you sure you want to delete this map?")) {
       try {
-        await axios.delete(`http://localhost:3001/api/karnaughmap/${mapId}`);
+        await axios.delete(`${API_URL}/karnaughmap/${mapId}`);
         // Remove the deleted tree from state
         setSavedMaps(savedMaps.filter((map) => map._id !== mapId));
       } catch (err) {

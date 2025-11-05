@@ -8,6 +8,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import GeneratedCode from "../../Components/GeneratedCode";
 import LatexImportModal from "../../Components/AST/LatexImportModal";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
@@ -446,7 +448,7 @@ const SyntaxTreeD3 = () => {
       if (id && user) {
         try {
           const response = await axios.get(
-            `http://localhost:3001/api/ast/${id}`
+            `${API_URL}/ast/${id}`
           );
           const loadedTree = response.data.data;
 
@@ -686,12 +688,12 @@ const SyntaxTreeD3 = () => {
 
       if (isEditMode) {
         // Update existing tree
-        await axios.put(`http://localhost:3001/api/ast/${id}`, treeToSave);
+        await axios.put(`${API_URL}/ast/${id}`, treeToSave);
         alert("Tree updated successfully!");
       } else {
         // Create new tree
         const response = await axios.post(
-          "http://localhost:3001/api/ast",
+          `${API_URL}/ast`,
           treeToSave
         );
         alert("Tree saved successfully!");
