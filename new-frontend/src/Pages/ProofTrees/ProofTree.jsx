@@ -369,12 +369,12 @@ const ProofTree = () => {
 
   const handleSave = async () => {
     if (!user || !rootNode) {
-      alert("Please log in and create a proof tree first");
+      toast.error("Please log in and create a proof tree first");
       return;
     }
 
     if (!treeName.trim()) {
-      alert("Please enter a name for your proof tree");
+      toast.error("Please enter a name for your proof tree");
       return;
     }
 
@@ -395,17 +395,17 @@ const ProofTree = () => {
       if (isEditMode) {
         // Update existing proof tree
         await proofTreeService.updateProofTree(id, treeToSave);
-        alert("Proof tree updated successfully!");
+        toast.success("Proof tree updated successfully!");
       } else {
         // Create new proof tree
         const response = await proofTreeService.saveProofTree(treeToSave);
-        alert("Proof tree saved successfully!");
+        toast.success("Proof tree saved successfully!");
         // Navigate to edit mode with the new tree ID
         navigate(`/proof-trees/edit/${response.data._id}`);
       }
     } catch (error) {
       console.error("Error saving proof tree:", error);
-      alert("Failed to save proof tree. Please try again.");
+      toast.error("Failed to save proof tree. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -427,7 +427,7 @@ const ProofTree = () => {
 
       setRootNode(importedNode);
       setSelectedNodeId(null);
-      alert("Proof tree imported successfully!");
+      toast.success("Proof tree imported successfully!");
     }
   };
 

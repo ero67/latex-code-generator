@@ -662,12 +662,12 @@ const SyntaxTreeD3 = () => {
 
   const handleSave = async () => {
     if (!user || !treeData) {
-      alert("Please log in and create a tree first");
+      toast.error("Please log in and create a tree first");
       return;
     }
 
     if (!treeName.trim()) {
-      alert("Please enter a name for your tree");
+      toast.error("Please enter a name for your tree");
       return;
     }
 
@@ -689,20 +689,20 @@ const SyntaxTreeD3 = () => {
       if (isEditMode) {
         // Update existing tree
         await axios.put(`${API_URL}/ast/${id}`, treeToSave);
-        alert("Tree updated successfully!");
+        toast.success("Tree updated successfully!");
       } else {
         // Create new tree
         const response = await axios.post(
           `${API_URL}/ast`,
           treeToSave
         );
-        alert("Tree saved successfully!");
+        toast.success("Tree saved successfully!");
         // Navigate to edit mode with the new tree ID
         navigate(`/ast/edit/${response.data.data._id}`);
       }
     } catch (error) {
       console.error("Error saving tree:", error);
-      alert("Failed to save tree. Please try again.");
+      toast.error("Failed to save tree. Please try again.");
     } finally {
       setIsSaving(false);
     }
