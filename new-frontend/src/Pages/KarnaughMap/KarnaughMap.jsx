@@ -429,7 +429,7 @@ const Kmap = () => {
     if (implicantCorner && rows === 4 && cols === 4) {
       code += "       \\implicantcorner\n";
     } else if (implicantCorner && (rows !== 4 || cols !== 4)) {
-      alert("Implicant na rohy sa dá zaznačiť len na poliach rozmeru 4x4");
+      toast.error("Implicant na rohy sa dá zaznačiť len na poliach rozmeru 4x4");
     }
 
     // logic for generating code for edge implicant
@@ -930,7 +930,7 @@ const Kmap = () => {
         ]);
         setNumberOfEdgeImplicants(numberOfEdgeImplicants + 1);
       } else {
-        alert("you can only select Cells on edges");
+        toast.error("you can only select Cells on edges");
         setMarkingEdgeImplicant(false);
         setfinishImplicantDisabled(true);
         setClassicImplicantDisabled(false);
@@ -1428,8 +1428,7 @@ const Kmap = () => {
         handleDisable();
         setCustomVariablesAllowed(fetchedKarnaughMap.customVariablesAllowed);
         setVariables(fetchedKarnaughMap.customVariablesValues);
-        addImplicantCorner(fetchedKarnaughMap.cornerImplicant);
-        addCornerImplicant();
+        addImplicantCorner(fetchedKarnaughMap.cornerImplicant || false);
         if (
           fetchedKarnaughMap.implicants &&
           fetchedKarnaughMap.implicants.length > 0
