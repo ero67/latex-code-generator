@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 const ASTSelection = () => {
   const [savedTrees, setSavedTrees] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,7 +18,7 @@ const ASTSelection = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:3001/api/ast?userId=${user.id}` // Changed endpoint
+          `${API_URL}/ast?userId=${user.id}` // Changed endpoint
         );
         setSavedTrees(response.data.data);
         setLoading(false);
@@ -40,7 +42,7 @@ const ASTSelection = () => {
   const handleDeleteTree = async (treeId) => {
     if (window.confirm("Are you sure you want to delete this tree?")) {
       try {
-        await axios.delete(`http://localhost:3001/api/ast/${treeId}`);
+        await axios.delete(`${API_URL}/ast/${treeId}`);
         // Remove the deleted tree from state
         setSavedTrees(savedTrees.filter(tree => tree._id !== treeId));
       } catch (err) {
