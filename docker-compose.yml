@@ -31,6 +31,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - PREPROCESS_URL=http://python-preprocess:8000/preprocess
+      - UMAMI_URL=http://svra-ubuntu-server-0161.virtual.cloud.tuke.sk:9000
     depends_on:
       latex_db_instance:
         condition: service_healthy
