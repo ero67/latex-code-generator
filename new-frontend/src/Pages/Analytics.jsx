@@ -15,10 +15,11 @@ import {
   Legend,
 } from "recharts";
 
-// const BASE_URL =
-//   "http://localhost:9000/api/websites/873bc035-44f6-4b18-bf4f-afb4526d170b";
-const BASE_URL = "http://localhost:9000/api/websites/90ad17e2-7260-4032-88cb-5a7a0d055389";
-const LOGIN_API = "http://localhost:9000/api/auth/login";
+// Get Umami URL from environment variable, fallback to localhost for development
+const UMAMI_URL = import.meta.env.VITE_UMAMI_URL || "http://localhost:9000";
+const WEBSITE_ID = import.meta.env.VITE_UMAMI_WEBSITE_ID || "90ad17e2-7260-4032-88cb-5a7a0d055389";
+const BASE_URL = `${UMAMI_URL}/api/websites/${WEBSITE_ID}`;
+const LOGIN_API = `${UMAMI_URL}/api/auth/login`;
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
