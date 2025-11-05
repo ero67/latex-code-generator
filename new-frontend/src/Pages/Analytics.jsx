@@ -35,7 +35,6 @@ function Analytics() {
   const [error, setError] = useState("");
   const [timeRange, setTimeRange] = useState(7); // days
   const [eventDetails, setEventDetails] = useState([]);
-  const [pages, setPages] = useState([]);
 
   useEffect(() => {
     async function fetchAnalytics() {
@@ -185,27 +184,6 @@ function Analytics() {
         );
         const statsData = await statsRes.json();
         setStats(statsData);
-
-        // Pages - fetch frequently visited pages
-        try {
-          const pagesRes = await fetch(
-            `${BASE_URL}/pages?startAt=${daysAgo}&endAt=${now}&unit=${unit}&timezone=${timezone}`,
-            { headers }
-          );
-          if (pagesRes.ok) {
-            const pagesData = await pagesRes.json();
-            // Format pages data for bar chart
-            const formattedPages = (pagesData.pages || pagesData || []).map((page) => ({
-              name: page.x || page.url || page.pathname || 'Unknown',
-              views: page.y || page.pageviews || page.views || 0,
-              visitors: page.visitors || 0,
-            })).sort((a, b) => b.views - a.views).slice(0, 10);
-            setPages(formattedPages);
-          }
-        } catch (err) {
-          console.warn("Error fetching pages:", err);
-          setPages([]);
-        }
 
         setLoading(false);
       } catch (err) {
