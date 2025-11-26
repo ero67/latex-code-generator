@@ -148,7 +148,6 @@ Where <orientationOption> is optional and only included if the tree is not top-d
 \\begin{forest}
 `,
 
-
   "Proof Tree": `You are an expert LaTeX proof tree generator. Your task is to analyze the uploaded hand-drawn diagram, which represents a logical proof structure. You MUST translate this diagram into valid LaTeX code using the 'bussproofs' package.
 
 --- RESTRICTIONS & FORMATTING RULES ---
@@ -174,8 +173,6 @@ Where <orientationOption> is optional and only included if the tree is not top-d
 2.  The number of premises directly above an inference line determines which command to use (\\UnaryInfC, \\BinaryInfC, etc.).
 3.  Place any rule label using the \\RightLabel command immediately before the inference command it annotates.
 
---- OUTPUT START ---
-\\begin{prooftree}
 `,
 };
 
