@@ -32,10 +32,15 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - PREPROCESS_URL=http://python-preprocess:8000/preprocess
       - UMAMI_URL=http://svra-ubuntu-server-0161.virtual.cloud.tuke.sk:9000
+      - LATEX_COMPILER_URL=http://latex-compiler:8080
+    volumes:
+      - latex-temp:/tmp/latex
     depends_on:
       latex_db_instance:
         condition: service_healthy
       python-preprocess:
+        condition: service_started
+      latex-compiler:
         condition: service_started
     networks:
       - app-network
@@ -94,5 +99,26 @@ services:
     networks:
       - app-network
 
+  # LaTeX compilation service (FastAPI + TeXLive)
+  latex-compiler:
+    build:
+      context: ./latex-compiler
+      dockerfile: Dockerfile
+    container_name: latex-compiler
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - latex-temp:/tmp/latex
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 volumes:
   mongodb_data:
+  latex-temp:
