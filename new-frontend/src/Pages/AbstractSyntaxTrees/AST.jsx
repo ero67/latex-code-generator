@@ -7,6 +7,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import GeneratedCode from "../../Components/GeneratedCode";
+import { LaTeXEditor } from "../../Components/LaTeXEditor";
 import LatexImportModal from "../../Components/AST/LatexImportModal";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -22,6 +23,7 @@ const SyntaxTreeD3 = () => {
   const [isChecked, setIsChecked] = useState(false);
 
   const svgRef = useRef();
+  const [showLaTeXEditor, setShowLaTeXEditor] = useState(false);
   const [generatedCode, setGeneratedCode] = useState(
     "Your code will appear here \n after you click on Generate Code button"
   );
@@ -897,7 +899,29 @@ const SyntaxTreeD3 = () => {
       </button>
 
       {/* Generated Code */}
-      <GeneratedCode id="generatedCode" code={generatedCode} />
+      {generatedCode && (
+        <div className="w-full mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-800">Generated LaTeX Code</h3>
+            <button
+              onClick={() => setShowLaTeXEditor(!showLaTeXEditor)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              {showLaTeXEditor ? "Show Code Only" : "Edit & Compile"}
+            </button>
+          </div>
+          
+          {showLaTeXEditor ? (
+            <LaTeXEditor
+              initialCode={generatedCode}
+              onCodeChange={(newCode) => setGeneratedCode(newCode)}
+              height="700px"
+            />
+          ) : (
+            <GeneratedCode id="generatedCode" code={generatedCode} />
+          )}
+        </div>
+      )}
       {/* Tree Metadata Section */}
       <div className="w-full bg-white p-5 rounded-lg shadow mb-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">

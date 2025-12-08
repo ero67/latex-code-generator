@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
 import GeneratedCode from "../../Components/GeneratedCode";
+import { LaTeXEditor } from "../../Components/LaTeXEditor";
 import LatexInput from "../../Components/LatexInput";
 import ProofTreeInstructions from "../../Components/ProofTree/ProofTreeInstructions";
 import LatexImportModal from "../../Components/ProofTree/LatexImportModal";
@@ -165,6 +166,7 @@ const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
 const ProofTree = () => {
   const [rootNode, setRootNode] = useState(createProofTreeNode());
   const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [showLaTeXEditor, setShowLaTeXEditor] = useState(false);
   const [generatedCode, setGeneratedCode] = useState(
     "Your code will appear here after you click on Generate Code button"
   );
@@ -680,7 +682,29 @@ const ProofTree = () => {
         </button>
       </div>
       {/* Generated Code */}
-      <GeneratedCode id="generatedCode" code={generatedCode} />
+      {generatedCode && (
+        <div className="w-full mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-800">Generated LaTeX Code</h3>
+            <button
+              onClick={() => setShowLaTeXEditor(!showLaTeXEditor)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              {showLaTeXEditor ? "Show Code Only" : "Edit & Compile"}
+            </button>
+          </div>
+          
+          {showLaTeXEditor ? (
+            <LaTeXEditor
+              initialCode={generatedCode}
+              onCodeChange={(newCode) => setGeneratedCode(newCode)}
+              height="700px"
+            />
+          ) : (
+            <GeneratedCode id="generatedCode" code={generatedCode} />
+          )}
+        </div>
+      )}
       {/* Tree Metadata Section */}
       <div className="w-full bg-white p-5 rounded-lg shadow mb-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">
