@@ -33,6 +33,12 @@ services:
       - PREPROCESS_URL=http://python-preprocess:8000/preprocess
       - UMAMI_URL=http://svra-ubuntu-server-0161.virtual.cloud.tuke.sk:9000
       - LATEX_COMPILER_URL=http://latex-compiler:8080
+      - SSO_ISSUER=${SSO_ISSUER}
+      - SSO_CLIENT_ID=${SSO_CLIENT_ID}
+      - SSO_CLIENT_SECRET=${SSO_CLIENT_SECRET}
+      - SSO_REDIRECT_URI=${SSO_REDIRECT_URI}
+      - SSO_SCOPES=${SSO_SCOPES}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
     volumes:
       - latex-temp:/tmp/latex
     depends_on:

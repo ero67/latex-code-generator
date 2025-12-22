@@ -8,11 +8,15 @@ import SyntaxTreeD3 from "./Pages/AbstractSyntaxTrees/AST";
 import ASTSelection from "./Pages/AbstractSyntaxTrees/ASTSelection";
 import LoginForm from "./Pages/AuthForms/LoginForm";
 import RegisterForm from "./Pages/AuthForms/RegisterForm";
+import SSOCallback from "./Pages/AuthForms/SSOCallback";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import KarnaughMapSelection from "./Pages/KarnaughMap/KarnaughMapSelection.jsx";
 import ProofTreeSelection from "./Pages/ProofTrees/ProofTreeSelection";
 import Analytics from "./Pages/Analytics";
 import ImageToLatex from "./Pages/ImageToLatex/ImageToLatex";
+import UserProfile from "./Pages/UserProfile";
+import ProtectedRoute from "./Components/ProtectedRoute";
+import ResolutionTree from "./Pages/ResolutionTrees/ResolutionTree";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
@@ -58,13 +62,29 @@ function App() {
               path="/proof-trees/edit/:id"
               element={<ProofTree></ProofTree>}
             ></Route>
+            <Route
+              path="/resolution-trees"
+              element={<ResolutionTree></ResolutionTree>}
+            ></Route>
             <Route path="/login" element={<LoginForm></LoginForm>}></Route>
             <Route
               path="/register"
               element={<RegisterForm></RegisterForm>}
             ></Route>
+            <Route
+              path="/auth/callback"
+              element={<SSOCallback></SSOCallback>}
+            ></Route>
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/image-to-latex" element={<ImageToLatex />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <UserProfile />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </div>
         <ToastContainer

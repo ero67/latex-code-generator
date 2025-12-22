@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import * as FaIcons from "react-icons/fa";
 import * as AiIcons from "react-icons/ai";
 import { Link } from "react-router-dom";
-import { SidebarData } from "./SidebarData.jsx";
+import { SidebarData, ProfileSidebarData } from "./SidebarData.jsx";
 // import "./Navbar.css";
 import { IconContext } from "react-icons";
 import { useAuth } from "../../context/AuthContext";
@@ -55,6 +55,18 @@ function Navbar() {
                     </Link>
                   </li>
                 )}
+                {user &&
+                  ProfileSidebarData.map((item, index) => (
+                    <li key={index} className="nav-item">
+                      <Link
+                        to={item.path}
+                        className="flex items-center px-4 py-2 text-gray-800 hover:bg-gray-200 rounded"
+                      >
+                        {item.icon}
+                        <span className="ml-2">{item.title}</span>
+                      </Link>
+                    </li>
+                  ))}
                 {user ? (
                   <>
                     <li className="nav-item">

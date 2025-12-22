@@ -8,18 +8,32 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
     if (token) {
       try {
         const decoded = jwtDecode(token);
         // Check if token is expired
         if (decoded.exp * 1000 > Date.now()) {
-          setUser(decoded); // Set the entire decoded token payload as user
+          // Merge JWT data with stored user data
+          let userData = decoded;
+          if (storedUser) {
+            try {
+              const parsedUser = JSON.parse(storedUser);
+              userData = { ...userData, ...parsedUser };
+            } catch (parseError) {
+              console.error("Error parsing stored user data:", parseError);
+            }
+          }
+          setUser(userData);
         } else {
           localStorage.removeItem("token");
+          localStorage.removeItem("user");
         }
       } catch (error) {
         console.error("Error decoding token:", error);
         localStorage.removeItem("token");
+        localStorage.removeItem("user");
       }
     }
   }, []);
@@ -37,6 +51,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 

@@ -6,6 +6,7 @@ import { FaTableCells } from "react-icons/fa6";
 import { BsTreeFill } from "react-icons/bs";
 import { BsTree } from "react-icons/bs";
 import { FaFileImage } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
 
 export const SidebarData = [
   {
@@ -33,9 +34,24 @@ export const SidebarData = [
     cName: "nav-text",
   },
   {
+    title: "Resolution trees",
+    path: "/resolution-trees",
+    icon: <BsTree />,
+    cName: "nav-text",
+  },
+  {
     title: "Image to LaTeX",
     path: "/image-to-latex",
     icon: <FaFileImage />,
+    cName: "nav-text",
+  },
+];
+
+export const ProfileSidebarData = [
+  {
+    title: "Profile",
+    path: "/profile",
+    icon: <FaUser />,
     cName: "nav-text",
   },
 ];
