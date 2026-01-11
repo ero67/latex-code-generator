@@ -10,7 +10,7 @@ import GeneratedCode from "../../Components/GeneratedCode";
 import { LaTeXEditor } from "../../Components/LaTeXEditor";
 import LatexImportModal from "../../Components/AST/LatexImportModal";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";

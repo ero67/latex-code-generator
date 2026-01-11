@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL;
+// Default to same-origin `/api` in production behind the reverse-proxy.
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export const authService = {
   async login(data) {
@@ -56,7 +57,6 @@ export const authService = {
    * Initiate SSO login - redirects to SSO provider
    */
   initiateSSO() {
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
     window.location.href = `${API_URL}/sso/login`;
   },
 };
