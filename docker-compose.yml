@@ -5,13 +5,51 @@ networks:
     driver: bridge
 
 services:
+  # Public entrypoint (ports 80/443) + HTTPS termination
+  reverse-proxy:
+    image: nginx:stable-alpine
+    container_name: latex-reverse-proxy
+    restart: always
+    environment:
+      - DOMAIN=${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/templates:/etc/nginx/templates:ro
+      - ./infra/nginx/docker-entrypoint.d:/docker-entrypoint.d:ro
+      - certbot-www:/var/www/certbot:ro
+      - certbot-conf:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+
+  # Let’s Encrypt cert management (webroot challenge)
+  certbot:
+    image: certbot/certbot:latest
+    container_name: latex-certbot
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-conf:/etc/letsencrypt
+    entrypoint: /bin/sh -c
+    # Renew twice per day; nginx reload is handled by restarting reverse-proxy (or do it manually after renew).
+    command: >
+      "trap exit TERM;
+       while :; do
+         certbot renew --webroot -w /var/www/certbot --quiet;
+         sleep 12h;
+       done"
+    networks:
+      - app-network
+
+  # Frontend (served internally; reverse-proxy exposes it publicly)
   frontend:
     build:
       context: ./new-frontend
       dockerfile: Dockerfile
     container_name: latex-frontend
-    ports:
-      - "80:80"
     restart: always
     networks:
       - app-network
@@ -22,8 +60,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: latex-backend
-    ports:
-      - "3001:3001"
+    # Expose only to the internal docker network; reverse-proxy serves it publicly.
+    # If you need to access it directly for debugging, temporarily add back:
+    # ports:
+    #   - "3001:3001"
     restart: always
     environment:
       - PORT=3001
@@ -128,3 +168,5 @@ services:
 volumes:
   mongodb_data:
   latex-temp:
+  certbot-www:
+  certbot-conf:

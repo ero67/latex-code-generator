@@ -16,13 +16,12 @@ const cleanMathMode = (content) => {
 };
 
 // Helper function to extract right label from RightLabel command
+// Note: in our generated LaTeX, \RightLabel typically appears on its own line
+// BEFORE the corresponding *InfC{...} command, so the parser must associate it
+// with the next inference node it sees.
 const extractRightLabel = (text) => {
-  const regex = /\\RightLabel\{\\scriptsize\{([^}]*)\}\}/g;
-  const match = text.match(regex);
-  if (match) {
-    return cleanMathMode(match[1].replace(/\\scriptsize\{([^}]*)\}/, '$1'));
-  }
-  return '';
+  const match = text.match(/\\RightLabel\{\\scriptsize\{([^}]*)\}\}/);
+  return match ? cleanMathMode(match[1]) : '';
 };
 
 // Helper function to determine node type based on LaTeX command
@@ -87,16 +86,21 @@ export const parseLatexToProofTree = (latexCode) => {
 
     // Parse the proof tree structure
     const nodes = [];
-    const nodeMap = new Map();
     let nodeId = 0;
+    let pendingRightLabel = '';
 
     // First pass: create all nodes
+    // Important: \RightLabel often lives on its own line, and applies to the
+    // next *InfC node. We carry it forward via `pendingRightLabel`.
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
-      
-      // Check for RightLabel
-      const rightLabelMatch = trimmedLine.match(/\\RightLabel\{\\scriptsize\{([^}]*)\}\}/);
-      const rightLabel = rightLabelMatch ? cleanMathMode(rightLabelMatch[1]) : '';
+
+      // Capture RightLabel even if this line doesn't contain a node command.
+      // If a line contains multiple RightLabels, the last one wins (rare).
+      if (trimmedLine.includes('\\RightLabel')) {
+        const extracted = extractRightLabel(trimmedLine);
+        if (extracted) pendingRightLabel = extracted;
+      }
 
       // Extract the main command
       const commandMatch = trimmedLine.match(/\\(AxiomC|UnaryInfC|BinaryInfC|TrinaryInfC|QuaternaryInfC|QuinaryInfC)\{([^}]*)\}/);
@@ -105,6 +109,10 @@ export const parseLatexToProofTree = (latexCode) => {
         const [, command, content] = commandMatch;
         const cleanedContent = cleanMathMode(content);
         const nodeType = getNodeType(command);
+
+        // Associate any pending RightLabel with this node (usually an inference node)
+        const rightLabel = nodeType !== 'axiom' ? pendingRightLabel : '';
+        pendingRightLabel = '';
         
         const node = {
           id: nodeId++,
@@ -117,7 +125,6 @@ export const parseLatexToProofTree = (latexCode) => {
         };
 
         nodes.push(node);
-        nodeMap.set(index, node);
       }
     });
 

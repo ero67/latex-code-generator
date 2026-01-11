@@ -13,14 +13,25 @@ import { ssoRoutes } from "./routes/sso.routes";
 
 // Initialize express
 const app = express();
-const corsOptions = {
-  origin: [
+const allowedOrigins = new Set(
+  [
+    process.env.FRONTEND_URL,
     "http://svra-ubuntu-server-0161.virtual.cloud.tuke.sk",
+    "https://svra-ubuntu-server-0161.virtual.cloud.tuke.sk",
     "http://localhost:3000",
     "http://localhost:5173", // Vite default port
     "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173"
-  ],
+    "http://127.0.0.1:5173",
+  ].filter(Boolean)
+);
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser tools (curl/postman) with no Origin header
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
 };
 // Middleware
 app.use(cors(corsOptions));
