@@ -54,15 +54,17 @@ Key details:
   - `certbot-conf:/etc/letsencrypt:ro`
     - Read-only mount of certificates
 
-### `certbot` service
+### `certbot` and `certbot-renew` services
 
-**Purpose**: Certificate renewal loop.
+**Purpose**:
+- `certbot`: one-off runner for initial issuance / manual operations
+- `certbot-renew`: certificate renewal loop
 
 Key details:
 - Mounts the same volumes as Nginx, but **read/write**:
   - `certbot-www:/var/www/certbot`
   - `certbot-conf:/etc/letsencrypt`
-- Runs a lightweight loop:
+- `certbot-renew` runs a lightweight loop:
   - `certbot renew --webroot -w /var/www/certbot --quiet`
   - sleeps 12 hours
 

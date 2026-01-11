@@ -26,15 +26,25 @@ services:
     networks:
       - app-network
 
-  # Let’s Encrypt cert management (webroot challenge)
+  # Let’s Encrypt one-off runner (used for initial issuance, manual renew/debug)
   certbot:
     image: certbot/certbot:latest
     container_name: latex-certbot
     volumes:
       - certbot-www:/var/www/certbot
       - certbot-conf:/etc/letsencrypt
+    networks:
+      - app-network
+
+  # Let’s Encrypt auto-renew loop (runs in background)
+  certbot-renew:
+    image: certbot/certbot:latest
+    container_name: latex-certbot-renew
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-conf:/etc/letsencrypt
     entrypoint: /bin/sh -c
-    # Renew twice per day; nginx reload is handled by restarting reverse-proxy (or do it manually after renew).
+    # Renew twice per day; nginx reload is handled by restarting/reloading reverse-proxy.
     command: >
       "trap exit TERM;
        while :; do

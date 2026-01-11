@@ -64,7 +64,7 @@ docker compose up -d
 
 ## 3) Renewals
 
-The `certbot` service runs `certbot renew` every 12 hours.
+The `certbot-renew` service runs `certbot renew` every 12 hours.
 
 After a renewal, Nginx needs to reload to pick up the updated cert files. Easiest option:
 
