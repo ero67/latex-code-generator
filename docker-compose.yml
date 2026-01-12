@@ -12,6 +12,8 @@ services:
     restart: always
     environment:
       - DOMAIN=${DOMAIN}
+    # Ensure our config-generator runs even if the script file isn't marked executable on the host.
+    entrypoint: ["/bin/sh", "-c", "sh /docker-entrypoint.d/99-generate-conf.sh && exec nginx -g 'daemon off;'"]
     ports:
       - "80:80"
       - "443:443"
@@ -72,8 +74,8 @@ services:
     container_name: latex-backend
     # Expose only to the internal docker network; reverse-proxy serves it publicly.
     # If you need to access it directly for debugging, temporarily add back:
-    # ports:
-    #   - "3001:3001"
+    ports:
+      - "3001:3001"
     restart: always
     environment:
       - PORT=3001
