@@ -17,6 +17,8 @@ import ImageToLatex from "./Pages/ImageToLatex/ImageToLatex";
 import UserProfile from "./Pages/UserProfile";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import ResolutionTree from "./Pages/ResolutionTrees/ResolutionTree";
+import FiniteStateAutomata from "./Pages/FiniteStateAutomata/FiniteStateAutomata";
+import FiniteStateAutomataSelection from "./Pages/FiniteStateAutomata/FiniteStateAutomataSelection";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
@@ -25,9 +27,10 @@ import "./index.css";
 function App() {
   return (
     <AuthProvider>
-      <div className="App">
-        <Navbar></Navbar>
-        <div className="content">
+      <div className="min-h-screen bg-gray-50 flex">
+        <Navbar />
+        <main className="flex-1 min-w-0 pt-14 md:pt-0">
+          <div className="p-4 md:p-6">
           <Routes>
             <Route path="/" element={<Home></Home>} />
             <Route
@@ -66,6 +69,18 @@ function App() {
               path="/resolution-trees"
               element={<ResolutionTree></ResolutionTree>}
             ></Route>
+            <Route
+              path="/finite-state-automata"
+              element={<FiniteStateAutomataSelection />}
+            />
+            <Route
+              path="/finite-state-automata/create"
+              element={<FiniteStateAutomata />}
+            />
+            <Route
+              path="/finite-state-automata/edit/:id"
+              element={<FiniteStateAutomata />}
+            />
             <Route path="/login" element={<LoginForm></LoginForm>}></Route>
             <Route
               path="/register"
@@ -86,7 +101,8 @@ function App() {
               }
             />
           </Routes>
-        </div>
+          </div>
+        </main>
         <ToastContainer
           position="top-right"
           autoClose={3000}

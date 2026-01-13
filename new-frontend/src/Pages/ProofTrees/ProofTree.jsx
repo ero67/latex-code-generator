@@ -24,9 +24,24 @@ const createProofTreeNode = (
 
 // --- (CORRECTED) SVG VISUALIZATION COMPONENT ---
 const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
+  // Estimate how wide a node box should be based on its displayed text.
+  // SVG text measurement via refs/getBBox gets tricky in a recursive render,
+  // so we use a stable monospace-based approximation.
+  const estimateNodeBoxWidth = (node) => {
+    const text = node?.content ? String(node.content) : "[Empty]";
+    // Rough monospace character width in px for the current font size.
+    const CHAR_PX = 8;
+    const H_PADDING_PX = 30; // total horizontal padding inside the rect
+    const MIN_W = 150;
+    const MAX_W = 420;
+    const estimated = text.length * CHAR_PX + H_PADDING_PX;
+    return Math.max(MIN_W, Math.min(MAX_W, estimated));
+  };
+
   const calculateTreeDimensions = (node) => {
+    const nodeBoxWidth = estimateNodeBoxWidth(node);
     if (!node.children || node.children.length === 0) {
-      return { width: 150, height: 50 };
+      return { width: nodeBoxWidth, height: 50 };
     }
     const childDimensions = node.children.map(calculateTreeDimensions);
     const totalChildWidth = childDimensions.reduce(
@@ -37,7 +52,8 @@ const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
       ...childDimensions.map((dim) => dim.height)
     );
     const horizontalPadding = (node.children.length - 1) * 20;
-    let width = Math.max(150, totalChildWidth + horizontalPadding);
+    // Ensure the parent node box fits too, not just the children spread.
+    let width = Math.max(nodeBoxWidth, totalChildWidth + horizontalPadding);
     if (node.rightLabel && node.children.length > 0) {
       width += 150;
     }
@@ -51,7 +67,9 @@ const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
     const isSelected = selectedNodeId === node.id;
     const hasChildren = node.children && node.children.length > 0;
     const elements = [];
-    const nodeWidth = Math.min(availableWidth * 0.9, 200);
+    // Match the rect width to the (estimated) text width, while keeping
+    // it within the available render width for this subtree.
+    const nodeWidth = Math.min(estimateNodeBoxWidth(node), availableWidth * 0.95);
 
     // ✨ FIX: Declare totalChildAreaWidth here, in the outer scope, with a default value.
     let totalChildAreaWidth = 0;

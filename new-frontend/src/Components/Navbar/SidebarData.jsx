@@ -40,6 +40,12 @@ export const SidebarData = [
     cName: "nav-text",
   },
   {
+    title: "Finite State Automata",
+    path: "/finite-state-automata",
+    icon: <AiIcons.AiOutlineShareAlt />,
+    cName: "nav-text",
+  },
+  {
     title: "Image to LaTeX",
     path: "/image-to-latex",
     icon: <FaFileImage />,
