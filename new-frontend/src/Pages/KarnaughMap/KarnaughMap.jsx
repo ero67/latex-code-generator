@@ -1582,16 +1582,6 @@ const Kmap = () => {
                 <span>Create Map</span>
               </button>
             </div>
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="px-4 h-10 bg-teal-600 text-white font-medium rounded hover:bg-teal-700 transition-colors flex items-center"
-              data-umami-event="Import Karnaugh Map from LaTeX button"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-              </svg>
-              Import from LaTeX
-            </button>
           </div>
         </div>
       )}
@@ -1744,15 +1734,37 @@ const Kmap = () => {
           Include import of the karnaugh map package
         </label>
       </div>
-      {/* Generate Code Button */}
-      <button
-        onClick={generateCodeLaTeX}
-        disabled={!disabled}
-        className="bg-green-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-600 mb-8"
-        data-umami-event="Generate Karnaugh Map LaTeX button"
-      >
-        Generate code
-      </button>
+      {/* Import + Generate Buttons (match Proof Trees layout) */}
+      <div className="flex flex-wrap gap-4 justify-center mb-8">
+        <button
+          onClick={() => setShowImportModal(true)}
+          className="bg-blue-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center"
+          data-umami-event="Import Karnaugh Map from LaTeX button"
+        >
+          <svg
+            className="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+            />
+          </svg>
+          <span>Import LaTeX</span>
+        </button>
+        <button
+          onClick={generateCodeLaTeX}
+          disabled={!disabled}
+          className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center"
+          data-umami-event="Generate Karnaugh Map LaTeX button"
+        >
+          Generate code
+        </button>
+      </div>
       {/* Generated Code */}
       {generatedCode && (
         <div className="w-full mb-8">

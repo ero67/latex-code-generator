@@ -42,6 +42,17 @@ const Home = () => {
           </Link>
         </div>
         <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200">
+          <h2 className="text-xl font-semibold mb-3 text-gray-800">Finite State Automata</h2>
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+            Design and visualize finite state automata: add states, mark start/accepting, and draw labeled transitions.
+          </p>
+          <Link to="/finite-state-automata">
+            <button className="bg-blue-500 hover:bg-blue-600 text-white py-1.5 px-4 rounded-lg w-full text-sm font-medium transition-colors">
+              Go to Automata
+            </button>
+          </Link>
+        </div>
+        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">Image to LaTeX</h2>
           <p className="text-sm text-gray-600 mb-4 leading-relaxed">
             Upload an image and automatically convert it to LaTeX code. Supports all structure types.

@@ -140,23 +140,60 @@ const ResolutionTree = () => {
   }, [selectedIds, combineSelected]);
 
   // ---- LaTeX generation ----
-  const renderNodeLatex = (node) => {
-    const isVirtual = node.id === -1;
-    const label = isVirtual
-      ? ""
-      : mathMode
-      ? `$${node.value}$`
-      : node.value;
-
-    let out = "[";
-    if (label) out += ` ${label}`;
-    if (node.children && node.children.length > 0) {
-      node.children.forEach((child) => {
-        out += "\n  " + renderNodeLatex(child).replace(/^/gm, "  ");
-      });
+  const normalizeClauseValue = (raw) => {
+    if (raw === null || raw === undefined) return "";
+    const v = String(raw).trim();
+    if (!v || v === "__root__") return "";
+    // Treat "{ }" / "{}" as "empty"
+    if (/^\{\s*\}$/.test(v)) return "";
+    // If user already wrapped in braces, strip them so forest can wrap consistently
+    if (v.startsWith("{") && v.endsWith("}")) {
+      return v.slice(1, -1).trim();
     }
-    out += "\n]";
-    return out;
+    return v;
+  };
+
+  const formatQtreeNodeLabel = (rawValue, depth) => {
+    const v = normalizeClauseValue(rawValue);
+    if (!v) return "";
+    if (v === "\\Box") return "$\\Box$";
+    // Match the expected rendering: clauses as sets in math mode
+    const inner =
+      depth > 0
+        ? v.startsWith("\\{") && v.endsWith("\\}")
+          ? v
+          : `\\{${v}\\}`
+        : v;
+    return `$${inner}$`;
+  };
+
+  const renderNodeQtree = (node, depth, namedIds) => {
+    const isVirtual = node.id === -1;
+    const children = node.children || [];
+    const label = isVirtual ? "" : formatQtreeNodeLabel(node.value, depth);
+
+    // Empty leaf
+    if (!label && children.length === 0) return "[]";
+
+    // For named nodes (used by extraLinks), render via \node(name){...};
+    const needsName = !isVirtual && namedIds.has(node.id);
+    const name = needsName ? `n${node.id}` : null;
+    const head = needsName
+      ? label
+        ? `.\\node(${name}){${label}};`
+        : `.\\node(${name}){};`
+      : label
+      ? `.{${label}}`
+      : ".{}";
+
+    if (children.length === 0) {
+      return `[${head} ]`;
+    }
+
+    const renderedChildren = children
+      .map((c) => renderNodeQtree(c, depth + 1, namedIds))
+      .join(" ");
+    return `[${head} ${renderedChildren} ]`;
   };
 
   const handleGenerateLatex = () => {
@@ -165,25 +202,41 @@ const ResolutionTree = () => {
       return;
     }
 
-    const body = renderNodeLatex(treeData);
+    // Prefer exporting a single real root if possible (avoids an empty virtual root).
+    const exportRoot =
+      treeData.id === -1 && treeData.children.length === 1
+        ? treeData.children[0]
+        : treeData;
+
+    const namedIds = new Set();
+    extraLinks.forEach((l) => {
+      namedIds.add(l.sourceId);
+      namedIds.add(l.targetId);
+    });
+    const body = renderNodeQtree(exportRoot, 0, namedIds);
+
     let code = "";
     if (includePreamble) {
-      code += "\\documentclass{article}\\n";
-      code += "\\usepackage{forest}\\n";
-      code += "\\begin{document}\\n";
+      code += "\\documentclass[tikz, margin=10pt]{standalone}\n";
+      code += "\\usepackage{tikz-qtree}\n";
+      code += "\\usepackage{latexsym}\n\n";
+      code += "\\begin{document}\n";
     }
 
-    code += `\\begin{forest}
-  for tree={
-    grow'=90,
-    parent anchor=north,
-    math content,
-  }
-${body}
-\\end{forest}`;
+    // tikz-qtree renders strict trees; we emulate the "second parent" edges via \draw.
+    const draws = extraLinks
+      .map(
+        (l) => `\\draw[red] (n${l.sourceId}.north) -- (n${l.targetId}.south);`
+      )
+      .join("\n");
+
+    code += `\\begin{tikzpicture}[grow'=up]\n`;
+    code += `\\Tree ${body}\n`;
+    if (draws) code += `${draws}\n`;
+    code += `\\end{tikzpicture}`;
 
     if (includePreamble) {
-      code += "\\n\\\\end{document}";
+      code += "\n\\end{document}";
     }
 
     setGeneratedCode(code);

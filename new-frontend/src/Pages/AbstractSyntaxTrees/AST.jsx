@@ -4,7 +4,7 @@
 //TODO:pomenovavanie hran uz viem pisat labele  do stredu hran uz len pridat logiku ze ked
 //klikenm na link ta sa len zisti na ktory link som klikol a na zaklade user inputu dam ten label aj do mojej struktury
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
 import GeneratedCode from "../../Components/GeneratedCode";
 import { LaTeXEditor } from "../../Components/LaTeXEditor";
@@ -23,12 +23,16 @@ const SyntaxTreeD3 = () => {
   const [isChecked, setIsChecked] = useState(false);
 
   const svgRef = useRef();
+  const zoomLayerRef = useRef(null);
+  const zoomBehaviorRef = useRef(null);
   const [showLaTeXEditor, setShowLaTeXEditor] = useState(false);
   const [generatedCode, setGeneratedCode] = useState(
     "Your code will appear here \n after you click on Generate Code button"
   );
 
   const [nodeId, setNodeId] = useState(0);
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [selectedEdge, setSelectedEdge] = useState(null); // { sourceId, targetId }
 
   const [indexOfOrientation, setIndexOfOrientation] = useState(0);
 
@@ -48,6 +52,80 @@ const SyntaxTreeD3 = () => {
   const { id } = useParams(); // Get tree ID from URL for edit mode
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
+
+  const findNodeById = useCallback((node, targetId) => {
+    if (!node) return null;
+    if (node.id === targetId) return node;
+    if (!node.children) return null;
+    for (const child of node.children) {
+      const found = findNodeById(child, targetId);
+      if (found) return found;
+    }
+    return null;
+  }, []);
+
+  const ensureIds = useCallback(
+    (root) => {
+      if (!root) return { tree: root, nextId: 0 };
+      if (root.id !== undefined && root.id !== null) {
+        // already has ids
+        const findMaxId = (node) => {
+          let maxId = node.id ?? 0;
+          if (node.children) {
+            node.children.forEach((child) => {
+              maxId = Math.max(maxId, findMaxId(child));
+            });
+          }
+          return maxId;
+        };
+        return { tree: root, nextId: findMaxId(root) + 1 };
+      }
+
+      // assign ids recursively
+      const cloned = JSON.parse(JSON.stringify(root));
+      const assign = (node, next = 0) => {
+        node.id = next;
+        let max = next;
+        if (node.children) {
+          node.children.forEach((child) => {
+            max = Math.max(max, assign(child, max + 1));
+          });
+        }
+        return max;
+      };
+      const maxId = assign(cloned, 0);
+      return { tree: cloned, nextId: maxId + 1 };
+    },
+    []
+  );
+
+  const selectedNode = useMemo(() => {
+    if (!treeData || selectedNodeId === null) return null;
+    return findNodeById(treeData, selectedNodeId);
+  }, [findNodeById, selectedNodeId, treeData]);
+
+  // Initialize zoom/pan once. We keep a dedicated layer for all rendered content.
+  useEffect(() => {
+    if (!svgRef.current) return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove();
+
+    const zoomLayer = svg.append("g").attr("class", "ast-zoom-layer");
+    zoomLayerRef.current = zoomLayer;
+
+    const zoom = d3
+      .zoom()
+      .scaleExtent([0.25, 3])
+      .on("zoom", (event) => {
+        zoomLayer.attr("transform", event.transform);
+      });
+
+    zoomBehaviorRef.current = zoom;
+    svg.call(zoom);
+    // Don't zoom on double-click; we reserve gestures for node interactions.
+    svg.on("dblclick.zoom", null);
+  }, []);
 
   // Define the calculateMaxWidth function with useCallback
   const calculateMaxWidth = useCallback((node) => {
@@ -79,8 +157,10 @@ const SyntaxTreeD3 = () => {
   useEffect(() => {
     if (!treeData) return;
 
-    // Clear previous content
-    d3.select(svgRef.current).selectAll("*").remove();
+    // Clear previous render (but keep zoom layer + zoom handler)
+    const zoomLayer =
+      zoomLayerRef.current ?? d3.select(svgRef.current).append("g");
+    zoomLayer.selectAll("*").remove();
 
     // Create a tree layout
     const tree = d3.tree().size([600, 400]);
@@ -91,17 +171,17 @@ const SyntaxTreeD3 = () => {
     // Assign positions to each node
     tree(root);
 
-    // Create an SVG container
-    const svg = d3.select(svgRef.current);
+    // Render into zoom layer so pan/zoom affects everything (nodes, links, labels)
+    const svg = d3.select(zoomLayer.node ? zoomLayer.node() : zoomLayer);
 
     if (indexOfOrientation === 1) {
-      renderLeftRightTree(svg, root);
+      renderLeftRightTree(svg, root, selectedNodeId);
     } else if (indexOfOrientation === 0) {
-      renderTopDownTree(svg, root);
+      renderTopDownTree(svg, root, selectedNodeId);
     } else if (indexOfOrientation === 2) {
-      renderBottomUpTree(svg, root, 600);
+      renderBottomUpTree(svg, root, 600, selectedNodeId);
     } else if (indexOfOrientation === 3) {
-      renderRightToLeftTree(svg, root, 600, 600);
+      renderRightToLeftTree(svg, root, 600, 600, selectedNodeId);
     }
 
     //////////////////////////////// for everything
@@ -192,7 +272,7 @@ const SyntaxTreeD3 = () => {
     });
   }
 
-  function renderRightToLeftTree(svg, root, svgWidth, svgHeight) {
+  function renderRightToLeftTree(svg, root, svgWidth, svgHeight, selectedId) {
     // Draw the links (edges) between nodes
     svg
       .selectAll("path.link")
@@ -233,8 +313,9 @@ const SyntaxTreeD3 = () => {
     nodes
       .append("circle")
       .attr("r", 15)
-      .attr("stroke", "black")
-      .attr("fill", "white");
+      .attr("stroke", (d) => (d.data.id === selectedId ? "#2563eb" : "black"))
+      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 1))
+      .attr("fill", (d) => (d.data.id === selectedId ? "#e3f2fd" : "white"));
 
     // Add labels to the nodes
     nodes
@@ -245,7 +326,7 @@ const SyntaxTreeD3 = () => {
       .text((d) => d.data.value);
   }
 
-  function renderLeftRightTree(svg, root) {
+  function renderLeftRightTree(svg, root, selectedId) {
     // Draw the links (edges) between nodes
     svg
       .selectAll("path.link")
@@ -283,8 +364,9 @@ const SyntaxTreeD3 = () => {
     nodes
       .append("circle")
       .attr("r", 15)
-      .attr("stroke", "black")
-      .attr("fill", "white");
+      .attr("stroke", (d) => (d.data.id === selectedId ? "#2563eb" : "black"))
+      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 1))
+      .attr("fill", (d) => (d.data.id === selectedId ? "#e3f2fd" : "white"));
 
     // Add labels to the nodes
     nodes
@@ -295,7 +377,7 @@ const SyntaxTreeD3 = () => {
       .text((d) => d.data.value);
   }
 
-  function renderTopDownTree(svg, root) {
+  function renderTopDownTree(svg, root, selectedId) {
     // Draw the links (edges) between nodes
     svg
       .selectAll("path.link")
@@ -333,8 +415,9 @@ const SyntaxTreeD3 = () => {
     nodes
       .append("circle")
       .attr("r", 15)
-      .attr("stroke", "black")
-      .attr("fill", "white");
+      .attr("stroke", (d) => (d.data.id === selectedId ? "#2563eb" : "black"))
+      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 1))
+      .attr("fill", (d) => (d.data.id === selectedId ? "#e3f2fd" : "white"));
 
     // Add labels to the nodes
     nodes
@@ -345,7 +428,7 @@ const SyntaxTreeD3 = () => {
       .text((d) => d.data.value);
   }
 
-  function renderBottomUpTree(svg, root, svgHeight) {
+  function renderBottomUpTree(svg, root, svgHeight, selectedId) {
     // Draw the links (edges) between nodes
     const svgHeightNew = svgHeight - 150;
     svg
@@ -387,8 +470,9 @@ const SyntaxTreeD3 = () => {
     nodes
       .append("circle")
       .attr("r", 15)
-      .attr("stroke", "black")
-      .attr("fill", "white");
+      .attr("stroke", (d) => (d.data.id === selectedId ? "#2563eb" : "black"))
+      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 1))
+      .attr("fill", (d) => (d.data.id === selectedId ? "#e3f2fd" : "white"));
 
     // Add labels to the nodes
     nodes
@@ -411,38 +495,13 @@ const SyntaxTreeD3 = () => {
   const handleNodeClick = useCallback(
     (event, node) => {
       // event.stopPropagation(); // Prevent propagation to the parent SVG
-      const childValue = prompt("Enter value for the new child node:");
-      if (childValue !== null) {
-        const newNode = {
-          id: nodeId,
-          value: childValue,
-          children: [],
-          label: "",
-        };
-        setNodeId(nodeId + 1);
-        // const currentDepth = calculateDepth(treeData);
-        // const currentWidth = calculateMaxWidth(treeData);
-        if (!node.data.children) {
-          // If the clicked node doesn't have children array, create one
-          node.data.children = [newNode];
-          // setHeight(height + 50);
-        } else {
-          // Add the new node to the children array
-          node.data.children.push(newNode);
-
-          // if (indexOfOrientation === 0 || indexOfOrientation === 2) {
-          //   const newDepth = calculateDepth({ ...treeData });
-          //   if (newDepth > currentDepth) {
-          //     setHeight(height + newDepth * 15);
-          //     setSvgHeight(height + newDepth * 15);
-          //   }
-          // }
-        }
-
-        setTreeData({ ...treeData });
+      if (node?.data?.id !== undefined && node?.data?.id !== null) {
+        setSelectedNodeId(node.data.id);
+        setSelectedEdge(null);
       }
+      // Normal click now just selects; use Inspector to add children.
     },
-    [treeData, nodeId]
+    [treeData]
   );
 
   useEffect(() => {
@@ -454,7 +513,8 @@ const SyntaxTreeD3 = () => {
           );
           const loadedTree = response.data.data;
 
-          setTreeData(loadedTree.treeData);
+          const ensured = ensureIds(loadedTree.treeData);
+          setTreeData(ensured.tree);
           setTreeName(loadedTree.name || "");
           setTreeDescription(loadedTree.description || "");
           setIsChecked(loadedTree.settings.isChecked);
@@ -472,7 +532,8 @@ const SyntaxTreeD3 = () => {
             }
             return maxId;
           };
-          setNodeId(findMaxId(loadedTree.treeData) + 1);
+          setNodeId(findMaxId(ensured.tree) + 1);
+          setSelectedNodeId(null);
         } catch (error) {
           console.error("Error loading tree:", error);
         }
@@ -520,52 +581,32 @@ const SyntaxTreeD3 = () => {
 
   const handleLinkClick = useCallback(
     (event, link) => {
-      // Prevent the event from bubbling to avoid triggering click events on other elements
-      // event.stopPropagation();
-
-      const newLabel = prompt("Enter label for the edge:");
-      if (newLabel !== null && newLabel !== "") {
-        const updateLabelInTreeData = (node, sourceId, targetId, newLabel) => {
-          if (node.id === sourceId) {
-            node.children = node.children.map((child) => {
-              if (child.id === targetId) {
-                return { ...child, label: newLabel }; // Update the label
-              }
-              return child;
-            });
-          }
-          if (node.children) {
-            node.children.forEach((child) =>
-              updateLabelInTreeData(child, sourceId, targetId, newLabel)
-            );
-          }
-        };
-
-        // Clone the tree data to ensure changes are detected by React
-        const newTreeData = { ...treeData };
-        updateLabelInTreeData(
-          newTreeData,
-          link.source.data.id,
-          link.target.data.id,
-          newLabel
-        );
-        setTreeData(newTreeData);
-      }
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      setSelectedNodeId(null);
+      setSelectedEdge({
+        sourceId: link.source.data.id,
+        targetId: link.target.data.id,
+      });
     },
     [treeData]
   );
 
   const handleCreateTree = () => {
-    const rootValue = prompt("Enter value for the root node:");
-    if (rootValue !== null) {
-      setHeight(100);
-      setTreeData({ value: rootValue, children: [], label: "" });
+    if (treeData && !window.confirm("Replace the current tree with a new root?")) {
+      return;
     }
+    setHeight(100);
+    setTreeData({ id: 0, value: "", children: [], label: "" });
+    setNodeId(1);
+    setSelectedNodeId(0);
+    setSelectedEdge(null);
   };
 
   const handleImportFromLatex = (tree) => {
     // Expect tree: { value, children: [...] }
-    setTreeData(tree);
+    const ensured = ensureIds(tree);
+    setTreeData(ensured.tree);
     // Reset nodeId to avoid id collisions when user adds new nodes
     const assignIds = (node, nextId = 0) => {
       node.id = nextId;
@@ -577,8 +618,10 @@ const SyntaxTreeD3 = () => {
       }
       return maxId;
     };
-    const maxId = assignIds(tree, 0);
+    const maxId = assignIds(ensured.tree, 0);
     setNodeId(maxId + 1);
+    setSelectedNodeId(0);
+    setSelectedEdge(null);
   };
 
   const generateLatexCode = (node, parentLabel = "") => {
@@ -728,11 +771,11 @@ const SyntaxTreeD3 = () => {
           </p>
           <p>
             <span className="font-bold text-blue-600">2.</span> Click on the
-            node you want to expand and enter the value of the child.
+            node you want to select. Use the Inspector to edit it or add children.
           </p>
           <p>
-            <span className="font-bold text-blue-600">3.</span> If you want to
-            label the edge, click on the edge and enter the label you want.
+            <span className="font-bold text-blue-600">3.</span> Click an edge
+            to select it, then edit the label in the Inspector.
           </p>
           <p>
             <span className="font-bold text-blue-600">4.</span> Using Turn Left
@@ -741,6 +784,10 @@ const SyntaxTreeD3 = () => {
           <p>
             <span className="font-bold text-blue-600">5.</span> By using right
             click on the node you can remove the node from the tree structure.
+          </p>
+          <p>
+            <span className="font-bold text-blue-600">6.</span> Use mouse wheel
+            to zoom and drag the background to pan the canvas.
           </p>
         </div>
       </div>
@@ -769,17 +816,7 @@ const SyntaxTreeD3 = () => {
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            <span>Create New Tree</span>
-          </button>
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="px-6 py-2 bg-teal-600 text-white font-medium rounded hover:bg-teal-700 transition-colors flex items-center"
-            data-umami-event="Import AST from LaTeX button"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-            </svg>
-            <span>Import from LaTeX</span>
+            <span>Add Root Node</span>
           </button>
 
           <label className="flex items-center cursor-pointer">
@@ -817,6 +854,43 @@ const SyntaxTreeD3 = () => {
             </svg>
             <span>Turn Left</span>
           </button>
+
+          <button
+            onClick={() => {
+              if (!zoomBehaviorRef.current) return;
+              d3.select(svgRef.current)
+                .transition()
+                .duration(150)
+                .call(zoomBehaviorRef.current.scaleBy, 1.2);
+            }}
+            className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
+          >
+            Zoom In
+          </button>
+          <button
+            onClick={() => {
+              if (!zoomBehaviorRef.current) return;
+              d3.select(svgRef.current)
+                .transition()
+                .duration(150)
+                .call(zoomBehaviorRef.current.scaleBy, 0.8);
+            }}
+            className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
+          >
+            Zoom Out
+          </button>
+          <button
+            onClick={() => {
+              if (!zoomBehaviorRef.current) return;
+              d3.select(svgRef.current)
+                .transition()
+                .duration(150)
+                .call(zoomBehaviorRef.current.transform, d3.zoomIdentity);
+            }}
+            className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
+          >
+            Reset View
+          </button>
         </div>
       </div>
       <LatexImportModal
@@ -826,18 +900,168 @@ const SyntaxTreeD3 = () => {
       />
 
       {/* Tree Visualization Container */}
-      <div className="w-full mb-8 bg-white p-5 rounded-lg shadow">
-        <h2 className="text-lg font-semibold mb-3 text-gray-700">
-          Tree Visualization
-        </h2>
-        <div className="flex justify-center">
+      <div className="w-full mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-lg shadow overflow-auto p-4">
           <svg
             ref={svgRef}
             width={600}
             height={600}
-            className="border border-gray-200 rounded"
-            onClick={() => setTreeData(null)} // Clear selection when clicking on the background
+            className="border border-gray-200 rounded block mx-auto"
           />
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-700">Inspector</h2>
+            {(selectedNodeId !== null || selectedEdge !== null) && (
+              <button
+                onClick={() => {
+                  setSelectedNodeId(null);
+                  setSelectedEdge(null);
+                }}
+                className="px-3 py-1 text-sm border rounded hover:bg-gray-100 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {!treeData ? (
+            <div className="text-sm text-gray-500">Create or import a tree to begin.</div>
+          ) : selectedEdge ? (
+            <div className="space-y-4">
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Edge</div>
+                <div className="font-mono text-sm text-gray-800">
+                  {selectedEdge.sourceId} → {selectedEdge.targetId}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Label
+                </label>
+                <input
+                  type="text"
+                  value={
+                    (() => {
+                      const src = findNodeById(treeData, selectedEdge.sourceId);
+                      const child =
+                        src?.children?.find((c) => c.id === selectedEdge.targetId) || null;
+                      return child?.label ?? "";
+                    })()
+                  }
+                  onChange={(e) => {
+                    const newLabel = e.target.value;
+                    const updateLabel = (node, sourceId, targetId) => {
+                      if (!node) return;
+                      if (node.id === sourceId && node.children) {
+                        node.children = node.children.map((child) =>
+                          child.id === targetId ? { ...child, label: newLabel } : child
+                        );
+                      }
+                      if (node.children) node.children.forEach((c) => updateLabel(c, sourceId, targetId));
+                    };
+                    const cloned = JSON.parse(JSON.stringify(treeData));
+                    updateLabel(cloned, selectedEdge.sourceId, selectedEdge.targetId);
+                    setTreeData(cloned);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="text-xs text-gray-500">
+                Tip: Click a node or edge in the canvas to edit it here.
+              </div>
+            </div>
+          ) : !selectedNode ? (
+            <div className="text-sm text-gray-500">
+              Click a node in the canvas to select it.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Node ID</div>
+                <div className="font-mono text-sm text-gray-800">
+                  {selectedNode.id}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Value
+                </label>
+                <input
+                  type="text"
+                  value={selectedNode.value ?? ""}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    const cloned = JSON.parse(JSON.stringify(treeData));
+                    const target = findNodeById(cloned, selectedNode.id);
+                    if (target) target.value = newValue;
+                    setTreeData(cloned);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    const cloned = JSON.parse(JSON.stringify(treeData));
+                    const target = findNodeById(cloned, selectedNode.id);
+                    if (!target) return;
+                    const newNode = {
+                      id: nodeId,
+                      value: "",
+                      children: [],
+                      label: "",
+                    };
+                    target.children = target.children || [];
+                    target.children.push(newNode);
+                    setNodeId(nodeId + 1);
+                    setTreeData(cloned);
+                    setSelectedNodeId(newNode.id);
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm font-medium"
+                >
+                  Add Child
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (!treeData) return;
+                    if (selectedNode.id === treeData.id) {
+                      toast.error("Cannot delete the root node.");
+                      return;
+                    }
+                    if (!window.confirm("Delete this node and all its children?")) return;
+
+                    const removeById = (targetId, currentNode) => {
+                      if (!currentNode.children) return;
+                      currentNode.children = currentNode.children.filter(
+                        (c) => c.id !== targetId
+                      );
+                      currentNode.children.forEach((c) =>
+                        removeById(targetId, c)
+                      );
+                    };
+                    const cloned = JSON.parse(JSON.stringify(treeData));
+                    removeById(selectedNode.id, cloned);
+                    setTreeData(cloned);
+                    setSelectedNodeId(null);
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium"
+                >
+                  Delete Node
+                </button>
+              </div>
+
+              <div className="text-xs text-gray-500">
+                Tip: Right-click a node to delete quickly.
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -875,28 +1099,50 @@ const SyntaxTreeD3 = () => {
         </div>
       </div>
 
-      {/* Generate Code Button */}
-      <button
-        id="generateBtn"
-        onClick={handleGenerateLatex}
-        className="bg-green-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-600 mb-8 transition-colors flex items-center"
-        data-umami-event="Generate AST LaTeX button"
-      >
-        <svg
-          className="w-4 h-4 mr-2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {/* Import + Generate Buttons (match Proof Trees layout) */}
+      <div className="flex flex-wrap gap-4 justify-center mb-8">
+        <button
+          onClick={() => setShowImportModal(true)}
+          className="bg-blue-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 transition-colors flex items-center"
+          data-umami-event="Import AST from LaTeX button"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-          />
-        </svg>
-        <span>Generate LaTeX</span>
-      </button>
+          <svg
+            className="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+            />
+          </svg>
+          <span>Import LaTeX</span>
+        </button>
+        <button
+          id="generateBtn"
+          onClick={handleGenerateLatex}
+          className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 transition-colors flex items-center"
+          data-umami-event="Generate AST LaTeX button"
+        >
+          <svg
+            className="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+            />
+          </svg>
+          <span>Generate LaTeX</span>
+        </button>
+      </div>
 
       {/* Generated Code */}
       {generatedCode && (
