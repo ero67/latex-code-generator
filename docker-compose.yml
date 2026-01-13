@@ -61,6 +61,9 @@ services:
     build:
       context: ./new-frontend
       dockerfile: Dockerfile
+      args:
+        # Build frontend to use same-origin `/api` (served via reverse-proxy) to avoid HTTPS->HTTP mixed content.
+        - VITE_API_URL=/api
     container_name: latex-frontend
     restart: always
     networks:

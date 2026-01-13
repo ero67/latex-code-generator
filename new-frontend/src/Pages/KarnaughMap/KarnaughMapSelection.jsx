@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+// In production behind the reverse-proxy, use same-origin `/api` to avoid mixed-content/CORS issues.
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 const KarnaughMapSelection = () => {
   const [savedMaps, setSavedMaps] = useState([]);
