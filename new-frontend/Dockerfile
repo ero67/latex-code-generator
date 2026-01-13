@@ -5,6 +5,10 @@ COPY package*.json ./
 # Use npm install --legacy-peer-deps if you ran into dependency conflicts earlier
 RUN npm install 
 COPY . .
+# Ensure production builds call the API via same-origin `/api` (no mixed-content).
+# You can override at build time with: --build-arg VITE_API_URL=https://your-domain/api
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=$VITE_API_URL
 # NOTE: Use development build for local testing, production build for deployment
 # For local development, use: RUN npm run build:dev
 # For production deployment, use: RUN npm run build

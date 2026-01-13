@@ -17,7 +17,8 @@ import {
 
 // Use backend proxy for Umami API to avoid CORS issues
 // The backend will proxy requests to Umami
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+// In production behind the reverse-proxy, use same-origin `/api` to avoid mixed-content/CORS issues.
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 const WEBSITE_ID = import.meta.env.VITE_UMAMI_WEBSITE_ID || "90ad17e2-7260-4032-88cb-5a7a0d055389";
 const BASE_URL = `${API_URL}/umami/api/websites/${WEBSITE_ID}`;
 const LOGIN_API = `${API_URL}/umami/api/auth/login`;
