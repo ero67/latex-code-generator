@@ -23,7 +23,8 @@ server {
 
   # Backend API
   location /api/ {
-    proxy_pass http://backend:3001/;
+    # IMPORTANT: do NOT strip "/api" prefix; backend is mounted at /api/*
+    proxy_pass http://backend:3001;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection $connection_upgrade;
