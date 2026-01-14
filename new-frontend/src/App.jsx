@@ -17,6 +17,7 @@ import ImageToLatex from "./Pages/ImageToLatex/ImageToLatex";
 import UserProfile from "./Pages/UserProfile";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import ResolutionTree from "./Pages/ResolutionTrees/ResolutionTree";
+import ResolutionTreeSelection from "./Pages/ResolutionTrees/ResolutionTreeSelection";
 import FiniteStateAutomata from "./Pages/FiniteStateAutomata/FiniteStateAutomata";
 import FiniteStateAutomataSelection from "./Pages/FiniteStateAutomata/FiniteStateAutomataSelection";
 import { ToastContainer } from "react-toastify";
@@ -67,7 +68,15 @@ function App() {
             ></Route>
             <Route
               path="/resolution-trees"
-              element={<ResolutionTree></ResolutionTree>}
+              element={<ResolutionTreeSelection />}
+            ></Route>
+            <Route
+              path="/resolution-trees/create"
+              element={<ResolutionTree />}
+            ></Route>
+            <Route
+              path="/resolution-trees/edit/:id"
+              element={<ResolutionTree />}
             ></Route>
             <Route
               path="/finite-state-automata"

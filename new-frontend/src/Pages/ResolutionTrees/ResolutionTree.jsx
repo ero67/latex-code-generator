@@ -3,6 +3,10 @@ import * as d3 from "d3";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import GeneratedCode from "../../Components/GeneratedCode";
 import { LaTeXEditor } from "../../Components/LaTeXEditor";
+import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate, useParams } from "react-router-dom";
+import { resolutionTreeService } from "../../services/resolutiontree.service";
 
 const ResolutionTree = () => {
   const svgRef = useRef();
@@ -16,43 +20,50 @@ const ResolutionTree = () => {
    // store extra links (second parent connections)
   const [extraLinks, setExtraLinks] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [generatedCode, setGeneratedCode] = useState("");
   const [showLaTeXEditor, setShowLaTeXEditor] = useState(false);
   const [includePreamble, setIncludePreamble] = useState(true);
+  const [resolventDraft, setResolventDraft] = useState("");
+  const [isSelectingParents, setIsSelectingParents] = useState(false);
+
+  const { user } = useAuth();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isEditMode = Boolean(id);
+
+  const [treeName, setTreeName] = useState("");
+  const [treeDescription, setTreeDescription] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const addTopNode = () => {
-    const value = prompt("Top-level clause (e.g., \\Box or {m})", "\\Box");
-    if (value !== null) {
-      const newNode = {
-        id: nodeId,
-        value: value || "\\Box",
-        children: [],
-      };
-      setNodeId((prev) => prev + 1);
-      setTreeData((prev) => ({
-        ...prev,
-        children: [...(prev.children || []), newNode],
-      }));
-    }
+    const newNode = { id: nodeId, value: "", children: [] };
+    setNodeId((prev) => prev + 1);
+    setTreeData((prev) => ({
+      ...prev,
+      children: [...(prev.children || []), newNode],
+    }));
+    setSelectedNodeId(newNode.id);
   };
 
-  const addChild = useCallback(
-    (target) => {
-      const value = prompt("Child clause (e.g., {a,m} or {¬m})", "{ }");
-      if (value === null) return;
-      const newNode = { id: nodeId, value: value || "{ }", children: [] };
-      setNodeId((prev) => prev + 1);
+  const addChildById = useCallback(
+    (parentId) => {
+      if (!treeData) return;
+      const newNode = { id: nodeId, value: "", children: [] };
       const clone = structuredClone(treeData);
       const dfs = (n) => {
-        if (n.id === target.id) {
+        if (n.id === parentId) {
           n.children = n.children || [];
           n.children.push(newNode);
           return true;
         }
         return n.children?.some(dfs);
       };
-      dfs(clone);
+      const ok = dfs(clone);
+      if (!ok) return;
+      setNodeId((prev) => prev + 1);
       setTreeData(clone);
+      setSelectedNodeId(newNode.id);
     },
     [nodeId, treeData]
   );
@@ -93,31 +104,31 @@ const ResolutionTree = () => {
     return null;
   }, []);
 
-  const combineSelected = useCallback(() => {
+  const createResolventFromSelection = useCallback(() => {
     if (!treeData || selectedIds.length !== 2) return;
     const [firstId, secondId] = selectedIds;
-    const newVal = prompt("New clause value (e.g., {m} or {¬m})", "{ }");
-    if (newVal === null) return;
 
-    // create new node under first selected
-    const newNode = { id: nodeId, value: newVal || "{ }", children: [] };
-    setNodeId((prev) => prev + 1);
+    const value = (resolventDraft ?? "").trim();
+    if (!value) {
+      toast.error("Please enter a resolvent clause value first.");
+      return;
+    }
 
+    const newNode = { id: nodeId, value, children: [] };
     const clone = structuredClone(treeData);
     const parentA = findNodeById(clone, firstId);
     if (!parentA) return;
     parentA.children = parentA.children || [];
     parentA.children.push(newNode);
 
-    // add second link from secondId to new node (visual only)
-    setExtraLinks((links) => [
-      ...links,
-      { sourceId: secondId, targetId: newNode.id },
-    ]);
-
+    setNodeId((prev) => prev + 1);
+    setExtraLinks((links) => [...links, { sourceId: secondId, targetId: newNode.id }]);
     setTreeData(clone);
     setSelectedIds([]);
-  }, [treeData, selectedIds, nodeId, findNodeById]);
+    setResolventDraft("");
+    setSelectedNodeId(newNode.id);
+    toast.success("Resolvent added.");
+  }, [treeData, selectedIds, resolventDraft, nodeId, findNodeById]);
 
   const toggleSelect = useCallback(
     (id) => {
@@ -133,11 +144,60 @@ const ResolutionTree = () => {
     []
   );
 
+  const selectedNode =
+    selectedNodeId !== null ? findNodeById(treeData, selectedNodeId) : null;
+
+  const updateSelectedNodeValue = useCallback(
+    (newValue) => {
+      if (!treeData || selectedNodeId === null) return;
+      const clone = structuredClone(treeData);
+      const target = findNodeById(clone, selectedNodeId);
+      if (!target) return;
+      target.value = newValue;
+      setTreeData(clone);
+    },
+    [treeData, selectedNodeId, findNodeById]
+  );
+
+  // ---- Load saved tree in edit mode ----
   useEffect(() => {
-    if (selectedIds.length === 2) {
-      combineSelected();
-    }
-  }, [selectedIds, combineSelected]);
+    const load = async () => {
+      if (!id || !user) return;
+      try {
+        const resp = await resolutionTreeService.getResolutionTree(id);
+        const loaded = resp.data;
+        setTreeData(loaded.treeData);
+        setExtraLinks(loaded.extraLinks || []);
+        setMathMode(loaded.settings?.mathMode ?? true);
+        setIncludePreamble(loaded.settings?.includePreamble ?? true);
+        setTreeName(loaded.name || "");
+        setTreeDescription(loaded.description || "");
+
+        // continue numbering
+        const findMaxId = (node) => {
+          if (!node) return -1;
+          let max = typeof node.id === "number" ? node.id : -1;
+          (node.children || []).forEach((c) => {
+            max = Math.max(max, findMaxId(c));
+          });
+          return max;
+        };
+        const maxTreeId = findMaxId(loaded.treeData);
+        const maxExtra =
+          (loaded.extraLinks || []).reduce(
+            (m, l) => Math.max(m, l.sourceId ?? -1, l.targetId ?? -1),
+            -1
+          ) ?? -1;
+        setNodeId(Math.max(maxTreeId, maxExtra) + 1);
+        setSelectedNodeId(null);
+        setSelectedIds([]);
+      } catch (e) {
+        console.error("Error loading resolution tree:", e);
+        toast.error("Failed to load resolution tree.");
+      }
+    };
+    load();
+  }, [id, user]);
 
   // ---- LaTeX generation ----
   const normalizeClauseValue = (raw) => {
@@ -180,8 +240,8 @@ const ResolutionTree = () => {
     const name = needsName ? `n${node.id}` : null;
     const head = needsName
       ? label
-        ? `.\\node(${name}){${label}};`
-        : `.\\node(${name}){};`
+        ? `. \\node(${name}){${label}};`
+        : `. \\node(${name}){};`
       : label
       ? `.{${label}}`
       : ".{}";
@@ -202,18 +262,114 @@ const ResolutionTree = () => {
       return;
     }
 
-    // Prefer exporting a single real root if possible (avoids an empty virtual root).
-    const exportRoot =
-      treeData.id === -1 && treeData.children.length === 1
-        ? treeData.children[0]
-        : treeData;
+    // --- Export model ---
+    // The UI stores edges "parent -> child" where child is the derived clause.
+    // For LaTeX (tikz-qtree) we want the standard resolution-tree look:
+    // premises at the TOP, final clause (typically \Box) at the BOTTOM.
+    //
+    // tikz-qtree with `grow'=up` draws children ABOVE the parent, so the final clause
+    // must be the ROOT of the exported tree. Therefore we invert the dependency edges:
+    // derived clause -> its parent clauses.
 
-    const namedIds = new Set();
+    const collectNodes = (root) => {
+      const out = [];
+      const stack = [root];
+      while (stack.length) {
+        const n = stack.pop();
+        if (!n) continue;
+        out.push(n);
+        (n.children || []).forEach((c) => stack.push(c));
+      }
+      return out;
+    };
+
+    const nodes = collectNodes(treeData).filter((n) => n.id !== -1);
+    const nodeById = new Map(nodes.map((n) => [n.id, n]));
+
+    // primaryParentOf[childId] = parentId from the "real" tree edges
+    const primaryParentOf = new Map();
+    const buildPrimaryParentMap = (n) => {
+      (n.children || []).forEach((c) => {
+        if (n.id !== -1 && c.id !== -1) primaryParentOf.set(c.id, n.id);
+        buildPrimaryParentMap(c);
+      });
+    };
+    buildPrimaryParentMap(treeData);
+
+    // reversedChildren[resultId] = [parentClauseIds...]
+    const reversedChildren = new Map();
+    const pushChild = (id, childId) => {
+      if (!reversedChildren.has(id)) reversedChildren.set(id, []);
+      reversedChildren.get(id).push(childId);
+    };
+
+    // Reverse primary edges: child depends on parent
+    for (const [childId, parentId] of primaryParentOf.entries()) {
+      pushChild(childId, parentId);
+    }
+
+    // Also include "second parent" dependencies (from extraLinks) as children in the exported tree.
+    // extraLinks store: { sourceId: secondParentId, targetId: derivedClauseId }
     extraLinks.forEach((l) => {
-      namedIds.add(l.sourceId);
-      namedIds.add(l.targetId);
+      if (nodeById.has(l.sourceId) && nodeById.has(l.targetId)) {
+        pushChild(l.targetId, l.sourceId);
+      }
     });
-    const body = renderNodeQtree(exportRoot, 0, namedIds);
+
+    const findFinalRootId = () => {
+      // Prefer an explicit \Box node if present
+      for (const n of nodes) {
+        if ((n.value || "").trim() === "\\Box") return n.id;
+      }
+
+      // Fallback: pick the deepest leaf in the original UI tree (derived clause chain)
+      let bestId = nodes.length ? nodes[nodes.length - 1].id : null;
+      let bestDepth = -1;
+      const dfs = (n, depth) => {
+        if (!n || n.id === -1) return;
+        const kids = n.children || [];
+        if (kids.length === 0 && depth > bestDepth) {
+          bestDepth = depth;
+          bestId = n.id;
+        }
+        kids.forEach((c) => dfs(c, depth + 1));
+      };
+      (treeData.children || []).forEach((c) => dfs(c, 0));
+      return bestId;
+    };
+
+    const rootId = findFinalRootId();
+    if (rootId === null || !nodeById.has(rootId)) {
+      setGeneratedCode("% Could not determine a final/root clause to export.");
+      return;
+    }
+
+    const buildExportTree = (id, depth = 0, visited = new Set()) => {
+      if (visited.has(id)) {
+        // Avoid cycles; represent as a leaf if it happens.
+        const base = nodeById.get(id);
+        return { id: base?.id ?? id, value: base?.value ?? "", children: [] };
+      }
+      visited.add(id);
+      const base = nodeById.get(id);
+      const parents = (reversedChildren.get(id) || []).filter((pid) => nodeById.has(pid));
+      // Ensure stable ordering: primary parent first (if present), then other parents
+      const primary = primaryParentOf.get(id);
+      const orderedParents = primary
+        ? [primary, ...parents.filter((p) => p !== primary)]
+        : parents;
+
+      return {
+        id: base.id,
+        value: base.value,
+        children: orderedParents.map((pid) => buildExportTree(pid, depth + 1, new Set(visited))),
+      };
+    };
+
+    const exportRoot = buildExportTree(rootId);
+
+    // We currently export a pure tree (no extra "second parent" red connectors).
+    const body = renderNodeQtree(exportRoot, 0, new Set());
 
     let code = "";
     if (includePreamble) {
@@ -223,16 +379,8 @@ const ResolutionTree = () => {
       code += "\\begin{document}\n";
     }
 
-    // tikz-qtree renders strict trees; we emulate the "second parent" edges via \draw.
-    const draws = extraLinks
-      .map(
-        (l) => `\\draw[red] (n${l.sourceId}.north) -- (n${l.targetId}.south);`
-      )
-      .join("\n");
-
     code += `\\begin{tikzpicture}[grow'=up]\n`;
     code += `\\Tree ${body}\n`;
-    if (draws) code += `${draws}\n`;
     code += `\\end{tikzpicture}`;
 
     if (includePreamble) {
@@ -298,9 +446,9 @@ const ResolutionTree = () => {
       .append("path")
       .attr("class", "extra-link")
       .attr("fill", "none")
-      .attr("stroke", "#ff8c00")
-      .attr("stroke-dasharray", "4 2")
-      .attr("stroke-width", 2)
+      // Render extra links the same as regular links for now
+      .attr("stroke", "#b6b6b6")
+      .attr("stroke-width", 3)
       .attr("d", (l) => {
         const s = posMap[l.sourceId];
         const t = posMap[l.targetId];
@@ -320,15 +468,8 @@ const ResolutionTree = () => {
       .attr("transform", (d) => `translate(${d.x + 50},${d.y + 50})`)
       .on("click", (event, d) => {
         event.stopPropagation();
-        if (event.shiftKey || event.metaKey || event.ctrlKey) {
-          toggleSelect(d.data.id); // multi-select with modifier
-        } else {
-          addChild(d.data); // default: add a child
-        }
-      })
-      .on("contextmenu", (event, d) => {
-        event.preventDefault();
-        removeNode(d.data);
+        if (isSelectingParents) toggleSelect(d.data.id);
+        setSelectedNodeId(d.data.id);
       });
 
     nodes
@@ -340,12 +481,20 @@ const ResolutionTree = () => {
       .attr("width", 70)
       .attr("height", 36)
       .attr("fill", (d) =>
-        selectedIds.includes(d.data.id) ? "#e0f2fe" : "#fff"
+        selectedNodeId === d.data.id
+          ? "#e3f2fd"
+          : selectedIds.includes(d.data.id)
+          ? "#e0f2fe"
+          : "#fff"
       )
       .attr("stroke", (d) =>
-        selectedIds.includes(d.data.id) ? "#0284c7" : "#111"
+        selectedNodeId === d.data.id
+          ? "#2563eb"
+          : selectedIds.includes(d.data.id)
+          ? "#0284c7"
+          : "#111"
       )
-      .attr("stroke-width", 1.5);
+      .attr("stroke-width", (d) => (selectedNodeId === d.data.id ? 2.5 : 1.5));
 
     nodes
       .append("text")
@@ -357,17 +506,23 @@ const ResolutionTree = () => {
         // simple wrap in braces if not already
         return d.data.value;
       });
-  }, [treeData, addChild, removeNode, mathMode]);
+  }, [
+    treeData,
+    removeNode,
+    mathMode,
+    extraLinks,
+    selectedIds,
+    selectedNodeId,
+    toggleSelect,
+    isSelectingParents,
+  ]);
 
   return (
     <div className="flex flex-col items-center w-full max-w-5xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4 text-center">Resolution Trees</h1>
       <p className="text-gray-600 text-sm mb-6 text-center">
-        Click on a node to add a child clause. Shift/Ctrl-click to select nodes
-        for combining (two selections will prompt for a new clause). Right-click
-        a node to delete it. Start by creating a root. Use LaTeX-like input for
-        clauses (e.g., {" {a,m} "} or {" {\\neg m} "}). The root can be {" \\Box "} for a
-        refutation.
+        Click a node to select it. Use the Inspector to edit it or add children.
+        Use the toggle below to select up to two parent clauses for resolution.
       </p>
 
       <div className="w-full flex flex-wrap gap-3 items-center mb-4">
@@ -376,6 +531,27 @@ const ResolutionTree = () => {
           className="px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2 hover:bg-blue-700"
         >
           <FaPlus /> Add top-level clause
+        </button>
+        <button
+          onClick={() => setIsSelectingParents((v) => !v)}
+          className={`px-4 py-2 rounded font-medium border transition-colors ${
+            isSelectingParents
+              ? "bg-gray-900 text-white border-gray-900"
+              : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
+          }`}
+          title="Toggle mode: clicking nodes will mark/unmark them as parents (max 2)"
+        >
+          {isSelectingParents ? "Selecting parents (pick 2)" : "Select 2 parents"}
+        </button>
+        <button
+          onClick={() => {
+            setSelectedIds([]);
+            setResolventDraft("");
+          }}
+          disabled={selectedIds.length === 0}
+          className="px-4 py-2 rounded font-medium border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Clear selection ({selectedIds.length}/2)
         </button>
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input
@@ -394,17 +570,141 @@ const ResolutionTree = () => {
           Include whole LaTeX preamble
         </label>
         <div className="text-sm text-gray-500 flex items-center gap-2">
-          <FaTrash className="text-red-500" /> Right-click node to delete
+          <FaTrash className="text-red-500" /> Delete from Inspector
         </div>
       </div>
 
-      <div className="w-full bg-white p-4 rounded shadow">
-        <svg
-          ref={svgRef}
-          width={700}
-          height={500}
-          className="border border-gray-200 rounded"
-        />
+      {/* Canvas + Inspector (match AST/FSA layout) */}
+      <div className="w-full mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-lg shadow overflow-auto p-4">
+          <svg
+            ref={svgRef}
+            width={700}
+            height={500}
+            className="border border-gray-200 rounded block mx-auto"
+          />
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-700">Inspector</h2>
+            {(selectedNodeId !== null || selectedIds.length > 0) && (
+              <button
+                onClick={() => {
+                  setSelectedNodeId(null);
+                  setSelectedIds([]);
+                  setResolventDraft("");
+                }}
+                className="px-3 py-1 text-sm border rounded hover:bg-gray-100 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {!selectedNode ? (
+            <div className="text-sm text-gray-500">
+              Click a node in the canvas to select it.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Node ID</div>
+                <div className="font-mono text-sm text-gray-800">{selectedNode.id}</div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Clause value
+                </label>
+                <input
+                  type="text"
+                  value={selectedNode.value ?? ""}
+                  onChange={(e) => updateSelectedNodeValue(e.target.value)}
+                  placeholder='e.g. {a,m}  |  {\\neg m}  |  \\Box'
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  Tip: You can type braces or LaTeX like <span className="font-mono">{"{\\neg m}"}</span>.
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => addChildById(selectedNode.id)}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm font-medium"
+                >
+                  Add Child
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (!treeData) return;
+                    if (selectedNode.id === treeData.id) {
+                      toast.error("Cannot delete the root node.");
+                      return;
+                    }
+                    if (!window.confirm("Delete this node and all its children?")) return;
+                    removeNode(selectedNode);
+                    setSelectedNodeId(null);
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium"
+                >
+                  Delete Node
+                </button>
+              </div>
+
+              {selectedIds.length === 2 && (
+                <div className="border-t pt-4">
+                  <div className="text-sm font-semibold text-gray-700 mb-2">
+                    Resolution
+                  </div>
+                  <div className="text-sm text-gray-600 mb-2">
+                    Parents:{" "}
+                    <span className="font-mono">{selectedIds.join(", ")}</span>
+                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Resolvent value
+                  </label>
+                  <input
+                    type="text"
+                    value={resolventDraft}
+                    onChange={(e) => setResolventDraft(e.target.value)}
+                    placeholder='e.g. {m}  |  {\\neg a}'
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setResolventDraft("\\Box")}
+                      className="px-3 py-1.5 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 transition-colors text-sm font-medium"
+                      title="Use □ as the final resolvent"
+                    >
+                      Final (\\Box)
+                    </button>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={createResolventFromSelection}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
+                      Add Resolvent
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedIds([]);
+                        setResolventDraft("");
+                      }}
+                      className="px-4 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 transition-colors text-sm font-medium"
+                    >
+                      Clear 2-selection
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* LaTeX generation */}
@@ -438,6 +738,95 @@ const ResolutionTree = () => {
               <GeneratedCode id="resolutionLatex" code={generatedCode} />
             )}
           </>
+        )}
+      </div>
+
+      {/* Metadata + Save/Update (match other builders) */}
+      <div className="w-full bg-white p-5 rounded-lg shadow mt-8">
+        <h3 className="text-lg font-semibold mb-3 text-gray-700">
+          Resolution Tree Information
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tree Name *
+            </label>
+            <input
+              type="text"
+              value={treeName}
+              onChange={(e) => setTreeName(e.target.value)}
+              placeholder="Enter a name for your resolution tree"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description (Optional)
+            </label>
+            <textarea
+              value={treeDescription}
+              onChange={(e) => setTreeDescription(e.target.value)}
+              placeholder="Enter a description for your resolution tree"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-8 mt-4">
+        <button
+          onClick={async () => {
+            if (!user) {
+              toast.error("Please log in to save your resolution tree.");
+              return;
+            }
+            if (!treeName.trim()) {
+              toast.error("Please enter a name for your resolution tree.");
+              return;
+            }
+            setIsSaving(true);
+            try {
+              const payload = {
+                name: treeName,
+                description: treeDescription,
+                treeData,
+                extraLinks,
+                settings: { mathMode, includePreamble },
+                userId: user.id,
+              };
+              if (isEditMode) {
+                await resolutionTreeService.updateResolutionTree(id, payload);
+                toast.success("Resolution tree updated successfully!");
+              } else {
+                const resp = await resolutionTreeService.saveResolutionTree(payload);
+                toast.success("Resolution tree saved successfully!");
+                navigate(`/resolution-trees/edit/${resp.data._id}`);
+              }
+            } catch (e) {
+              console.error("Error saving resolution tree:", e);
+              toast.error("Failed to save resolution tree.");
+            } finally {
+              setIsSaving(false);
+            }
+          }}
+          disabled={!user || isSaving}
+          className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center"
+        >
+          {isSaving ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+              <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+            </>
+          ) : (
+            <span>{isEditMode ? "Update Resolution Tree" : "Save Resolution Tree"}</span>
+          )}
+        </button>
+        {!user && (
+          <p className="text-sm text-red-500 mt-2">
+            Please log in to save your resolution tree
+          </p>
         )}
       </div>
     </div>
