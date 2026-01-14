@@ -7,6 +7,7 @@ import { karnaughMapRoutes } from "./routes/karnaughmap.routes";
 import { abstractSyntaxTreeRoutes } from "./routes/abstractsyntaxtrees.routes";
 import { proofTreeRoutes } from "./routes/prooftree.routes";
 import { finiteStateAutomataRoutes } from "./routes/finitestateautomata.routes";
+import { resolutionTreeRoutes } from "./routes/resolutiontree.routes";
 import { imageToLatexRoutes } from "./routes/imagetolatex.routes";
 import { umamiRoutes } from "./routes/umami.routes";
 import { latexRoutes } from "./routes/latex.routes";
@@ -45,6 +46,7 @@ app.use("/api/karnaughmap", karnaughMapRoutes);
 app.use("/api/ast", abstractSyntaxTreeRoutes);
 app.use("/api/prooftree", proofTreeRoutes);
 app.use("/api/fsa", finiteStateAutomataRoutes);
+app.use("/api/resolutiontree", resolutionTreeRoutes);
 app.use("/api/imagetolatex", imageToLatexRoutes);
 app.use("/api/umami", umamiRoutes); // Proxy for Umami API
 app.use("/api/latex", latexRoutes); // LaTeX compilation service

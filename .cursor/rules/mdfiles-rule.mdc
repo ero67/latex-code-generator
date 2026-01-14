@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+- When creating helper .md file with explanation,plan,documentation for some feature etc... create the file in MDDocs directory
