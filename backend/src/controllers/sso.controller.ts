@@ -98,11 +98,22 @@ export const handleCallback = async (req: Request, res: Response) => {
     // Remove state from store (one-time use)
     ssoStateStore.delete(stateParam);
 
-    // Build callback URL from request
-    const protocol = req.protocol;
-    const host = req.get("host");
-    const path = req.originalUrl;
-    const callbackUrl = new URL(`${protocol}://${host}${path}`);
+    // IMPORTANT:
+    // Do NOT build callback URL from req.protocol/host. Behind reverse proxies,
+    // Express can see the internal scheme/host (often http), which causes a
+    // redirect_uri mismatch during the token exchange.
+    // Always use the configured redirect URI (must match the provider registration),
+    // and attach the query params from the incoming request.
+    const { redirectUri } = getSSOConfig();
+    const callbackUrl = new URL(redirectUri);
+    for (const [k, v] of Object.entries(req.query)) {
+      if (Array.isArray(v)) {
+        // Preserve multi-values (rare)
+        v.forEach((vv) => callbackUrl.searchParams.append(k, String(vv)));
+      } else if (v !== undefined) {
+        callbackUrl.searchParams.set(k, String(v));
+      }
+    }
 
     // Get code verifier from stored state
     const codeVerifier = storedState.codeVerifier;
@@ -141,7 +152,9 @@ export const handleCallback = async (req: Request, res: Response) => {
 
     // Create user object for frontend
     const userData = {
-      id: user._id.toString(),
+      // Mongoose typings can expose `_id` as `unknown` depending on version/generics.
+      // `String(...)` safely normalizes it to a string without unsafe casting.
+      id: String(user._id),
       email: user.email,
       name: user.name,
       ssoId: user.ssoId,
