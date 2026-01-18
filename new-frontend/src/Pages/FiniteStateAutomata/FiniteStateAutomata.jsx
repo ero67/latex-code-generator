@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { fsaService } from "../../services/fsa.service";
 import { toast } from "react-toastify";
+import { parseFsaTikz } from "../../utils/fsaTikzParser";
 
 const NODE_R = 26;
 
@@ -165,6 +166,45 @@ const FiniteStateAutomata = () => {
 
     load();
   }, [id, user]);
+
+  // Auto-import LaTeX code from Image-to-LaTeX page (create mode only)
+  useEffect(() => {
+    if (isEditMode) return;
+
+    const storageKey = "pendingLatexImport_Finite State Automata";
+    const pendingLatexCode = sessionStorage.getItem(storageKey);
+    if (!pendingLatexCode) return;
+
+    try {
+      const parsed = parseFsaTikz(pendingLatexCode);
+      setNodes(parsed.nodes || []);
+      setEdges(parsed.edges || []);
+
+      // Update ID counters so new elements don't collide with imported IDs.
+      const maxQ = (parsed.nodes || [])
+        .map((n) => String(n.id))
+        .map((nid) => (nid.startsWith("q") ? asNumber(nid.slice(1), -1) : -1))
+        .reduce((acc, v) => Math.max(acc, v), -1);
+      const maxE = (parsed.edges || [])
+        .map((e) => String(e.id))
+        .map((eid) => (eid.startsWith("e") ? asNumber(eid.slice(1), -1) : -1))
+        .reduce((acc, v) => Math.max(acc, v), -1);
+      nextNodeId.current = Math.max(nextNodeId.current, maxQ + 1);
+      nextEdgeId.current = Math.max(nextEdgeId.current, maxE + 1);
+
+      setSelected({ type: null, id: null });
+      setPendingSourceId(null);
+      setMode("select");
+      setIsInspectorOpen(true);
+
+      sessionStorage.removeItem(storageKey);
+      toast.success("LaTeX automata imported successfully from Image-to-LaTeX!");
+    } catch (err) {
+      console.error("Error auto-importing FSA LaTeX:", err);
+      toast.error(`Failed to import automata: ${err.message || "Invalid LaTeX"}`);
+      sessionStorage.removeItem(storageKey);
+    }
+  }, [isEditMode]);
 
   // SVG init: zoom/pan + marker defs.
   useEffect(() => {

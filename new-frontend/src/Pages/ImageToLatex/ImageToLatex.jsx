@@ -75,6 +75,8 @@ const ImageToLatex = () => {
       "Karnaugh Map": "/karnaugh-maps/create",
       "Abstract Syntax Tree": "/ast/create",
       "Proof Tree": "/proof-trees/create",
+      "Finite State Automata": "/finite-state-automata/create",
+      "Resolution Tree": "/resolution-trees/create",
     };
 
     const targetRoute = routeMap[structureType];
@@ -232,6 +234,8 @@ const ImageToLatex = () => {
             <option value="Karnaugh Map">Karnaugh Map</option>
             <option value="Abstract Syntax Tree">Abstract Syntax Tree</option>
             <option value="Proof Tree">Proof Tree</option>
+            <option value="Finite State Automata">Finite State Automata</option>
+            <option value="Resolution Tree">Resolution Tree</option>
           </select>
         </div>
 
