@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { resolutionTreeService } from "../../services/resolutiontree.service";
+import { parseResolutionTreeTikz } from "../../utils/resolutionTreeTikzParser";
 
 const ResolutionTree = () => {
   const svgRef = useRef();
@@ -198,6 +199,48 @@ const ResolutionTree = () => {
     };
     load();
   }, [id, user]);
+
+  // Auto-import LaTeX code from Image-to-LaTeX page (create mode only)
+  useEffect(() => {
+    if (isEditMode) return;
+
+    const storageKey = "pendingLatexImport_Resolution Tree";
+    const pendingLatexCode = sessionStorage.getItem(storageKey);
+    if (!pendingLatexCode) return;
+
+    try {
+      const parsed = parseResolutionTreeTikz(pendingLatexCode);
+      setTreeData(parsed.treeData);
+      setExtraLinks(parsed.extraLinks || []);
+
+      const findMaxId = (node) => {
+        if (!node) return -1;
+        let max = typeof node.id === "number" ? node.id : -1;
+        (node.children || []).forEach((c) => {
+          max = Math.max(max, findMaxId(c));
+        });
+        return max;
+      };
+      const maxTreeId = findMaxId(parsed.treeData);
+      const maxExtra =
+        (parsed.extraLinks || []).reduce(
+          (m, l) => Math.max(m, l.sourceId ?? -1, l.targetId ?? -1),
+          -1
+        ) ?? -1;
+      setNodeId(Math.max(maxTreeId, maxExtra) + 1);
+
+      setSelectedNodeId(null);
+      setSelectedIds([]);
+      setIsSelectingParents(false);
+      setResolventDraft("");
+      sessionStorage.removeItem(storageKey);
+      toast.success("LaTeX resolution tree imported successfully from Image-to-LaTeX!");
+    } catch (err) {
+      console.error("Error auto-importing resolution tree LaTeX:", err);
+      toast.error(`Failed to import resolution tree: ${err.message || "Invalid LaTeX"}`);
+      sessionStorage.removeItem(storageKey);
+    }
+  }, [isEditMode]);
 
   // ---- LaTeX generation ----
   const normalizeClauseValue = (raw) => {

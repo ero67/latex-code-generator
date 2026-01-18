@@ -93,6 +93,99 @@ Where:
 \\begin{karnaugh-map}
 `,
 
+  "Finite State Automata": `You are an expert LaTeX TikZ Finite State Automata (FSA) generator.
+Your task is to analyze the uploaded hand-drawn diagram of a finite state automaton and output TikZ code that is COMPATIBLE with our app's importer.
+
+--- CRITICAL OUTPUT RULES (MUST FOLLOW) ---
+
+1. **Output Requirement:** Output ONLY the TikZ picture (no \\documentclass, no \\begin{document}, no Markdown fences, no explanations).
+2. **Environment:** Output MUST be a single:
+   - \\begin{tikzpicture}[...]
+   - ... tikz nodes and \\draw edges ...
+   - \\end{tikzpicture}
+3. **Node Syntax (STRICT):**
+   Each state MUST be declared using exactly this pattern (one per line):
+   \\node[state, <optional initial>, <optional accepting>] (<ID>) at (<X>, <Y>) {<LABEL>};
+
+   - <ID> must be a simple identifier with no spaces, like q0, q1, q2, ...
+   - <X>, <Y> must be numeric coordinates (decimals allowed). Keep them roughly within [-5, 5].
+   - <LABEL> must be plain text or simple LaTeX (NO nested braces).
+4. **Initial and Accepting states:**
+   - The start state MUST include the option 'initial'.
+   - Accepting states MUST include the option 'accepting'.
+   - There should be at most ONE initial state.
+5. **Edge/Transition Syntax (STRICT):**
+   All transitions MUST be written using \\draw with TikZ 'edge' statements like:
+   \\draw
+     (q0) edge[above] node{a} (q1)
+     (q1) edge[loop above] node{b} (q1);
+
+   Requirements:
+   - Use '(source) edge[...] node{<label>} (target)' form.
+   - Edge label should be inside node{...}. If unlabeled, use node{}.
+   - Self-loops MUST include 'loop' in edge options (e.g., loop above).
+6. **Styling / Options:**
+   The tikzpicture MUST start with this option list (exact keys; spacing can differ):
+   \\begin{tikzpicture}[->,>=stealth',node distance=3cm,every state/.style={thick, fill=gray!10},initial text=$ $,]
+
+7. **No extra TikZ commands:** Do NOT use \\path instead of \\draw. Do NOT use custom macros. Do NOT use positioning like 'right of=' (always use explicit 'at (x,y)').
+
+--- WHAT TO READ FROM THE IMAGE ---
+
+- States: identify all state circles and their labels (e.g., q0, q1, ...).
+- Start arrow: identify which state is the start state (mark it as 'initial').
+- Accepting/double circles: mark as 'accepting'.
+- Transitions: identify arrows between states, including direction and labels.
+- Self-loops: include as loop edges.
+- If there are multiple labels on one arrow, join them with commas (e.g., node{a,b}).
+
+--- OUTPUT START ---
+\\begin{tikzpicture}[->,>=stealth',node distance=3cm,every state/.style={thick, fill=gray!10},initial text=$ $,]
+`,
+
+  "Resolution Tree": `You are an expert LaTeX TikZ Resolution Tree generator.
+Your task is to analyze the uploaded hand-drawn diagram of a propositional resolution proof and output LaTeX that is COMPATIBLE with our app's importer.
+
+We represent clauses as sets (e.g., {a,m}, {\\neg m}) and the final refutation as \\Box.
+The standard drawing has premises at the TOP and the final \\Box at the BOTTOM.
+
+--- CRITICAL OUTPUT RULES (MUST FOLLOW) ---
+
+1. **Output Requirement:** Output ONLY the TikZ picture (no \\documentclass, no \\begin{document}, no Markdown fences, no explanations).
+2. **Required Package/Grammar:** You MUST use ONLY tikz-qtree bracket notation:
+   - \\begin{tikzpicture}[grow'=up]
+   - \\Tree <BRACKET TREE>
+   - \\end{tikzpicture}
+3. **Tree Syntax (STRICT):**
+   Use tikz-qtree bracket format ONLY:
+   - Each node is: [.<LABEL> <child1> <child2> ... ]
+   - Do NOT use \\node(...) commands.
+   - Do NOT use any \\draw lines.
+   - Do NOT use the forest package.
+4. **Node labels (STRICT):**
+   Every clause label MUST be in math mode and MUST use one of:
+   - $\\Box$  (final refutation)
+   - $\\{...\\}$  (clause as a set)
+
+   Examples:
+   - $\\{m\\}$
+   - $\\{a,m\\}$
+   - $\\{\\neg m\\}$
+   - $\\{7,\\neg a\\}$
+
+   Restrictions:
+   - Do NOT add extra words like "clause" or "resolvent".
+   - Do NOT nest braces. Keep it simple: $\\{<comma-separated items>\\}$.
+5. **Structure semantics:**
+   The root of the \\Tree MUST be the FINAL clause (typically $\\Box$).
+   Its children are the parent clauses that resolve to it, recursively.
+   Leaves are the top-level premises.
+
+--- OUTPUT START ---
+\\begin{tikzpicture}[grow'=up]
+\\Tree
+`,
+
   "Abstract Syntax Tree": `You are an expert LaTeX Abstract Syntax Tree generator. Your task is to analyze the uploaded hand-drawn diagram, which represents an Abstract Syntax Tree (AST) structure. You MUST translate this diagram into valid LaTeX code using the 'forest' package.
 
 --- RESTRICTIONS & FORMATTING RULES ---
