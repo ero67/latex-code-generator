@@ -57,6 +57,48 @@ server {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
   }
+
+  # Umami analytics (proxy through same-origin to avoid HTTPS->HTTP mixed content in browsers)
+  # This makes `/umami/script.js` and `/umami/api/send` work even if the upstream Umami is HTTP-only.
+  location /umami/ {
+    proxy_pass http://svra-ubuntu-server-0161.virtual.cloud.tuke.sk:9000/;
+    proxy_set_header Host svra-ubuntu-server-0161.virtual.cloud.tuke.sk;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # Umami tracking endpoint (script typically posts to /api/send).
+  # We proxy this exact path to Umami so tracking works even when the site is HTTPS.
+  location = /api/send {
+    set $umami_upstream ${UMAMI_URL};
+    proxy_pass $umami_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # Some Umami versions use /api/collect instead of /api/send.
+  location = /api/collect {
+    set $umami_upstream ${UMAMI_URL};
+    proxy_pass $umami_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # Serve Umami script and assets under /umami/* to avoid mixed-content blocking.
+  location ^~ /umami/ {
+    set $umami_upstream ${UMAMI_URL};
+    rewrite ^/umami/(.*)$ /$1 break;
+    proxy_pass $umami_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
 }
 
 

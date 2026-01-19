@@ -12,6 +12,8 @@ services:
     restart: always
     environment:
       - DOMAIN=${DOMAIN}
+      # Umami base URL used by nginx templates for proxying /umami/* + /api/send
+      - UMAMI_URL=${UMAMI_URL:-http://svra-ubuntu-server-0161.virtual.cloud.tuke.sk:9000}
     # Ensure our config-generator runs even if the script file isn't marked executable on the host.
     entrypoint: ["/bin/sh", "-c", "sh /docker-entrypoint.d/99-generate-conf.sh && exec nginx -g 'daemon off;'"]
     ports:
