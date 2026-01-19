@@ -13,6 +13,13 @@ export default defineConfig({
         target: "http://localhost:3001",
         changeOrigin: true,
       },
+      // Proxy Umami under `/umami` to avoid mixed-content issues in production
+      // and to keep `src="/umami/script.js"` working during local dev.
+      "/umami": {
+        target: "http://svra-ubuntu-server-0161.virtual.cloud.tuke.sk:9000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/umami/, ""),
+      },
     },
   },
 });

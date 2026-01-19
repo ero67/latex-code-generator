@@ -27,16 +27,39 @@ const allowedOrigins = new Set(
   ].filter(Boolean)
 );
 
-const corsOptions: cors.CorsOptions = {
-  origin: (origin, callback) => {
-    // Allow non-browser tools (curl/postman) with no Origin header
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.has(origin)) return callback(null, true);
-    return callback(new Error(`CORS blocked for origin: ${origin}`));
-  },
-};
 // Middleware
-app.use(cors(corsOptions));
+// CORS note:
+// - In production, the app is served behind `reverse-proxy` on the same origin as `/api/*`.
+// - When the teacher points a new domain at your IP, the browser Origin becomes `https://<DOMAIN>`.
+//   If we hard-block unknown origins here, even same-origin API calls can start failing.
+//
+// So we:
+// - always allow requests with no Origin (curl/postman)
+// - allow explicitly configured origins (FRONTEND_URL, localhost, etc.)
+// - allow "same-origin" requests based on Host + (X-Forwarded-Proto | req.protocol)
+const corsOptionsDelegate: cors.CorsOptionsDelegate = (req, callback) => {
+  const getHeader = (name: string): string | undefined => {
+    const value = req.headers?.[name.toLowerCase()];
+    if (Array.isArray(value)) return value[0];
+    return value;
+  };
+
+  const origin = getHeader("origin");
+  if (!origin) return callback(null, { origin: true });
+
+  const host = getHeader("host");
+  const forwardedProtoRaw = getHeader("x-forwarded-proto");
+  // NOTE: `cors` types `req` as `CorsRequest`, which doesn't include Express' `req.protocol`.
+  // We only need protocol for "same-origin" checks, so rely on X-Forwarded-Proto (set by our reverse-proxy),
+  // and fall back to "http" when it's missing.
+  const proto = (forwardedProtoRaw ? forwardedProtoRaw.split(",")[0] : "http").trim();
+  const sameOrigin = Boolean(host) && origin === `${proto}://${host}`;
+
+  const isAllowed = sameOrigin || allowedOrigins.has(origin);
+  return callback(null, { origin: isAllowed });
+};
+
+app.use(cors(corsOptionsDelegate));
 app.use(express.json()); // Parse JSON bodies
 app.use(morgan("dev")); // HTTP request logger
 
