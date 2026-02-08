@@ -40,8 +40,8 @@ const SyntaxTreeD3 = () => {
 
   const [svgHeight, setSvgHeight] = useState(100);
 
-  const [includePreamble, setIncludePreamble] = useState(false);
-  const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
+  const [includePreamble, setIncludePreamble] = useState(true);
+  const [includeDocumentTags, setIncludeDocumentTags] = useState(true);
 
   //Saving vars
   const [treeName, setTreeName] = useState("");

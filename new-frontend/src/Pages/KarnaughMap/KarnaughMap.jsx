@@ -100,8 +100,8 @@ const Kmap = () => {
   const [isEditMode, setIsEdit] = useState(id);
   const [cellValues, setCellValues] = useState([]);
 
-  const [includePreamble, setIncludePreamble] = useState(false);
-  const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
+  const [includePreamble, setIncludePreamble] = useState(true);
+  const [includeDocumentTags, setIncludeDocumentTags] = useState(true);
 
   const [variables, setVariables] = useState([]);
 

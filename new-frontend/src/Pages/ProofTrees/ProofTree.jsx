@@ -189,8 +189,8 @@ const ProofTree = () => {
     "Your code will appear here after you click on Generate Code button"
   );
   const [math_notation, setMathNotation] = useState(false);
-  const [includePreamble, setIncludePreamble] = useState(false);
-  const [includeDocumentTags, setIncludeDocumentTags] = useState(false);
+  const [includePreamble, setIncludePreamble] = useState(true);
+  const [includeDocumentTags, setIncludeDocumentTags] = useState(true);
   const [treeName, setTreeName] = useState("");
   const [treeDescription, setTreeDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
