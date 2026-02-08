@@ -271,7 +271,7 @@ const ResolutionTree = () => {
   };
 
   const renderNodeQtree = (node, depth, namedIds) => {
-    const isVirtual = node.id === -1;
+    const isVirtual = node.id === -1 || node.id === -999; // -1 is UI root, -999 is export virtual root
     const children = node.children || [];
     const label = isVirtual ? "" : formatQtreeNodeLabel(node.value, depth);
 
@@ -313,6 +313,10 @@ const ResolutionTree = () => {
     // tikz-qtree with `grow'=up` draws children ABOVE the parent, so the final clause
     // must be the ROOT of the exported tree. Therefore we invert the dependency edges:
     // derived clause -> its parent clauses.
+    //
+    // IMPORTANT FOR EDUCATION: We include ALL nodes in the tree, including unclosed
+    // branches and nodes that don't lead to \Box. This ensures the complete diagram
+    // is exported for educational purposes.
 
     const collectNodes = (root) => {
       const out = [];
@@ -359,44 +363,69 @@ const ResolutionTree = () => {
       }
     });
 
-    const findFinalRootId = () => {
-      // Prefer an explicit \Box node if present
-      for (const n of nodes) {
-        if ((n.value || "").trim() === "\\Box") return n.id;
-      }
-
-      // Fallback: pick the deepest leaf in the original UI tree (derived clause chain)
-      let bestId = nodes.length ? nodes[nodes.length - 1].id : null;
-      let bestDepth = -1;
-      const dfs = (n, depth) => {
+    // Find ALL leaf nodes in the UI tree (nodes with no children)
+    // Each leaf becomes a root in the reversed/exported tree
+    const findAllLeafIds = () => {
+      const leafIds = [];
+      const dfs = (n) => {
         if (!n || n.id === -1) return;
         const kids = n.children || [];
-        if (kids.length === 0 && depth > bestDepth) {
-          bestDepth = depth;
-          bestId = n.id;
+        if (kids.length === 0) {
+          leafIds.push(n.id);
         }
-        kids.forEach((c) => dfs(c, depth + 1));
+        kids.forEach((c) => dfs(c));
       };
-      (treeData.children || []).forEach((c) => dfs(c, 0));
-      return bestId;
+      (treeData.children || []).forEach((c) => dfs(c));
+      return leafIds;
     };
 
-    const rootId = findFinalRootId();
-    if (rootId === null || !nodeById.has(rootId)) {
-      setGeneratedCode("% Could not determine a final/root clause to export.");
+    const allLeafIds = findAllLeafIds();
+
+    if (allLeafIds.length === 0) {
+      setGeneratedCode("% Could not find any nodes to export.");
       return;
     }
 
-    const buildExportTree = (id, depth = 0, visited = new Set()) => {
+    // Sort: \Box first, then by depth (deepest first)
+    const getLeafDepth = (leafId) => {
+      const findDepth = (n, d) => {
+        if (!n || n.id === -1) return -1;
+        if (n.id === leafId) return d;
+        for (const c of (n.children || [])) {
+          const found = findDepth(c, d + 1);
+          if (found >= 0) return found;
+        }
+        return -1;
+      };
+      for (const c of (treeData.children || [])) {
+        const d = findDepth(c, 0);
+        if (d >= 0) return d;
+      }
+      return 0;
+    };
+
+    allLeafIds.sort((a, b) => {
+      const aNode = nodeById.get(a);
+      const bNode = nodeById.get(b);
+      const aIsBox = (aNode?.value || "").trim() === "\\Box";
+      const bIsBox = (bNode?.value || "").trim() === "\\Box";
+      if (aIsBox && !bIsBox) return -1;
+      if (!aIsBox && bIsBox) return 1;
+      return getLeafDepth(b) - getLeafDepth(a);
+    });
+
+    // Build export tree for each leaf, tracking which nodes are included
+    const globalIncluded = new Set();
+
+    const buildExportTree = (id, visited = new Set()) => {
       if (visited.has(id)) {
-        // Avoid cycles; represent as a leaf if it happens.
         const base = nodeById.get(id);
         return { id: base?.id ?? id, value: base?.value ?? "", children: [] };
       }
       visited.add(id);
+      globalIncluded.add(id);
       const base = nodeById.get(id);
       const parents = (reversedChildren.get(id) || []).filter((pid) => nodeById.has(pid));
-      // Ensure stable ordering: primary parent first (if present), then other parents
       const primary = primaryParentOf.get(id);
       const orderedParents = primary
         ? [primary, ...parents.filter((p) => p !== primary)]
@@ -405,14 +434,31 @@ const ResolutionTree = () => {
       return {
         id: base.id,
         value: base.value,
-        children: orderedParents.map((pid) => buildExportTree(pid, depth + 1, new Set(visited))),
+        children: orderedParents.map((pid) => buildExportTree(pid, new Set(visited))),
       };
     };
 
-    const exportRoot = buildExportTree(rootId);
+    // Build trees for each disconnected branch
+    // Skip leaves that are already included in a previous tree
+    const exportTrees = [];
+    for (const leafId of allLeafIds) {
+      if (globalIncluded.has(leafId)) {
+        // This leaf is already part of another tree's ancestry, skip it
+        continue;
+      }
+      const tree = buildExportTree(leafId);
+      exportTrees.push(tree);
+    }
 
-    // We currently export a pure tree (no extra "second parent" red connectors).
-    const body = renderNodeQtree(exportRoot, 0, new Set());
+    // If no trees were built (shouldn't happen), fall back to first leaf
+    if (exportTrees.length === 0 && allLeafIds.length > 0) {
+      const tree = buildExportTree(allLeafIds[0]);
+      exportTrees.push(tree);
+    }
+
+    // Generate the body - if single tree, render normally
+    // If multiple trees, render each separately with spacing
+    const treeBodies = exportTrees.map((tree) => renderNodeQtree(tree, 0, new Set()));
 
     let code = "";
     if (includePreamble) {
@@ -422,9 +468,23 @@ const ResolutionTree = () => {
       code += "\\begin{document}\n";
     }
 
-    code += `\\begin{tikzpicture}[grow'=up]\n`;
-    code += `\\Tree ${body}\n`;
-    code += `\\end{tikzpicture}`;
+    if (treeBodies.length === 1) {
+      // Single tree - render as before
+      code += `\\begin{tikzpicture}[grow'=up]\n`;
+      code += `\\Tree ${treeBodies[0]}\n`;
+      code += `\\end{tikzpicture}`;
+    } else {
+      // Multiple trees (main resolution + unclosed branches)
+      // Render each tree in its own tikzpicture, side by side
+      treeBodies.forEach((body, index) => {
+        if (index > 0) {
+          code += `\n\\hspace{1cm}\n`;
+        }
+        code += `\\begin{tikzpicture}[grow'=up]\n`;
+        code += `\\Tree ${body}\n`;
+        code += `\\end{tikzpicture}`;
+      });
+    }
 
     if (includePreamble) {
       code += "\n\\end{document}";
