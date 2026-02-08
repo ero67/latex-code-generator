@@ -1,0 +1,122 @@
+[
+    {
+        "model": "llama3.2-vision:11b",
+        "structure": "Finite State Automata",
+        "file": "Finite State Automata_1.png",
+        "latency": 304.03,
+        "output": "\\begin{tikzpicture}[->,>=stealth',node distance=3cm,every state/.style={thick, fill=gray10},initial text=$ $,]\n\n\\node[state,initial,accepting] (q0) at (0,0) {q0};\n\n\\node[state,accepting] (q1) at (3,0) {q1};\n\n\\draw\n(q0) edge[above] node{a} (q1)\n(q1) edge[loop above] node{b} (q1);\n\n\\end{tikzpicture}",
+        "status": "success"
+    },
+    {
+        "model": "llama3.2-vision:11b",
+        "structure": "Resolution Tree",
+        "file": "Resolution Tree_1.png",
+        "latency": 250.82,
+        "output": "\\begin{tikzpicture}[grow'=up]\n\\Tree\n[.$\\{a,m\\}$ \n[.$\\{a\\}$ \n[.$\\{\\neg a\\}$ \n[.$\\{\\neg m\\}$ \n[.$\\Box$ ]\n[.$\\{m\\}$ ]\n]\n[.$\\{\\neg a\\}$ ]\n]\n[.$\\{a,m\\}$ ]\n]\n\\end{tikzpicture}",
+        "status": "success"
+    },
+    {
+        "model": "llama3.2-vision:11b",
+        "structure": "Proof Tree",
+        "file": "Proof Tree_1.png",
+        "latency": 276.48,
+        "output": "\\begin{prooftree}\n\\AxiomC{$\\forall x \\forall y (P(x) \\land Q(y)) \\rightarrow \\forall x \\forall y (Q(y) \\land P(x))$}\n\\UnaryInfC{$\\forall x \\forall y (P(x) \\land Q(y))$}\n\\BinaryInfC{$\\forall x \\forall y (Q(y) \\land P(x))$}\n\\UnaryInfC{$\\forall x (P(x) \\land Q(x))$}\n\\BinaryInfC{$\\forall x (Q(x) \\land P(x))$}\n\\end{prooftree}",
+        "status": "success"
+    },
+    {
+        "model": "llama3.2-vision:11b",
+        "structure": "Abstract Syntax Tree",
+        "file": "Abstract Syntax Tree_1.png",
+        "latency": 294.19,
+        "output": "\\begin{forest}\n  for tree={grow=0}\n  [A, [B, [C, [D], [E]], [F, [G, [H], [I]]]]\n\\end{forest}",
+        "status": "success"
+    },
+    {
+        "model": "llama3.2-vision:11b",
+        "structure": "Karnaugh Map",
+        "file": "Karnaugh Map_1.png",
+        "latency": 350.38,
+        "output": "\\begin{karnaugh-map}[4][4][1][A][B]\n\\manualterms{0,1,1,0,1,0,0,1,1,0,1,0,0,1,1,0}\n\\implicant{0}{1}\n\\implicant{2}{3}\n\\implicant{8}{9}\n\\implicant{10}{11}\n\\implicant{12}{13}\n\\implicant{14}{15}\n\\end{karnaugh-map}",
+        "status": "success"
+    },
+    {
+        "model": "gemma3:4b",
+        "structure": "Finite State Automata",
+        "file": "Finite State Automata_1.png",
+        "latency": 115.75,
+        "output": "\\begin{tikzpicture}[->,>=stealth',node distance=3cm,every state/.style={thick, fill=gray!10},initial text=$ $,]\n  \n  % States\n  \\node[state, initial] (q0) at (0,0) {q0};\n  \\node[state] (q1) at (3,0) {q1};\n  \\node[state] (q2) at (6,0) {q2};\n  \n  % Accepting states\n  \\node[state, accepting] (q3) at (0, -2) {q3};\n  \n  % Transitions\n  \\draw[above] (q0) edge[loop above] node{a} (q0);\n  \\draw[above] (q0) edge[above] node{a} (q1);\n  \\draw[above] (q1) edge[above] node{b} (q2);\n  \\draw[above] (q2) edge[above] node{c} (q3);\n  \\draw[above] (q3) edge[above] node{d} (q3);\n\\end{tikzpicture}\n",
+        "status": "success"
+    },
+    {
+        "model": "gemma3:4b",
+        "structure": "Resolution Tree",
+        "file": "Resolution Tree_1.png",
+        "latency": 75.0,
+        "output": "```latex\n\\begin{tikzpicture}[grow'=up]\n\\Tree[\n  root={node{\\Box}},\n  child={node{\\{a,m\\}}},\n  child={node{\\{m\\}}}\n]\n\\end{tikzpicture}\n```",
+        "status": "success"
+    },
+    {
+        "model": "gemma3:4b",
+        "structure": "Proof Tree",
+        "file": "Proof Tree_1.png",
+        "latency": 79.27,
+        "output": "```latex\n\\begin{prooftree}\n  \\Axiom[global] {P}\n  \\UnaryInf\n  \\Axiom[global] {Q}\n  \\BinaryInf\n  \\Axiom[global] {R}\n  \\BinaryInf\n\\end{prooftree}\n```",
+        "status": "success"
+    },
+    {
+        "model": "gemma3:4b",
+        "structure": "Abstract Syntax Tree",
+        "file": "Abstract Syntax Tree_1.png",
+        "latency": 108.27,
+        "output": "```latex\n\\begin{forest}\nfor tree ={grow'=0, font=\\scriptsize}\n[Expression,\n  [Term,\n    [Variable, edge label={node[midway,left,font=\\scriptsize,inner sep=1pt]{x}}],\n    [Operator, edge label={node[midway,left,font=\\scriptsize,inner sep=1pt]{+}}],\n    [Constant, edge label={node[midway,left,font=\\scriptsize,inner sep=1pt]{5}}]\n  ],\n  [Operator, edge label={node[midway,left,font=\\scriptsize,inner sep=1pt]{-}}],\n  [Constant, edge label={node[midway,left,font=\\scriptsize,inner sep=1pt]{2}}]\n]\n\\end{forest}\n```",
+        "status": "success"
+    },
+    {
+        "model": "gemma3:4b",
+        "structure": "Karnaugh Map",
+        "file": "Karnaugh Map_1.png",
+        "latency": 112.39,
+        "output": "```latex\n\\begin{karnaugh-map}[2][2][1]\n       \\manualterms{0,1,0,1,1,0,1,0}\n       \\implicant{0}{3}\n       \\implicantedge{0}{0}{1}{1}\n       \\implicantedge{0}{0}{3}{3}\n\\end{karnaugh-map}\n```",
+        "status": "success"
+    },
+    {
+        "model": "qwen2.5vl:7b",
+        "structure": "Finite State Automata",
+        "file": "Finite State Automata_1.png",
+        "latency": 94.03,
+        "output": "\\begin{tikzpicture}[->,>=stealth',node distance=3cm,every state/.style={thick, fill=gray!10},initial text=$ $,]\n  \\node[state, initial] (q0) at (-2,0) {q0};\n  \\node[state, accepting] (q1) at (2,0) {q1};\n  \\node[state] (q2) at (-2,-2) {q2};\n  \\draw\n    (q0) edge[above] node{a} (q1)\n    (q0) edge[loop below] node{c} (q0)\n    (q1) edge[loop above] node{b} (q1);\n\\end{tikzpicture}",
+        "status": "success"
+    },
+    {
+        "model": "qwen2.5vl:7b",
+        "structure": "Resolution Tree",
+        "file": "Resolution Tree_1.png",
+        "latency": 109.68,
+        "output": "\\begin{tikzpicture}[grow'=up]\n\\Tree\n    [.$\\Box$\n        [.$\\{\\neg a\\}$ $\\{b\\}$]\n        [.$\\{\\neg b, a\\}$]\n        [.$\\{\\neg c, a\\}$]\n        [.$\\{k, l\\}$]\n        [.$\\{l\\}$]\n        [.$\\{k\\}$]\n    ]\n\\end{tikzpicture}",
+        "status": "success"
+    },
+    {
+        "model": "qwen2.5vl:7b",
+        "structure": "Proof Tree",
+        "file": "Proof Tree_1.png",
+        "latency": 500.0,
+        "error": "Timeout after 500 seconds",
+        "status": "failed"
+    },
+    {
+        "model": "qwen2.5vl:7b",
+        "structure": "Abstract Syntax Tree",
+        "file": "Abstract Syntax Tree_1.png",
+        "latency": 393.51,
+        "output": "\\begin{forest}\nfor tree={grow'= 0,}\n[a\n    [x, edge label={node[midway,left,font=\\scriptsize,inner sep=1pt]{D}}\n    ]\n    [c, edge label={node[midway,right,font=\\scriptsize,inner sep=1pt]{G}}\n    ]\n    [b, edge label={node[midway,left,font=\\scriptsize,inner sep=1pt]{E}}\n    ]\n]\n\\end{forest}",
+        "status": "success"
+    },
+    {
+        "model": "qwen2.5vl:7b",
+        "structure": "Karnaugh Map",
+        "file": "Karnaugh Map_1.png",
+        "latency": 272.73,
+        "output": "\\begin{karnaugh-map}[4][4][1]\n       \\manualterms{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}\n       \\implicant{0}{3}\n       \\implicant{4}{7}\n       \\implicant{8}{11}\n       \\implicant{12}{15}\n\\end{karnaugh-map}",
+        "status": "success"
+    }
+]

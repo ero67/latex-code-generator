@@ -18,7 +18,6 @@ function Navbar() {
   });
 
   useEffect(() => {
-    // Prevent body scroll when the mobile drawer is open
     const prev = document.body.style.overflow;
     document.body.style.overflow = isOpen ? "hidden" : prev || "";
     return () => {
@@ -42,14 +41,15 @@ function Navbar() {
     return items;
   }, [user]);
 
-  const linkBase =
-    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors";
+  const linkBase = "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors";
   const linkActive = "bg-blue-50 text-blue-700";
   const linkInactive = "text-gray-700 hover:bg-gray-100";
 
+  // Refactored SidebarContent with flex-shrink control
   const SidebarContent = ({ collapsed }) => (
-    <div className="h-full flex flex-col">
-      <div className="px-4 py-4 border-b border-gray-200 flex items-center justify-between gap-2">
+    <div className="h-full flex flex-col bg-white">
+      {/* Header: Fixed height, won't shrink */}
+      <div className="shrink-0 px-4 py-4 border-b border-gray-200 flex items-center justify-between gap-2">
         {!collapsed && (
           <Link
             to="/"
@@ -69,19 +69,17 @@ function Navbar() {
               const next = !prev;
               try {
                 localStorage.setItem("sidebar_collapsed", next ? "1" : "0");
-              } catch {
-                // ignore
-              }
+              } catch {}
               return next;
             });
           }}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand" : "Collapse"}
         >
           {collapsed ? <AiIcons.AiOutlineRight /> : <AiIcons.AiOutlineLeft />}
         </button>
       </div>
 
+      {/* Nav: Will scroll if items overflow */}
       <nav className="flex-1 overflow-y-auto px-3 py-3">
         <ul className="space-y-1">
           {navItems.map((item) => (
@@ -105,19 +103,16 @@ function Navbar() {
         </ul>
       </nav>
 
-      <div className="border-t border-gray-200 p-4 space-y-3">
+      {/* Footer: Fixed height, forced to bottom, won't shrink */}
+      <div className="shrink-0 border-t border-gray-200 p-4 space-y-3 bg-white">
         {user ? (
           <>
             {!collapsed ? (
               <div className="text-sm text-gray-600">
-                Logged as:{" "}
-                <span className="font-semibold text-gray-800">{user.name}</span>
+                Logged as: <span className="font-semibold text-gray-800">{user.name}</span>
               </div>
             ) : (
-              <div
-                className="w-full flex items-center justify-center"
-                title={`Logged as: ${user.name}`}
-              >
+              <div className="w-full flex items-center justify-center" title={`Logged as: ${user.name}`}>
                 <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-sm font-semibold text-gray-700">
                   {String(user.name ?? "U").slice(0, 1).toUpperCase()}
                 </div>
@@ -131,7 +126,6 @@ function Navbar() {
               className={`${
                 collapsed ? "w-10 h-10 mx-auto" : "w-full py-2 px-4"
               } bg-red-500 hover:bg-red-600 text-white rounded-md text-sm font-medium flex items-center justify-center`}
-              title={collapsed ? "Logout" : undefined}
             >
               {collapsed ? <AiIcons.AiOutlineLogout /> : "Logout"}
             </button>
@@ -141,20 +135,14 @@ function Navbar() {
             <Link
               to="/login"
               onClick={() => setIsOpen(false)}
-              className={`${
-                collapsed ? "w-10 h-10" : "py-2 px-3"
-              } text-center bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm font-medium flex items-center justify-center`}
-              title={collapsed ? "Login" : undefined}
+              className={`${collapsed ? "w-10 h-10" : "py-2 px-3"} text-center bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm font-medium flex items-center justify-center`}
             >
               {collapsed ? <AiIcons.AiOutlineLogin /> : "Login"}
             </Link>
             <Link
               to="/register"
               onClick={() => setIsOpen(false)}
-              className={`${
-                collapsed ? "w-10 h-10" : "py-2 px-3"
-              } text-center bg-green-500 hover:bg-green-600 text-white rounded-md text-sm font-medium flex items-center justify-center`}
-              title={collapsed ? "Register" : undefined}
+              className={`${collapsed ? "w-10 h-10" : "py-2 px-3"} text-center bg-green-500 hover:bg-green-600 text-white rounded-md text-sm font-medium flex items-center justify-center`}
             >
               {collapsed ? <AiIcons.AiOutlineUserAdd /> : "Register"}
             </Link>
@@ -169,11 +157,7 @@ function Navbar() {
       <IconContext.Provider value={{ color: "#000000ff" }}>
         {/* Mobile top bar */}
         <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-40 flex items-center justify-between px-4">
-          <button
-            className="text-gray-900 text-2xl"
-            onClick={() => setIsOpen(true)}
-            aria-label="Open menu"
-          >
+          <button className="text-gray-900 text-2xl" onClick={() => setIsOpen(true)}>
             <FaIcons.FaBars />
           </button>
           <Link to="/" className="text-lg font-bold text-gray-900">
@@ -188,7 +172,7 @@ function Navbar() {
             isCollapsed ? "md:w-20" : "md:w-72"
           }`}
         >
-          <div className="w-full">
+          <div className="w-full h-full">
             <SidebarContent collapsed={isCollapsed} />
           </div>
         </aside>
@@ -199,20 +183,17 @@ function Navbar() {
             <button
               className="fixed inset-0 bg-black/30 z-40"
               onClick={() => setIsOpen(false)}
-              aria-label="Close menu overlay"
             />
-            <aside className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white z-50 shadow-xl">
-              <div className="h-14 px-4 border-b border-gray-200 flex items-center justify-between">
+            <aside className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white z-50 shadow-xl flex flex-col">
+              <div className="shrink-0 h-14 px-4 border-b border-gray-200 flex items-center justify-between">
                 <span className="text-sm font-semibold text-gray-700">Menu</span>
-                <button
-                  className="text-2xl text-gray-900"
-                  onClick={() => setIsOpen(false)}
-                  aria-label="Close menu"
-                >
+                <button className="text-2xl text-gray-900" onClick={() => setIsOpen(false)}>
                   <AiIcons.AiOutlineClose />
                 </button>
               </div>
-              <SidebarContent collapsed={false} />
+              <div className="flex-1 overflow-hidden">
+                <SidebarContent collapsed={false} />
+              </div>
             </aside>
           </div>
         )}
