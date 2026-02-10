@@ -347,6 +347,20 @@ const ImageToLatex = () => {
             </>
           )}
         </button>
+
+        {loading && (
+          <div className="w-full mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-3 text-sm text-blue-900">
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse [animation-delay:150ms]" />
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse [animation-delay:300ms]" />
+              </div>
+              <span>Waiting for the model to respond...</span>
+            </div>
+            <span className="text-xs text-blue-700">OpenRouter</span>
+          </div>
+        )}
       </form>
 
       {/* Error Display */}
