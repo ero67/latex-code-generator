@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import * as FaIcons from "react-icons/fa";
 import * as AiIcons from "react-icons/ai";
 import { Link, NavLink } from "react-router-dom";
@@ -8,22 +8,29 @@ import { useAuth } from "../../context/AuthContext";
 
 function Navbar() {
   const { user, logout } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem("sidebar_collapsed") === "1";
-    } catch {
-      return false;
-    }
-  });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
+  // Close mobile menu on route change (handled by NavLink onClick)
   useEffect(() => {
     const prev = document.body.style.overflow;
-    document.body.style.overflow = isOpen ? "hidden" : prev || "";
+    document.body.style.overflow = mobileMenuOpen ? "hidden" : prev || "";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [isOpen]);
+  }, [mobileMenuOpen]);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const navItems = useMemo(() => {
     const items = [...SidebarData];
@@ -32,173 +39,253 @@ function Navbar() {
         title: "Analytics",
         path: "/analytics",
         icon: <AiIcons.AiOutlineBarChart />,
-        cName: "nav-text",
       });
-    }
-    if (user) {
-      items.push(...ProfileSidebarData);
+      items.push({
+        title: "Model Manager",
+        path: "/admin/models",
+        icon: <AiIcons.AiOutlineSetting />,
+      });
     }
     return items;
   }, [user]);
 
-  const linkBase = "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors";
-  const linkActive = "bg-blue-50 text-blue-700";
-  const linkInactive = "text-gray-700 hover:bg-gray-100";
+  const linkBase =
+    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap";
+  const linkActive = "bg-blue-100 text-blue-700";
+  const linkInactive = "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
 
-  // Refactored SidebarContent with flex-shrink control
-  const SidebarContent = ({ collapsed }) => (
-    <div className="h-full flex flex-col bg-white">
-      {/* Header: Fixed height, won't shrink */}
-      <div className="shrink-0 px-4 py-4 border-b border-gray-200 flex items-center justify-between gap-2">
-        {!collapsed && (
+  const mobileLinkBase =
+    "flex items-center gap-3 px-4 py-3 text-base font-medium transition-colors border-b border-gray-100";
+  const mobileLinkActive = "bg-blue-50 text-blue-700";
+  const mobileLinkInactive = "text-gray-700 hover:bg-gray-50";
+
+  return (
+    <IconContext.Provider value={{ color: "currentColor" }}>
+      {/* Main Navbar */}
+      <nav className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50 shadow-sm">
+        <div className="h-full w-full px-4 lg:px-6 flex items-center">
+          {/* Left: Logo */}
           <Link
             to="/"
-            className="text-xl font-bold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis"
-            onClick={() => setIsOpen(false)}
-            title="Home"
+            className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors shrink-0"
           >
             LaTeX Generator
           </Link>
-        )}
-        <button
-          className={`hidden md:inline-flex items-center justify-center w-9 h-9 rounded-md border border-gray-200 hover:bg-gray-50 text-gray-700 ${
-            collapsed ? "mx-auto" : ""
-          }`}
-          onClick={() => {
-            setIsCollapsed((prev) => {
-              const next = !prev;
-              try {
-                localStorage.setItem("sidebar_collapsed", next ? "1" : "0");
-              } catch {}
-              return next;
-            });
-          }}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <AiIcons.AiOutlineRight /> : <AiIcons.AiOutlineLeft />}
-        </button>
-      </div>
 
-      {/* Nav: Will scroll if items overflow */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3">
-        <ul className="space-y-1">
-          {navItems.map((item) => (
-            <li key={item.path}>
+          {/* Center: Desktop Navigation */}
+          <div className="hidden lg:flex items-center gap-1 ml-8">
+            {navItems.map((item) => (
               <NavLink
+                key={item.path}
                 to={item.path}
-                onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
-                  `${linkBase} ${collapsed ? "justify-center" : ""} ${
-                    isActive ? linkActive : linkInactive
-                  }`
+                  `${linkBase} ${isActive ? linkActive : linkInactive}`
                 }
-                title={collapsed ? item.title : undefined}
               >
                 <span className="text-lg">{item.icon}</span>
-                {!collapsed && <span>{item.title}</span>}
-                {collapsed && <span className="sr-only">{item.title}</span>}
+                <span>{item.title}</span>
               </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
+            ))}
+          </div>
 
-      {/* Footer: Fixed height, forced to bottom, won't shrink */}
-      <div className="shrink-0 border-t border-gray-200 p-4 space-y-3 bg-white">
-        {user ? (
-          <>
-            {!collapsed ? (
-              <div className="text-sm text-gray-600">
-                Logged as: <span className="font-semibold text-gray-800">{user.name}</span>
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Right: User Actions */}
+          <div className="flex items-center gap-3">
+            {user ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-sm font-semibold text-blue-700">
+                    {String(user.name ?? "U").slice(0, 1).toUpperCase()}
+                  </div>
+                  <span className="hidden sm:block text-sm font-medium text-gray-700 max-w-[120px] truncate">
+                    {user.name}
+                  </span>
+                  <AiIcons.AiOutlineDown className="text-gray-500 text-xs" />
+                </button>
+
+                {/* User Dropdown Menu */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                    {ProfileSidebarData.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span>{item.icon}</span>
+                        <span>{item.title}</span>
+                      </Link>
+                    ))}
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      <AiIcons.AiOutlineLogout />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="w-full flex items-center justify-center" title={`Logged as: ${user.name}`}>
-                <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-sm font-semibold text-gray-700">
-                  {String(user.name ?? "U").slice(0, 1).toUpperCase()}
-                </div>
+              <div className="hidden sm:flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                >
+                  Register
+                </Link>
               </div>
             )}
+
+            {/* Mobile Menu Toggle */}
             <button
-              onClick={() => {
-                setIsOpen(false);
-                logout();
-              }}
-              className={`${
-                collapsed ? "w-10 h-10 mx-auto" : "w-full py-2 px-4"
-              } bg-red-500 hover:bg-red-600 text-white rounded-md text-sm font-medium flex items-center justify-center`}
+              className="lg:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open menu"
             >
-              {collapsed ? <AiIcons.AiOutlineLogout /> : "Logout"}
+              <FaIcons.FaBars className="text-xl" />
             </button>
-          </>
-        ) : (
-          <div className={`${collapsed ? "flex flex-col items-center" : "grid grid-cols-2"} gap-2`}>
-            <Link
-              to="/login"
-              onClick={() => setIsOpen(false)}
-              className={`${collapsed ? "w-10 h-10" : "py-2 px-3"} text-center bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm font-medium flex items-center justify-center`}
-            >
-              {collapsed ? <AiIcons.AiOutlineLogin /> : "Login"}
-            </Link>
-            <Link
-              to="/register"
-              onClick={() => setIsOpen(false)}
-              className={`${collapsed ? "w-10 h-10" : "py-2 px-3"} text-center bg-green-500 hover:bg-green-600 text-white rounded-md text-sm font-medium flex items-center justify-center`}
-            >
-              {collapsed ? <AiIcons.AiOutlineUserAdd /> : "Register"}
-            </Link>
           </div>
-        )}
-      </div>
-    </div>
-  );
-
-  return (
-    <>
-      <IconContext.Provider value={{ color: "#000000ff" }}>
-        {/* Mobile top bar */}
-        <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-40 flex items-center justify-between px-4">
-          <button className="text-gray-900 text-2xl" onClick={() => setIsOpen(true)}>
-            <FaIcons.FaBars />
-          </button>
-          <Link to="/" className="text-lg font-bold text-gray-900">
-            LaTeX Generator
-          </Link>
-          <div className="w-8" />
         </div>
+      </nav>
 
-        {/* Desktop sidebar */}
-        <aside
-          className={`hidden md:flex md:shrink-0 md:h-screen md:sticky md:top-0 bg-white border-r border-gray-200 transition-[width] duration-200 ${
-            isCollapsed ? "md:w-20" : "md:w-72"
-          }`}
-        >
-          <div className="w-full h-full">
-            <SidebarContent collapsed={isCollapsed} />
-          </div>
-        </aside>
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          {/* Backdrop */}
+          <button
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close menu"
+          />
 
-        {/* Mobile drawer */}
-        {isOpen && (
-          <div className="md:hidden">
-            <button
-              className="fixed inset-0 bg-black/30 z-40"
-              onClick={() => setIsOpen(false)}
-            />
-            <aside className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white z-50 shadow-xl flex flex-col">
-              <div className="shrink-0 h-14 px-4 border-b border-gray-200 flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-700">Menu</span>
-                <button className="text-2xl text-gray-900" onClick={() => setIsOpen(false)}>
-                  <AiIcons.AiOutlineClose />
-                </button>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <SidebarContent collapsed={false} />
-              </div>
-            </aside>
-          </div>
-        )}
-      </IconContext.Provider>
-    </>
+          {/* Mobile Menu Panel */}
+          <aside className="fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-xl flex flex-col animate-slide-in-right">
+            {/* Header */}
+            <div className="h-16 px-4 border-b border-gray-200 flex items-center justify-between shrink-0">
+              <span className="text-lg font-semibold text-gray-900">Menu</span>
+              <button
+                className="p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Close menu"
+              >
+                <AiIcons.AiOutlineClose className="text-xl" />
+              </button>
+            </div>
+
+            {/* Navigation Links */}
+            <nav className="flex-1 overflow-y-auto">
+              <ul>
+                {navItems.map((item) => (
+                  <li key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `${mobileLinkBase} ${
+                          isActive ? mobileLinkActive : mobileLinkInactive
+                        }`
+                      }
+                    >
+                      <span className="text-xl">{item.icon}</span>
+                      <span>{item.title}</span>
+                    </NavLink>
+                  </li>
+                ))}
+                {user &&
+                  ProfileSidebarData.map((item) => (
+                    <li key={item.path}>
+                      <NavLink
+                        to={item.path}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={({ isActive }) =>
+                          `${mobileLinkBase} ${
+                            isActive ? mobileLinkActive : mobileLinkInactive
+                          }`
+                        }
+                      >
+                        <span className="text-xl">{item.icon}</span>
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </li>
+                  ))}
+              </ul>
+            </nav>
+
+            {/* Footer: Auth Actions */}
+            <div className="shrink-0 border-t border-gray-200 p-4 bg-gray-50">
+              {user ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-sm font-semibold text-blue-700">
+                      {String(user.name ?? "U").slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <AiIcons.AiOutlineLogout />
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-2.5 px-4 text-center border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-2.5 px-4 text-center bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      )}
+    </IconContext.Provider>
   );
 }
 

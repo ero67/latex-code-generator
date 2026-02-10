@@ -87,6 +87,8 @@ services:
       - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@latex_db_instance:27017/latex-app?authSource=admin
       - JWT_SECRET=${JWT_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AI_PROVIDER=${AI_PROVIDER}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - PREPROCESS_URL=http://python-preprocess:8000/preprocess
       - UMAMI_URL=http://svra-ubuntu-server-0161.virtual.cloud.tuke.sk:9000
       - LATEX_COMPILER_URL=http://latex-compiler:8080

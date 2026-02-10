@@ -9,8 +9,10 @@ const openai = new OpenAI({
   timeout: TIMEOUT_MS,
 });
 
-// Define prompts for different structure types
-const PROMPTS = {
+const DEFAULT_MODEL = "gpt-5.1-2025-11-13";
+
+// Define prompts for different structure types (exported for use by other services)
+export const PROMPTS: Record<string, string> = {
   "Karnaugh Map": `You are an expert LaTeX Karnaugh Map generator. Your task is to analyze the uploaded hand-drawn diagram, which represents a Karnaugh Map (K-map) structure. You MUST translate this diagram into valid LaTeX code using the 'karnaugh-map' package.
 
 --- RESTRICTIONS & FORMATTING RULES ---
@@ -286,7 +288,7 @@ export class OpenAIService {
       const prompt =
         PROMPTS[structureType as keyof typeof PROMPTS] || PROMPTS["Proof Tree"];
       const response = await openai.chat.completions.create({
-        model: "gpt-4.1-2025-04-14",
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: "user",
@@ -337,5 +339,9 @@ export class OpenAIService {
 
   static getSupportedStructureTypes(): string[] {
     return Object.keys(PROMPTS);
+  }
+
+  static getConfiguredModel(): string {
+    return DEFAULT_MODEL;
   }
 }
