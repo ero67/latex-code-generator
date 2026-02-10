@@ -12,6 +12,7 @@ import { imageToLatexRoutes } from "./routes/imagetolatex.routes";
 import { umamiRoutes } from "./routes/umami.routes";
 import { latexRoutes } from "./routes/latex.routes";
 import { ssoRoutes } from "./routes/sso.routes";
+import { modelsRoutes } from "./routes/models.routes";
 
 // Initialize express
 const app = express();
@@ -61,7 +62,34 @@ const corsOptionsDelegate: cors.CorsOptionsDelegate = (req, callback) => {
 
 app.use(cors(corsOptionsDelegate));
 app.use(express.json()); // Parse JSON bodies
-app.use(morgan("dev")); // HTTP request logger
+app.use(
+  morgan((tokens, req, res) => {
+    const method = tokens.method(req, res) || "-";
+    const url = tokens.url(req, res) || "-";
+    const status = tokens.status(req, res) || "-";
+    const contentLen = tokens.res(req, res, "content-length") || "-";
+    const responseTime = tokens["response-time"](req, res) || "-";
+    const date = new Date().toISOString();
+    const remoteAddr = tokens["remote-addr"](req, res) || "-";
+
+    // Color status logic
+    let statusColor = "\x1b[0m"; // reset
+    const statusNum = parseInt(status, 10);
+    if (statusNum >= 500) statusColor = "\x1b[31m"; // red
+    else if (statusNum >= 400) statusColor = "\x1b[33m"; // yellow
+    else if (statusNum >= 300) statusColor = "\x1b[36m"; // cyan
+    else if (statusNum >= 200) statusColor = "\x1b[32m"; // green
+
+    // Method colors
+    let methodColor = "\x1b[0m";
+    if (method === "GET") methodColor = "\x1b[32m"; // green
+    else if (method === "POST") methodColor = "\x1b[33m"; // yellow
+    else if (method === "PUT") methodColor = "\x1b[34m"; // blue
+    else if (method === "DELETE") methodColor = "\x1b[31m"; // red
+
+    return `[${date}] ${remoteAddr} ${methodColor}${method}\x1b[0m ${url} ${statusColor}${status}\x1b[0m ${responseTime} ms - ${contentLen}`;
+  })
+); // Custom HTTP request logger
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -74,6 +102,7 @@ app.use("/api/imagetolatex", imageToLatexRoutes);
 app.use("/api/umami", umamiRoutes); // Proxy for Umami API
 app.use("/api/latex", latexRoutes); // LaTeX compilation service
 app.use("/api/sso", ssoRoutes); // SSO authentication
+app.use("/api/models", modelsRoutes); // OpenRouter model management
 
 // Basic error handling
 app.use(

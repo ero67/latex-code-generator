@@ -1,18 +1,60 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ImageService from "../../services/image.service";
+import ModelService from "../../services/model.service";
 import GeneratedCode from "../../Components/GeneratedCode";
 import { toast } from "react-toastify";
-import { FaUpload, FaImage, FaSpinner, FaCheckCircle, FaTimesCircle, FaEdit } from "react-icons/fa";
+import {
+  FaUpload,
+  FaImage,
+  FaSpinner,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaEdit,
+  FaInfoCircle,
+} from "react-icons/fa";
+
+const OPENROUTER_MODELS = [
+  "openai/gpt-4.1",
+  "openai/gpt-5.1",
+  "google/gemini-3-pro-preview",
+  "google/gemini-3-flash-preview",
+];
 
 const ImageToLatex = () => {
   const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [structureType, setStructureType] = useState("Karnaugh Map");
+  const [selectedModel, setSelectedModel] = useState("openai/gpt-4.1");
+  const [models, setModels] = useState(OPENROUTER_MODELS);
   const [latexCode, setLatexCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [responseMeta, setResponseMeta] = useState(null);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        const response = await ModelService.getAvailableModels();
+        const apiModels = response.data?.data || [];
+        const modelIds = apiModels
+          .map((item) => item.modelId)
+          .filter(Boolean);
+
+        if (modelIds.length > 0) {
+          setModels(modelIds);
+          setSelectedModel((prev) =>
+            modelIds.includes(prev) ? prev : modelIds[0]
+          );
+        }
+      } catch (err) {
+        console.error("Failed to load models:", err);
+      }
+    };
+
+    loadModels();
+  }, []);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -64,6 +106,10 @@ const ImageToLatex = () => {
     setStructureType(event.target.value);
   };
 
+  const handleModelChange = (event) => {
+    setSelectedModel(event.target.value);
+  };
+
   const handleEditInApp = () => {
     if (!latexCode) {
       toast.error("No LaTeX code to import!");
@@ -104,15 +150,22 @@ const ImageToLatex = () => {
     setLoading(true);
     setError("");
     setLatexCode("");
+    setResponseMeta(null);
 
     try {
       const response = await ImageService.uploadImage(
         selectedFile,
-        structureType
+        structureType,
+        selectedModel
       );
       
       if (response.data.status === "success") {
         setLatexCode(response.data.latex);
+        setResponseMeta({
+          provider: response.data.provider,
+          model: response.data.model,
+          responseTimeMs: response.data.responseTimeMs,
+        });
         toast.success("LaTeX code generated successfully!");
         if (response.data.message) {
           console.log("Server message:", response.data.message);
@@ -154,6 +207,16 @@ const ImageToLatex = () => {
         <p className="text-gray-600 text-sm">
           Upload an image and convert it to LaTeX code automatically
         </p>
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
+          <FaInfoCircle className="text-blue-600 mt-0.5" />
+          <div className="text-sm text-blue-900">
+            <p className="font-semibold">Powered by OpenRouter</p>
+            <p className="text-blue-800">
+              Model selection uses OpenRouter to access multiple providers. Your
+              chosen model is sent with the request.
+            </p>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="w-full space-y-6">
@@ -239,6 +302,31 @@ const ImageToLatex = () => {
           </select>
         </div>
 
+        {/* Model Selection */}
+        <div className="space-y-2">
+          <label
+            htmlFor="model-select"
+            className="block text-sm font-semibold text-gray-700"
+          >
+            OpenRouter Model
+          </label>
+          <select
+            id="model-select"
+            value={selectedModel}
+            onChange={handleModelChange}
+            className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow duration-200"
+          >
+            {models.map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500">
+            Uses OpenRouter to route requests to the selected model.
+          </p>
+        </div>
+
         {/* Submit Button */}
         <button
           type="submit"
@@ -278,6 +366,19 @@ const ImageToLatex = () => {
               Generated LaTeX Code
             </h3>
           </div>
+          {responseMeta && (
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+              <span className="px-2 py-1 bg-gray-100 rounded-md">
+                Provider: {responseMeta.provider || "unknown"}
+              </span>
+              <span className="px-2 py-1 bg-gray-100 rounded-md">
+                Model: {responseMeta.model || "unknown"}
+              </span>
+              <span className="px-2 py-1 bg-gray-100 rounded-md">
+                Response time: {responseMeta.responseTimeMs ?? "-"} ms
+              </span>
+            </div>
+          )}
           <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
             <GeneratedCode code={latexCode} />
           </div>

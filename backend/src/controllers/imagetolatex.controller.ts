@@ -1,7 +1,13 @@
 import { Request, Response } from "express";
 import { OpenAIService } from "../services/openai.service";
+import { OpenRouterService } from "../services/openrouter.service";
+import { OpenRouterModel } from "../models/OpenRouterModel";
 import axios from "axios";
 import FormData from "form-data";
+
+// AI Provider configuration - set via environment variable
+// Options: "openai" | "openrouter"
+const AI_PROVIDER = process.env.AI_PROVIDER || "openrouter";
 
 const PREPROCESS_URL =
   process.env.PREPROCESS_URL || "http://python-preprocess:8000/preprocess";
@@ -32,34 +38,46 @@ async function callPreprocessService(
 
 export const convertImageToLatex = async (req: Request, res: Response) => {
   try {
+    const startTime = Date.now();
     if (!req.file) {
       return res
         .status(400)
         .json({ status: "error", message: "No file uploaded." });
     }
 
-    const { structureType } = req.body;
+    const { structureType, model } = req.body;
     if (!structureType) {
       return res
         .status(400)
         .json({ status: "error", message: "Structure type is required." });
     }
 
-    // Check OpenAI API key
-    if (
-      !process.env.OPENAI_API_KEY ||
-      process.env.OPENAI_API_KEY === "your-openai-api-key-here"
-    ) {
-      return res
-        .status(500)
-        .json({
+    // Check API key based on provider
+    if (AI_PROVIDER === "openai") {
+      if (
+        !process.env.OPENAI_API_KEY ||
+        process.env.OPENAI_API_KEY === "your-openai-api-key-here"
+      ) {
+        return res.status(500).json({
           status: "error",
           message:
             "OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.",
         });
+      }
+    } else if (AI_PROVIDER === "openrouter") {
+      if (
+        !process.env.OPENROUTER_API_KEY ||
+        process.env.OPENROUTER_API_KEY === "your-openrouter-api-key-here"
+      ) {
+        return res.status(500).json({
+          status: "error",
+          message:
+            "OpenRouter API key not configured. Please set OPENROUTER_API_KEY environment variable.",
+        });
+      }
     }
 
-    // Validate structure type
+    // Validate structure type (both services support the same types)
     const supportedTypes = OpenAIService.getSupportedStructureTypes();
     if (!supportedTypes.includes(structureType)) {
       return res
@@ -86,12 +104,48 @@ export const convertImageToLatex = async (req: Request, res: Response) => {
       req.file.mimetype || "image/png"
     );
 
-    // Forward processed buffer to OpenAI service
-    const result = await OpenAIService.analyzeImage(
-      processedBuffer,
-      "image/png",
-      structureType
-    );
+    // Forward processed buffer to AI service based on configured provider
+    let resolvedModel: string | undefined = model;
+    if (AI_PROVIDER === "openrouter" && model) {
+      const configuredCount = await OpenRouterModel.countDocuments({
+        provider: "openrouter",
+      });
+
+      if (configuredCount > 0) {
+        const found = await OpenRouterModel.findOne({
+          modelId: model,
+          enabled: true,
+          provider: "openrouter",
+        });
+
+        if (!found) {
+          return res.status(400).json({
+            status: "error",
+            message: "Selected model is not available",
+          });
+        }
+      }
+    }
+
+    const result =
+      AI_PROVIDER === "openai"
+        ? await OpenAIService.analyzeImage(
+            processedBuffer,
+            "image/png",
+            structureType
+          )
+        : await OpenRouterService.analyzeImage(
+            processedBuffer,
+            "image/png",
+            structureType,
+            resolvedModel
+          );
+
+    const responseTimeMs = Date.now() - startTime;
+    const usedModel =
+      AI_PROVIDER === "openai"
+        ? OpenAIService.getConfiguredModel()
+        : OpenRouterService.getConfiguredModel(resolvedModel);
 
     return res
       .status(200)
@@ -100,6 +154,9 @@ export const convertImageToLatex = async (req: Request, res: Response) => {
         latex: result.latex,
         structureType: result.structureType,
         confidence: result.confidence,
+        provider: AI_PROVIDER,
+        model: usedModel,
+        responseTimeMs,
         message: "Image processed successfully",
       });
   } catch (error: any) {
