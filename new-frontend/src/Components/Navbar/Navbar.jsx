@@ -73,7 +73,7 @@ function Navbar() {
           </Link>
 
           {/* Center: Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-1 ml-8">
+          <div className="hidden min-[1401px]:flex items-center gap-1 ml-8">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
@@ -162,7 +162,7 @@ function Navbar() {
 
             {/* Mobile Menu Toggle */}
             <button
-              className="lg:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+              className="min-[1401px]:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open menu"
             >
@@ -173,8 +173,8 @@ function Navbar() {
       </nav>
 
       {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
+        {mobileMenuOpen && (
+          <div className="min-[1401px]:hidden fixed inset-0 z-50">
           {/* Backdrop */}
           <button
             className="fixed inset-0 bg-black/40 backdrop-blur-sm"
