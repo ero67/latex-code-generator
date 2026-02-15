@@ -157,6 +157,8 @@ export const convertImageToLatex = async (req: Request, res: Response) => {
         provider: AI_PROVIDER,
         model: usedModel,
         responseTimeMs,
+        cost: result.cost,
+        usage: result.usage,
         message: "Image processed successfully",
       });
   } catch (error: any) {
