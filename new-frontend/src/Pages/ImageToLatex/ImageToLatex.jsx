@@ -165,6 +165,8 @@ const ImageToLatex = () => {
           provider: response.data.provider,
           model: response.data.model,
           responseTimeMs: response.data.responseTimeMs,
+          cost: response.data.cost,
+          usage: response.data.usage,
         });
         toast.success("LaTeX code generated successfully!");
         if (response.data.message) {
@@ -391,6 +393,16 @@ const ImageToLatex = () => {
               <span className="px-2 py-1 bg-gray-100 rounded-md">
                 Response time: {responseMeta.responseTimeMs ?? "-"} ms
               </span>
+              {responseMeta.cost != null && (
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md font-medium">
+                  Cost: ${responseMeta.cost.toFixed(6)}
+                </span>
+              )}
+              {responseMeta.usage && (
+                <span className="px-2 py-1 bg-gray-100 rounded-md" title="Prompt / Completion / Total tokens">
+                  Tokens: {responseMeta.usage.prompt_tokens ?? 0} + {responseMeta.usage.completion_tokens ?? 0} = {responseMeta.usage.total_tokens ?? 0}
+                </span>
+              )}
             </div>
           )}
           <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">

@@ -275,6 +275,12 @@ export interface ImageAnalysisResult {
   latex: string;
   confidence?: number;
   structureType: string;
+  cost?: number;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
 }
 
 export class OpenAIService {

@@ -10,6 +10,12 @@ export interface ImageAnalysisResult {
   latex: string;
   confidence?: number;
   structureType: string;
+  cost?: number;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
 }
 
 // Dynamic import for ESM-only @openrouter/sdk
@@ -62,7 +68,15 @@ export class OpenRouterService {
       });
 
       // Handle the response - the SDK returns different types based on stream option
-      const response = result as { choices?: Array<{ message?: { content?: string } }> };
+      const response = result as {
+        choices?: Array<{ message?: { content?: string } }>;
+        usage?: {
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          total_tokens?: number;
+          cost?: number;
+        };
+      };
       const content = response.choices?.[0]?.message?.content;
       
       if (!content) {
@@ -79,6 +93,14 @@ export class OpenRouterService {
         latex: latexCode,
         confidence: 0.9,
         structureType,
+        cost: response.usage?.cost,
+        usage: response.usage
+          ? {
+              prompt_tokens: response.usage.prompt_tokens,
+              completion_tokens: response.usage.completion_tokens,
+              total_tokens: response.usage.total_tokens,
+            }
+          : undefined,
       };
     } catch (error) {
       console.error("OpenRouter API Error:", error);
