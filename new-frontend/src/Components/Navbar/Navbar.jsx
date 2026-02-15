@@ -45,6 +45,11 @@ function Navbar() {
         path: "/admin/models",
         icon: <AiIcons.AiOutlineSetting />,
       });
+      items.push({
+        title: "Benchmark",
+        path: "/admin/benchmark",
+        icon: <AiIcons.AiOutlineExperiment />,
+      });
     }
     return items;
   }, [user]);
