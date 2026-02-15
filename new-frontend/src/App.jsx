@@ -18,6 +18,7 @@ import UserProfile from "./Pages/UserProfile";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import AdminRoute from "./Components/AdminRoute";
 import ModelManager from "./Pages/Admin/ModelManager";
+import ModelBenchmark from "./Pages/Admin/ModelBenchmark";
 import ResolutionTree from "./Pages/ResolutionTrees/ResolutionTree";
 import ResolutionTreeSelection from "./Pages/ResolutionTrees/ResolutionTreeSelection";
 import FiniteStateAutomata from "./Pages/FiniteStateAutomata/FiniteStateAutomata";
@@ -108,6 +109,14 @@ function App() {
               element={
                 <AdminRoute>
                   <ModelManager />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/benchmark"
+              element={
+                <AdminRoute>
+                  <ModelBenchmark />
                 </AdminRoute>
               }
             />
