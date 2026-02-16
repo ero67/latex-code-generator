@@ -118,20 +118,29 @@ const ModelBenchmark = () => {
     formData.append("models", JSON.stringify(selectedModels));
 
     try {
-      const response = await fetch(
-        `${API_URL}/imagetolatex/benchmark`,
-        {
-          method: "POST",
-          body: formData,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/imagetolatex/benchmark`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Benchmark failed");
+      const contentType = response.headers.get("content-type") || "";
+      const isEventStream = contentType.includes("text/event-stream");
+
+      if (!isEventStream) {
+        const rawText = await response.text();
+        let message = response.statusText || "Benchmark failed";
+        if (rawText) {
+          try {
+            const parsed = JSON.parse(rawText);
+            message = parsed?.message || message;
+          } catch {
+            message = rawText;
+          }
+        }
+        throw new Error(message);
       }
 
       const reader = response.body?.getReader();
@@ -142,6 +151,8 @@ const ModelBenchmark = () => {
       }
 
       let buffer = "";
+      let hasResult = false;
+      let hasError = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -152,28 +163,35 @@ const ModelBenchmark = () => {
         buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (!payload || payload === "[DONE]") continue;
+          try {
+            const data = JSON.parse(payload);
 
-              if (data.status === "progress") {
-                setCurrentModel(data.currentModel || "");
-                setProgress({ current: data.modelIndex, total: data.totalModels });
-              } else if (data.status === "result") {
-                setResults((prev) => [...prev, data.result]);
-              } else if (data.status === "complete") {
-                setResults(data.results);
-                setCurrentModel("");
-                toast.success(data.message);
-              } else if (data.status === "error") {
-                setError(data.message || "Benchmark failed.");
-                toast.error(data.message || "Benchmark failed.");
-              }
-            } catch (e) {
-              console.error("Failed to parse SSE data:", e);
+            if (data.status === "progress") {
+              setCurrentModel(data.currentModel || "");
+              setProgress({ current: data.modelIndex, total: data.totalModels });
+            } else if (data.status === "result") {
+              hasResult = true;
+              setResults((prev) => [...prev, data.result]);
+            } else if (data.status === "complete") {
+              setResults(data.results);
+              setCurrentModel("");
+              toast.success(data.message);
+            } else if (data.status === "error") {
+              hasError = true;
+              setError(data.message || "Benchmark failed.");
+              toast.error(data.message || "Benchmark failed.");
             }
+          } catch (e) {
+            console.error("Failed to parse SSE data:", e, payload);
           }
         }
+      }
+
+      if (!response.ok && !hasResult && !hasError) {
+        throw new Error(response.statusText || "Benchmark failed");
       }
     } catch (err) {
       console.error("Benchmark error:", err);
