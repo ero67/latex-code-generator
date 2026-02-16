@@ -12,7 +12,6 @@ import {
   FaClock,
   FaDollarSign,
 } from "react-icons/fa";
-import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -34,6 +33,8 @@ const ModelBenchmark = () => {
   const [results, setResults] = useState([]);
   const [expandedRow, setExpandedRow] = useState(null);
   const [error, setError] = useState("");
+  const [currentModel, setCurrentModel] = useState("");
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
   const abortRef = useRef(null);
 
   const token = localStorage.getItem("token");
@@ -108,6 +109,8 @@ const ModelBenchmark = () => {
     setError("");
     setResults([]);
     setExpandedRow(null);
+    setCurrentModel("");
+    setProgress({ current: 0, total: selectedModels.length });
 
     const formData = new FormData();
     formData.append("image", selectedFile);
@@ -115,33 +118,71 @@ const ModelBenchmark = () => {
     formData.append("models", JSON.stringify(selectedModels));
 
     try {
-      const response = await axios.post(
+      const response = await fetch(
         `${API_URL}/imagetolatex/benchmark`,
-        formData,
         {
+          method: "POST",
+          body: formData,
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
-          timeout: selectedModels.length * 320000, // generous per-model timeout
         }
       );
 
-      if (response.data.status === "success") {
-        setResults(response.data.results);
-        toast.success(response.data.message);
-      } else {
-        setError(response.data.message || "Benchmark failed.");
-        toast.error(response.data.message || "Benchmark failed.");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Benchmark failed");
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("Failed to read response stream");
+      }
+
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.status === "progress") {
+                setCurrentModel(data.currentModel || "");
+                setProgress({ current: data.modelIndex, total: data.totalModels });
+              } else if (data.status === "result") {
+                setResults((prev) => [...prev, data.result]);
+              } else if (data.status === "complete") {
+                setResults(data.results);
+                setCurrentModel("");
+                toast.success(data.message);
+              } else if (data.status === "error") {
+                setError(data.message || "Benchmark failed.");
+                toast.error(data.message || "Benchmark failed.");
+              }
+            } catch (e) {
+              console.error("Failed to parse SSE data:", e);
+            }
+          }
+        }
       }
     } catch (err) {
       console.error("Benchmark error:", err);
-      const msg =
-        err.response?.data?.message || "Benchmark failed. Please try again.";
+      const msg = err.message || "Benchmark failed. Please try again.";
       setError(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
+      setCurrentModel("");
     }
   };
 
@@ -327,21 +368,40 @@ const ModelBenchmark = () => {
 
       {/* Loading indicator */}
       {loading && (
-        <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg flex items-center justify-between">
-          <div className="flex items-center gap-3 text-sm text-purple-900">
-            <div className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse" />
-              <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse [animation-delay:150ms]" />
-              <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse [animation-delay:300ms]" />
+        <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3 text-sm text-purple-900">
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse [animation-delay:150ms]" />
+                <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse [animation-delay:300ms]" />
+              </div>
+              <span>
+                Testing model {progress.current}/{progress.total}...
+              </span>
             </div>
-            <span>
-              Processing {selectedModels.length} model
-              {selectedModels.length !== 1 ? "s" : ""} sequentially...
+            <span className="text-xs text-purple-700">
+              ~{progress.total * 15}s estimated
             </span>
           </div>
-          <span className="text-xs text-purple-700">
-            ~{selectedModels.length * 15}s estimated
-          </span>
+          
+          {/* Current model being tested */}
+          {currentModel && (
+            <div className="bg-purple-100 rounded-lg p-3 border border-purple-200">
+              <p className="text-xs text-purple-600 mb-1">Currently testing:</p>
+              <p className="font-mono text-sm text-purple-900 font-medium truncate">
+                {currentModel}
+              </p>
+            </div>
+          )}
+
+          {/* Progress bar */}
+          <div className="mt-3 h-2 bg-purple-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-purple-600 transition-all duration-300"
+              style={{ width: `${(progress.current / progress.total) * 100}%` }}
+            />
+          </div>
         </div>
       )}
 

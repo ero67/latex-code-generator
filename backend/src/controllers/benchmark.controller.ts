@@ -14,6 +14,11 @@ const BENCHMARK_MODEL_TIMEOUT_MS = Number(
   process.env.BENCHMARK_MODEL_TIMEOUT_MS || 300000
 );
 
+// Delay between model requests to avoid rate limiting (default 2 seconds)
+const BENCHMARK_DELAY_MS = Number(
+  process.env.BENCHMARK_DELAY_MS || 2000
+);
+
 async function callPreprocessService(
   fileBuffer: Buffer,
   filename: string,
@@ -52,20 +57,27 @@ interface BenchmarkResult {
 }
 
 export const runBenchmark = async (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  const sendProgress = (data: any) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
   try {
     if (!req.file) {
-      return res
-        .status(400)
-        .json({ status: "error", message: "No file uploaded." });
+      sendProgress({ status: "error", message: "No file uploaded." });
+      return res.status(400).end();
     }
 
     const { structureType } = req.body;
     let { models } = req.body;
 
     if (!structureType) {
-      return res
-        .status(400)
-        .json({ status: "error", message: "Structure type is required." });
+      sendProgress({ status: "error", message: "Structure type is required." });
+      return res.status(400).end();
     }
 
     // models comes as JSON string from FormData
@@ -73,31 +85,33 @@ export const runBenchmark = async (req: Request, res: Response) => {
       try {
         models = JSON.parse(models);
       } catch {
-        return res
-          .status(400)
-          .json({ status: "error", message: "Invalid models format." });
+        sendProgress({ status: "error", message: "Invalid models format." });
+        return res.status(400).end();
       }
     }
 
     if (!Array.isArray(models) || models.length === 0) {
-      return res.status(400).json({
+      sendProgress({
         status: "error",
         message: "At least one model is required.",
       });
+      return res.status(400).end();
     }
 
     if (
       !process.env.OPENROUTER_API_KEY ||
       process.env.OPENROUTER_API_KEY === "your-openrouter-api-key-here"
     ) {
-      return res.status(500).json({
+      sendProgress({
         status: "error",
         message:
           "OpenRouter API key not configured. Please set OPENROUTER_API_KEY environment variable.",
       });
+      return res.status(500).end();
     }
 
     // Preprocess the image once
+    sendProgress({ status: "progress", message: "Preprocessing image..." });
     const processedBuffer = await callPreprocessService(
       req.file.buffer,
       req.file.originalname || "upload.png",
@@ -109,7 +123,19 @@ export const runBenchmark = async (req: Request, res: Response) => {
     // Run all models sequentially to avoid rate-limiting
     const results: BenchmarkResult[] = [];
 
-    for (const model of models) {
+    for (let i = 0; i < models.length; i++) {
+      const model = models[i];
+      const modelIndex = i + 1;
+      const totalModels = models.length;
+
+      sendProgress({
+        status: "progress",
+        message: `Testing model ${modelIndex}/${totalModels}`,
+        currentModel: model,
+        modelIndex,
+        totalModels,
+      });
+
       const startTime = Date.now();
       try {
         const analysisResult = await Promise.race([
@@ -134,7 +160,7 @@ export const runBenchmark = async (req: Request, res: Response) => {
 
         const latency = (Date.now() - startTime) / 1000; // seconds
 
-        results.push({
+        const result: BenchmarkResult = {
           model,
           structure: structureType,
           file: filename,
@@ -143,46 +169,42 @@ export const runBenchmark = async (req: Request, res: Response) => {
           status: "success",
           cost: analysisResult.cost,
           usage: analysisResult.usage,
-        });
+        };
+        results.push(result);
+        sendProgress({ status: "result", result });
       } catch (error) {
         const latency = (Date.now() - startTime) / 1000;
-        results.push({
+        const result: BenchmarkResult = {
           model,
           structure: structureType,
           file: filename,
           latency: Math.round(latency * 100) / 100,
-          error:
-            error instanceof Error ? error.message : "Unknown error",
+          error: error instanceof Error ? error.message : "Unknown error",
           status: "failed",
-        });
+        };
+        results.push(result);
+        sendProgress({ status: "result", result });
       }
 
-      // Send intermediate progress via SSE-like headers isn't possible with REST,
-      // so we just continue sequentially
+      // Add delay between requests to avoid rate limiting
+      if (i < models.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, BENCHMARK_DELAY_MS));
+      }
     }
 
-    return res.status(200).json({
-      status: "success",
-      results,
+    sendProgress({
+      status: "complete",
       message: `Benchmark completed for ${results.length} model(s)`,
+      results,
     });
+    res.end();
   } catch (error: any) {
     console.error("Benchmark error:", error?.message || error);
-
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status || 502;
-      const detail = error.response?.data || error.message;
-      return res.status(status).json({
-        status: "error",
-        message: "Preprocess service error",
-        details: detail,
-      });
-    }
-
-    return res.status(500).json({
+    sendProgress({
       status: "error",
       message: "Benchmark failed.",
       details: error?.message,
     });
+    res.end();
   }
 };

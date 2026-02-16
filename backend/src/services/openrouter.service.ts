@@ -1,10 +1,68 @@
 import { Buffer } from "buffer";
+import axios from "axios";
 
 // Import prompts from openai service to reuse them
 import { PROMPTS } from "./openai.service";
 
 // Default model - can be changed via environment variable
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4.1";
+
+type ModelPricing = {
+  prompt?: number;
+  completion?: number;
+  request?: number;
+  image?: number;
+};
+
+const PRICING_CACHE_TTL_MS = 10 * 60 * 1000;
+let pricingCache:
+  | {
+      fetchedAt: number;
+      data: Map<string, ModelPricing>;
+    }
+  | null = null;
+
+const parsePrice = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+};
+
+const getCachedPricing = (modelId: string): ModelPricing | undefined => {
+  if (!pricingCache) return undefined;
+  if (Date.now() - pricingCache.fetchedAt > PRICING_CACHE_TTL_MS) return undefined;
+  return pricingCache.data.get(modelId);
+};
+
+const fetchModelPricing = async (modelId: string): Promise<ModelPricing | undefined> => {
+  const cached = getCachedPricing(modelId);
+  if (cached) return cached;
+
+  const response = await axios.get("https://openrouter.ai/api/v1/models", {
+    timeout: 10000,
+  });
+  const models = response.data?.data;
+  if (!Array.isArray(models)) return undefined;
+
+  const map = new Map<string, ModelPricing>();
+  for (const model of models) {
+    if (!model?.id || !model?.pricing) continue;
+    map.set(model.id, {
+      prompt: parsePrice(model.pricing.prompt),
+      completion: parsePrice(model.pricing.completion),
+      request: parsePrice(model.pricing.request),
+      image: parsePrice(model.pricing.image),
+    });
+  }
+
+  pricingCache = { fetchedAt: Date.now(), data: map };
+  return map.get(modelId);
+};
 
 export interface ImageAnalysisResult {
   latex: string;
@@ -68,17 +126,10 @@ export class OpenRouterService {
       });
 
       // Handle the response - the SDK returns different types based on stream option
-      const response = result as {
-        choices?: Array<{ message?: { content?: string } }>;
-        usage?: {
-          prompt_tokens?: number;
-          completion_tokens?: number;
-          total_tokens?: number;
-          cost?: number;
-        };
-      };
-      const content = response.choices?.[0]?.message?.content;
-      
+      const response = result as any;
+
+      const content = response?.choices?.[0]?.message?.content;
+
       if (!content) {
         throw new Error("No response from OpenRouter");
       }
@@ -89,18 +140,88 @@ export class OpenRouterService {
         .replace(/```tex\n?/g, "")
         .trim();
 
+      const usageRaw =
+        response?.usage ?? response?.data?.usage ?? response?.response?.usage;
+      const toNumber = (value: unknown) => {
+        if (typeof value === "number" && Number.isFinite(value)) {
+          return value;
+        }
+        if (typeof value === "string") {
+          const parsed = Number(value);
+          return Number.isFinite(parsed) ? parsed : undefined;
+        }
+        return undefined;
+      };
+      const promptTokens =
+        usageRaw?.prompt_tokens ?? usageRaw?.promptTokens ?? undefined;
+      const completionTokens =
+        usageRaw?.completion_tokens ?? usageRaw?.completionTokens ?? undefined;
+      const totalTokens =
+        usageRaw?.total_tokens ??
+        usageRaw?.totalTokens ??
+        (promptTokens != null && completionTokens != null
+          ? promptTokens + completionTokens
+          : undefined);
+      const costDetails = usageRaw?.cost_details ?? usageRaw?.costDetails;
+      const costDirect =
+        toNumber(usageRaw?.cost) ??
+        toNumber(response?.cost) ??
+        toNumber(response?.data?.cost);
+      const costFromDetails = toNumber(
+        costDetails?.upstream_inference_cost ??
+          costDetails?.upstreamInferenceCost ??
+          costDetails?.total_cost ??
+          costDetails?.totalCost
+      );
+      const promptCost = toNumber(
+        costDetails?.upstream_inference_prompt_cost ??
+          costDetails?.upstreamInferencePromptCost
+      );
+      const completionCost = toNumber(
+        costDetails?.upstream_inference_completions_cost ??
+          costDetails?.upstreamInferenceCompletionsCost
+      );
+      const summedCost =
+        promptCost != null || completionCost != null
+          ? (promptCost || 0) + (completionCost || 0)
+          : undefined;
+      let cost = costDirect ?? costFromDetails ?? summedCost;
+      const usage =
+        promptTokens != null || completionTokens != null || totalTokens != null
+          ? {
+              prompt_tokens: promptTokens,
+              completion_tokens: completionTokens,
+              total_tokens: totalTokens,
+            }
+          : undefined;
+
+      if (cost == null && usage) {
+        try {
+          const pricing = await fetchModelPricing(model);
+          if (pricing) {
+            const promptPrice = pricing.prompt || 0;
+            const completionPrice = pricing.completion || 0;
+            const requestPrice = pricing.request || 0;
+            const imagePrice = pricing.image || 0;
+            const promptCount = usage.prompt_tokens || 0;
+            const completionCount = usage.completion_tokens || 0;
+            cost =
+              promptCount * promptPrice +
+              completionCount * completionPrice +
+              requestPrice +
+              imagePrice;
+          }
+        } catch (pricingError) {
+          console.warn("Failed to fetch OpenRouter pricing:", pricingError);
+        }
+      }
+
       return {
         latex: latexCode,
         confidence: 0.9,
         structureType,
-        cost: response.usage?.cost,
-        usage: response.usage
-          ? {
-              prompt_tokens: response.usage.prompt_tokens,
-              completion_tokens: response.usage.completion_tokens,
-              total_tokens: response.usage.total_tokens,
-            }
-          : undefined,
+        cost,
+        usage,
       };
     } catch (error) {
       console.error("OpenRouter API Error:", error);
