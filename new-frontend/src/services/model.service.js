@@ -2,7 +2,14 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const getAvailableModels = () => axios.get(`${API_URL}/models`);
+const getAvailableModels = () => {
+  const token = localStorage.getItem("token");
+  return axios.get(`${API_URL}/models`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
 
 const getAllModels = (token) =>
   axios.get(`${API_URL}/models/all`, {

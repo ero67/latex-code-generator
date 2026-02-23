@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import { OpenRouterService } from "../services/openrouter.service";
+import { AppSettings } from "../models/AppSettings";
+import { User } from "../models/User";
+import { decryptSecret } from "../utils/encryption";
 import axios from "axios";
 import FormData from "form-data";
 
@@ -99,16 +102,63 @@ export const runBenchmark = async (req: Request, res: Response) => {
       return res.status(400).end();
     }
 
-    if (
-      !process.env.OPENROUTER_API_KEY ||
-      process.env.OPENROUTER_API_KEY === "your-openrouter-api-key-here"
-    ) {
+    const settings = await AppSettings.findOne().lean();
+    const byokEnabled = settings?.byokEnabled ?? false;
+    const byokProvider = settings?.byokProvider || "openrouter";
+
+    if (byokEnabled && byokProvider !== "openrouter") {
       sendProgress({
         status: "error",
-        message:
-          "OpenRouter API key not configured. Please set OPENROUTER_API_KEY environment variable.",
+        message: "BYOK provider is not supported",
       });
       return res.status(500).end();
+    }
+
+    let openRouterApiKey: string | undefined;
+    if (byokEnabled) {
+      if (!req.user) {
+        sendProgress({
+          status: "error",
+          message: "Please authenticate",
+        });
+        return res.status(401).end();
+      }
+
+      const user = await User.findById(req.user._id).select(
+        "+openRouterKeyCiphertext +openRouterKeyIv +openRouterKeyTag"
+      );
+
+      if (
+        !user?.openRouterKeyCiphertext ||
+        !user.openRouterKeyIv ||
+        !user.openRouterKeyTag
+      ) {
+        sendProgress({
+          status: "error",
+          message:
+            "OpenRouter key not configured. Please save your key in your profile.",
+        });
+        return res.status(400).end();
+      }
+
+      openRouterApiKey = decryptSecret({
+        ciphertext: user.openRouterKeyCiphertext,
+        iv: user.openRouterKeyIv,
+        tag: user.openRouterKeyTag,
+      });
+    } else {
+      if (
+        !process.env.OPENROUTER_API_KEY ||
+        process.env.OPENROUTER_API_KEY === "your-openrouter-api-key-here"
+      ) {
+        sendProgress({
+          status: "error",
+          message:
+            "OpenRouter API key not configured. Please set OPENROUTER_API_KEY environment variable.",
+        });
+        return res.status(500).end();
+      }
+      openRouterApiKey = process.env.OPENROUTER_API_KEY;
     }
 
     // Preprocess the image once
@@ -144,7 +194,8 @@ export const runBenchmark = async (req: Request, res: Response) => {
             processedBuffer,
             "image/png",
             structureType,
-            model
+            model,
+            openRouterApiKey
           ),
           new Promise<never>((_, reject) =>
             setTimeout(

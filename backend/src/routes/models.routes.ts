@@ -10,8 +10,8 @@ import { requireAdmin } from "../middleware/admin";
 
 const router = Router();
 
-// Public: list enabled OpenRouter models
-router.get("/", getAvailableModels);
+// Authenticated: list enabled OpenRouter models
+router.get("/", auth, getAvailableModels);
 
 // Admin: manage models
 router.get("/all", auth, requireAdmin, getAllModels);

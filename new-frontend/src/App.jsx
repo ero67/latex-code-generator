@@ -15,6 +15,7 @@ import ProofTreeSelection from "./Pages/ProofTrees/ProofTreeSelection";
 import Analytics from "./Pages/Analytics";
 import ImageToLatex from "./Pages/ImageToLatex/ImageToLatex";
 import UserProfile from "./Pages/UserProfile";
+import ByokTutorial from "./Pages/ByokTutorial";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import AdminRoute from "./Components/AdminRoute";
 import ModelManager from "./Pages/Admin/ModelManager";
@@ -103,7 +104,14 @@ function App() {
               element={<SSOCallback></SSOCallback>}
             ></Route>
             <Route path="/analytics" element={<Analytics />} />
-            <Route path="/image-to-latex" element={<ImageToLatex />} />
+            <Route
+              path="/image-to-latex"
+              element={
+                <ProtectedRoute>
+                  <ImageToLatex />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/admin/models"
               element={
@@ -125,6 +133,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/byok-tutorial"
+              element={
+                <ProtectedRoute>
+                  <ByokTutorial />
                 </ProtectedRoute>
               }
             />

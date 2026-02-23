@@ -1,12 +1,25 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FaUser, FaEnvelope, FaIdCard, FaBuilding, FaUserTie } from "react-icons/fa";
+import { toast } from "react-toastify";
+import ByokService from "../services/byok.service";
 
 const UserProfile = () => {
   const { user } = useAuth();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [byokStatus, setByokStatus] = useState({
+    configured: false,
+    last4: null,
+    updatedAt: null,
+  });
+  const [byokLoading, setByokLoading] = useState(true);
+  const [byokSaving, setByokSaving] = useState(false);
+  const [byokDeleting, setByokDeleting] = useState(false);
+  const [byokKeyInput, setByokKeyInput] = useState("");
+  const [byokError, setByokError] = useState(null);
 
   useEffect(() => {
     // Load user data from localStorage
@@ -23,6 +36,75 @@ const UserProfile = () => {
     }
     setLoading(false);
   }, []);
+
+  const loadByokStatus = async () => {
+    try {
+      setByokLoading(true);
+      setByokError(null);
+      const response = await ByokService.getStatus();
+      const data = response.data?.data || {};
+      setByokStatus({
+        configured: Boolean(data.configured),
+        last4: data.last4 || null,
+        updatedAt: data.updatedAt || null,
+      });
+    } catch (err) {
+      console.error("Failed to load BYOK status:", err);
+      setByokError("Failed to load BYOK status");
+    } finally {
+      setByokLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadByokStatus();
+  }, []);
+
+  const handleSaveByokKey = async () => {
+    if (!byokKeyInput.trim()) {
+      toast.error("Please enter your OpenRouter API key");
+      return;
+    }
+
+    try {
+      setByokSaving(true);
+      const response = await ByokService.saveKey(byokKeyInput.trim());
+      const data = response.data?.data || {};
+      setByokStatus({
+        configured: Boolean(data.configured),
+        last4: data.last4 || null,
+        updatedAt: data.updatedAt || null,
+      });
+      setByokKeyInput("");
+      toast.success("OpenRouter key saved");
+    } catch (err) {
+      console.error("Failed to save BYOK key:", err);
+      const message = err.response?.data?.message || "Failed to save key";
+      toast.error(message);
+    } finally {
+      setByokSaving(false);
+    }
+  };
+
+  const handleDeleteByokKey = async () => {
+    try {
+      setByokDeleting(true);
+      const response = await ByokService.deleteKey();
+      const data = response.data?.data || {};
+      setByokStatus({
+        configured: Boolean(data.configured),
+        last4: data.last4 || null,
+        updatedAt: data.updatedAt || null,
+      });
+      toast.success("OpenRouter key removed");
+    } catch (err) {
+      console.error("Failed to delete BYOK key:", err);
+      const message = err.response?.data?.message || "Failed to delete key";
+      toast.error(message);
+    } finally {
+      setByokDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -174,6 +256,78 @@ const UserProfile = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* BYOK Settings */}
+          <div className="mt-6 bg-gray-50 p-4 rounded-lg">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <FaUserTie className="mr-2 text-blue-500" />
+              OpenRouter API Key (BYOK)
+            </h2>
+            {byokError && (
+              <p className="text-sm text-red-600 mb-3">{byokError}</p>
+            )}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="font-medium">
+                    {byokLoading
+                      ? "Loading..."
+                      : byokStatus.configured
+                      ? `Configured (••••${byokStatus.last4 || ""})`
+                      : "Not configured"}
+                  </p>
+                  {byokStatus.updatedAt && (
+                    <p className="text-xs text-gray-400">
+                      Updated: {new Date(byokStatus.updatedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+                {byokStatus.configured && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteByokKey}
+                    disabled={byokDeleting}
+                    className={`px-3 py-2 text-xs font-semibold rounded-md bg-red-100 text-red-600 hover:bg-red-200 ${
+                      byokDeleting ? "opacity-60 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    {byokDeleting ? "Removing..." : "Remove Key"}
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-3">
+                <input
+                  type="password"
+                  value={byokKeyInput}
+                  onChange={(e) => setByokKeyInput(e.target.value)}
+                  placeholder="Paste your OpenRouter API key"
+                  className="flex-1 p-3 border border-gray-300 rounded-lg text-sm"
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveByokKey}
+                  disabled={byokSaving}
+                  className={`px-4 py-3 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 ${
+                    byokSaving ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {byokSaving ? "Saving..." : "Save Key"}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500">
+                Your key is stored encrypted and never shared with other users.
+              </p>
+              <Link
+                to="/byok-tutorial"
+                className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800"
+              >
+                How to get an OpenRouter key
+              </Link>
             </div>
           </div>
 
