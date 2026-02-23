@@ -77,10 +77,10 @@ export interface ImageAnalysisResult {
 }
 
 // Dynamic import for ESM-only @openrouter/sdk
-async function getOpenRouterClient() {
+async function getOpenRouterClient(apiKey: string) {
   const { OpenRouter } = await import("@openrouter/sdk");
   return new OpenRouter({
-    apiKey: process.env.OPENROUTER_API_KEY || "",
+    apiKey,
   });
 }
 
@@ -89,7 +89,8 @@ export class OpenRouterService {
     imageBuffer: Buffer,
     imageMimeType: string,
     structureType: string,
-    requestedModel?: string
+    requestedModel?: string,
+    apiKey?: string
   ): Promise<ImageAnalysisResult> {
     try {
       const base64Image = imageBuffer.toString("base64");
@@ -97,7 +98,11 @@ export class OpenRouterService {
         PROMPTS[structureType as keyof typeof PROMPTS] || PROMPTS["Proof Tree"];
 
       const model = OpenRouterService.getConfiguredModel(requestedModel);
-      const openRouter = await getOpenRouterClient();
+      const resolvedKey = apiKey || process.env.OPENROUTER_API_KEY || "";
+      if (!resolvedKey) {
+        throw new Error("OpenRouter API key not configured");
+      }
+      const openRouter = await getOpenRouterClient(resolvedKey);
 
       const result = await openRouter.chat.send({
         chatGenerationParams: {

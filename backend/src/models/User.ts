@@ -10,6 +10,11 @@ export interface IUser extends mongoose.Document {
   ssoId?: string; // preferred_username from SSO
   ssoProvider?: string; // e.g., "kpi-testing" or "kpi-production"
   employeeType?: string; // S (student), D (doktorand), P (pedagog), N (administratívny)
+  openRouterKeyCiphertext?: string;
+  openRouterKeyIv?: string;
+  openRouterKeyTag?: string;
+  openRouterKeyLast4?: string;
+  openRouterKeyUpdatedAt?: Date;
   comparePassword(password: string): Promise<boolean>;
   generateAuthToken(): string;
 }
@@ -63,6 +68,26 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["S", "D", "P", "N"], // Student, Doktorand, Pedagog, Administratívny
       trim: true,
+    },
+    openRouterKeyCiphertext: {
+      type: String,
+      select: false,
+    },
+    openRouterKeyIv: {
+      type: String,
+      select: false,
+    },
+    openRouterKeyTag: {
+      type: String,
+      select: false,
+    },
+    openRouterKeyLast4: {
+      type: String,
+      select: false,
+    },
+    openRouterKeyUpdatedAt: {
+      type: Date,
+      select: false,
     },
   },
   {

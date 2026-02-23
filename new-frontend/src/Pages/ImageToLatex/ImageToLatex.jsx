@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ImageService from "../../services/image.service";
 import ModelService from "../../services/model.service";
+import SettingsService from "../../services/settings.service";
+import ByokService from "../../services/byok.service";
 import GeneratedCode from "../../Components/GeneratedCode";
 import { toast } from "react-toastify";
 import {
@@ -32,6 +34,8 @@ const ImageToLatex = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [responseMeta, setResponseMeta] = useState(null);
+  const [byokEnabled, setByokEnabled] = useState(false);
+  const [byokConfigured, setByokConfigured] = useState(true);
 
   useEffect(() => {
     const loadModels = async () => {
@@ -55,6 +59,30 @@ const ImageToLatex = () => {
 
     loadModels();
   }, []);
+
+  useEffect(() => {
+    const loadByokStatus = async () => {
+      try {
+        const [settingsResponse, statusResponse] = await Promise.all([
+          SettingsService.getPublicSettings(),
+          ByokService.getStatus(),
+        ]);
+        const settings = settingsResponse.data?.data || {};
+        const status = statusResponse.data?.data || {};
+        setByokEnabled(Boolean(settings.byokEnabled));
+        setByokConfigured(Boolean(status.configured));
+      } catch (err) {
+        console.error("Failed to load BYOK status:", err);
+        setByokEnabled(false);
+        setByokConfigured(true);
+      } finally {
+      }
+    };
+
+    loadByokStatus();
+  }, []);
+
+  const byokBlocked = byokEnabled && !byokConfigured;
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -239,10 +267,15 @@ const ImageToLatex = () => {
                 onChange={handleFileChange}
                 accept="image/*"
                 className="hidden"
+                disabled={byokBlocked}
               />
               <label
                 htmlFor="file-upload"
-                className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-blue-400 transition-colors duration-200"
+                className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 transition-colors duration-200 ${
+                  byokBlocked
+                    ? "cursor-not-allowed opacity-60"
+                    : "cursor-pointer hover:bg-gray-100 hover:border-blue-400"
+                }`}
               >
                 <FaUpload className="w-12 h-12 text-gray-400 mb-3" />
                 <p className="mb-2 text-sm text-gray-600 font-medium">
@@ -294,7 +327,12 @@ const ImageToLatex = () => {
             id="structure-type"
             value={structureType}
             onChange={handleStructureChange}
-            className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow duration-200"
+            disabled={byokBlocked}
+            className={`w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-700 transition-shadow duration-200 ${
+              byokBlocked
+                ? "opacity-60 cursor-not-allowed"
+                : "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            }`}
           >
             <option value="Karnaugh Map">Karnaugh Map</option>
             <option value="Abstract Syntax Tree">Abstract Syntax Tree</option>
@@ -316,7 +354,12 @@ const ImageToLatex = () => {
             id="model-select"
             value={selectedModel}
             onChange={handleModelChange}
-            className="w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow duration-200"
+            disabled={byokBlocked}
+            className={`w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-700 transition-shadow duration-200 ${
+              byokBlocked
+                ? "opacity-60 cursor-not-allowed"
+                : "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            }`}
           >
             {models.map((model) => (
               <option key={model} value={model}>
@@ -333,7 +376,7 @@ const ImageToLatex = () => {
         <button
           type="submit"
           className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          disabled={loading || !selectedFile}
+          disabled={loading || !selectedFile || byokBlocked}
           data-umami-event="Generate LaTeX from Image button"
           data-umami-event-structure-type={structureType}
         >
@@ -365,11 +408,48 @@ const ImageToLatex = () => {
         )}
       </form>
 
+      {byokBlocked && (
+        <div className="w-full mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+          <FaInfoCircle className="text-amber-600 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-amber-900">
+            <p className="font-semibold">OpenRouter key required</p>
+            <p className="text-amber-800">
+              BYOK is enabled. Add your OpenRouter API key in your profile to
+              use Image to LaTeX.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 mt-2">
+              <Link
+                to="/profile"
+                className="text-blue-700 hover:text-blue-900 font-semibold"
+              >
+                Go to Profile
+              </Link>
+              <Link
+                to="/byok-tutorial"
+                className="text-blue-700 hover:text-blue-900 font-semibold"
+              >
+                How to get a key
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Error Display */}
       {error && (
         <div className="w-full mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
           <FaTimesCircle className="text-red-500 mt-0.5 flex-shrink-0" />
-          <p className="text-red-700 text-sm">{error}</p>
+          <div>
+            <p className="text-red-700 text-sm">{error}</p>
+            {error.toLowerCase().includes("openrouter key not configured") && (
+              <Link
+                to="/byok-tutorial"
+                className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800 mt-2"
+              >
+                How to get an OpenRouter key
+              </Link>
+            )}
+          </div>
         </div>
       )}
 

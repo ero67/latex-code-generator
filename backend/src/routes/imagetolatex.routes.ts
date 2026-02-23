@@ -7,7 +7,7 @@ import { requireAdmin } from "../middleware/admin";
 
 const router: Router = express.Router();
 
-router.post("/generate", upload.single("image"), convertImageToLatex);
+router.post("/generate", auth, upload.single("image"), convertImageToLatex);
 router.post(
   "/benchmark",
   auth,

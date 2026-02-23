@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FaPlus, FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
 import ModelService from "../../services/model.service";
+import SettingsService from "../../services/settings.service";
 
 const ModelManager = () => {
   const [models, setModels] = useState([]);
@@ -10,6 +11,9 @@ const ModelManager = () => {
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newEnabled, setNewEnabled] = useState(true);
   const [nameEdits, setNameEdits] = useState({});
+  const [byokEnabled, setByokEnabled] = useState(false);
+  const [byokLoading, setByokLoading] = useState(true);
+  const [byokSaving, setByokSaving] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -32,9 +36,46 @@ const ModelManager = () => {
     }
   };
 
+  const loadSettings = async () => {
+    try {
+      setByokLoading(true);
+      const response = await SettingsService.getSettings(token);
+      const settings = response.data?.data;
+      setByokEnabled(Boolean(settings?.byokEnabled));
+    } catch (error) {
+      console.error("Failed to load settings:", error);
+      toast.error("Failed to load settings");
+    } finally {
+      setByokLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadModels();
+    loadSettings();
   }, []);
+
+  const handleToggleByok = async () => {
+    try {
+      setByokSaving(true);
+      const nextValue = !byokEnabled;
+      await SettingsService.updateSettings(token, {
+        byokEnabled: nextValue,
+        byokProvider: "openrouter",
+      });
+      setByokEnabled(nextValue);
+      toast.success(
+        nextValue
+          ? "BYOK enabled. Users must add their OpenRouter key."
+          : "BYOK disabled. Using server key."
+      );
+    } catch (error) {
+      console.error("Failed to update BYOK settings:", error);
+      toast.error("Failed to update BYOK settings");
+    } finally {
+      setByokSaving(false);
+    }
+  };
 
   const handleCreateModel = async (event) => {
     event.preventDefault();
@@ -94,6 +135,36 @@ const ModelManager = () => {
           Manage the list of OpenRouter models available in the Image to LaTeX
           dropdown.
         </p>
+      </div>
+
+      <div className="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Bring Your Own Key (BYOK)
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              When enabled, Image to LaTeX requires users to add their own
+              OpenRouter API key.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleByok}
+            disabled={byokLoading || byokSaving}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              byokEnabled
+                ? "bg-green-600 text-white hover:bg-green-700"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            } ${byokLoading || byokSaving ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            {byokLoading
+              ? "Loading..."
+              : byokEnabled
+              ? "BYOK Enabled"
+              : "BYOK Disabled"}
+          </button>
+        </div>
       </div>
 
       <form

@@ -8,6 +8,8 @@ server {
   listen 80;
   server_name ${DOMAIN};
 
+  client_max_body_size 25m;
+
   # Docker DNS resolver (required so nginx re-resolves service names after container IP changes)
   resolver 127.0.0.11 valid=10s ipv6=off;
 
@@ -70,6 +72,5 @@ server {
     proxy_set_header X-Forwarded-Proto $scheme;
   }
 }
-
 
 

@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { OpenAIService } from "../services/openai.service";
 import { OpenRouterService } from "../services/openrouter.service";
 import { OpenRouterModel } from "../models/OpenRouterModel";
+import { AppSettings } from "../models/AppSettings";
+import { User } from "../models/User";
+import { decryptSecret } from "../utils/encryption";
 import axios from "axios";
 import FormData from "form-data";
 
@@ -52,8 +55,25 @@ export const convertImageToLatex = async (req: Request, res: Response) => {
         .json({ status: "error", message: "Structure type is required." });
     }
 
+    const settings = await AppSettings.findOne().lean();
+    const byokEnabled = settings?.byokEnabled ?? false;
+    const byokProvider = settings?.byokProvider || "openrouter";
+
+    if (byokEnabled && byokProvider !== "openrouter") {
+      return res.status(500).json({
+        status: "error",
+        message: "BYOK provider is not supported",
+      });
+    }
+
     // Check API key based on provider
     if (AI_PROVIDER === "openai") {
+      if (byokEnabled) {
+        return res.status(500).json({
+          status: "error",
+          message: "BYOK is enabled but AI_PROVIDER is not openrouter",
+        });
+      }
       if (
         !process.env.OPENAI_API_KEY ||
         process.env.OPENAI_API_KEY === "your-openai-api-key-here"
@@ -65,15 +85,17 @@ export const convertImageToLatex = async (req: Request, res: Response) => {
         });
       }
     } else if (AI_PROVIDER === "openrouter") {
-      if (
-        !process.env.OPENROUTER_API_KEY ||
-        process.env.OPENROUTER_API_KEY === "your-openrouter-api-key-here"
-      ) {
-        return res.status(500).json({
-          status: "error",
-          message:
-            "OpenRouter API key not configured. Please set OPENROUTER_API_KEY environment variable.",
-        });
+      if (!byokEnabled) {
+        if (
+          !process.env.OPENROUTER_API_KEY ||
+          process.env.OPENROUTER_API_KEY === "your-openrouter-api-key-here"
+        ) {
+          return res.status(500).json({
+            status: "error",
+            message:
+              "OpenRouter API key not configured. Please set OPENROUTER_API_KEY environment variable.",
+          });
+        }
       }
     }
 
@@ -127,6 +149,42 @@ export const convertImageToLatex = async (req: Request, res: Response) => {
       }
     }
 
+    let openRouterApiKey: string | undefined;
+    if (AI_PROVIDER === "openrouter") {
+      if (byokEnabled) {
+        if (!req.user) {
+          return res.status(401).json({
+            status: "error",
+            message: "Please authenticate",
+          });
+        }
+
+        const user = await User.findById(req.user._id).select(
+          "+openRouterKeyCiphertext +openRouterKeyIv +openRouterKeyTag"
+        );
+
+        if (
+          !user?.openRouterKeyCiphertext ||
+          !user.openRouterKeyIv ||
+          !user.openRouterKeyTag
+        ) {
+          return res.status(400).json({
+            status: "error",
+            message:
+              "OpenRouter key not configured. Please save your key in your profile.",
+          });
+        }
+
+        openRouterApiKey = decryptSecret({
+          ciphertext: user.openRouterKeyCiphertext,
+          iv: user.openRouterKeyIv,
+          tag: user.openRouterKeyTag,
+        });
+      } else {
+        openRouterApiKey = process.env.OPENROUTER_API_KEY || "";
+      }
+    }
+
     const result =
       AI_PROVIDER === "openai"
         ? await OpenAIService.analyzeImage(
@@ -138,7 +196,8 @@ export const convertImageToLatex = async (req: Request, res: Response) => {
             processedBuffer,
             "image/png",
             structureType,
-            resolvedModel
+            resolvedModel,
+            openRouterApiKey
           );
 
     const responseTimeMs = Date.now() - startTime;

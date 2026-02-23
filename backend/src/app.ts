@@ -13,6 +13,8 @@ import { umamiRoutes } from "./routes/umami.routes";
 import { latexRoutes } from "./routes/latex.routes";
 import { ssoRoutes } from "./routes/sso.routes";
 import { modelsRoutes } from "./routes/models.routes";
+import { byokRoutes } from "./routes/byok.routes";
+import { settingsRoutes } from "./routes/settings.routes";
 
 // Initialize express
 const app = express();
@@ -103,6 +105,8 @@ app.use("/api/umami", umamiRoutes); // Proxy for Umami API
 app.use("/api/latex", latexRoutes); // LaTeX compilation service
 app.use("/api/sso", ssoRoutes); // SSO authentication
 app.use("/api/models", modelsRoutes); // OpenRouter model management
+app.use("/api/byok", byokRoutes); // BYOK key management
+app.use("/api/settings", settingsRoutes); // Application settings
 
 // Basic error handling
 app.use(
