@@ -54,6 +54,45 @@ function Navbar() {
     return items;
   }, [user]);
 
+  const adminPaths = ["/analytics", "/admin/models", "/admin/benchmark"];
+  const imageToLatexPath = "/image-to-latex";
+
+  const getNavLinkClass = (path, isActive) => {
+    let baseClass = linkBase;
+    let activeClass = linkActive;
+    let inactiveClass = linkInactive;
+
+    if (path === imageToLatexPath) {
+      baseClass = "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap";
+      activeClass = "bg-purple-600 text-white";
+      inactiveClass = "bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800";
+    } else if (adminPaths.includes(path)) {
+      baseClass = "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap";
+      activeClass = "bg-amber-100 text-amber-700";
+      inactiveClass = "bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800";
+    }
+
+    return `${baseClass} ${isActive ? activeClass : inactiveClass}`;
+  };
+
+  const getMobileNavLinkClass = (path, isActive) => {
+    let baseClass = mobileLinkBase;
+    let activeClass = mobileLinkActive;
+    let inactiveClass = mobileLinkInactive;
+
+    if (path === imageToLatexPath) {
+      baseClass = "flex items-center gap-3 px-4 py-3 text-base font-medium transition-colors border-b border-gray-100";
+      activeClass = "bg-purple-50 text-purple-700";
+      inactiveClass = "text-purple-700 hover:bg-purple-50";
+    } else if (adminPaths.includes(path)) {
+      baseClass = "flex items-center gap-3 px-4 py-3 text-base font-medium transition-colors border-b border-gray-100";
+      activeClass = "bg-amber-50 text-amber-700";
+      inactiveClass = "text-amber-700 hover:bg-amber-50";
+    }
+
+    return `${baseClass} ${isActive ? activeClass : inactiveClass}`;
+  };
+
   const linkBase =
     "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap";
   const linkActive = "bg-blue-100 text-blue-700";
@@ -84,7 +123,7 @@ function Navbar() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `${linkBase} ${isActive ? linkActive : linkInactive}`
+                  getNavLinkClass(item.path, isActive)
                 }
               >
                 <span className="text-lg">{item.icon}</span>
@@ -210,9 +249,7 @@ function Navbar() {
                       to={item.path}
                       onClick={() => setMobileMenuOpen(false)}
                       className={({ isActive }) =>
-                        `${mobileLinkBase} ${
-                          isActive ? mobileLinkActive : mobileLinkInactive
-                        }`
+                        getMobileNavLinkClass(item.path, isActive)
                       }
                     >
                       <span className="text-xl">{item.icon}</span>
