@@ -18,6 +18,37 @@ import { toast } from "react-toastify";
 import { parseAstLatex } from "../../utils/astParser";
 
 const SyntaxTreeD3 = () => {
+  const forestFillColorOptions = [
+    "red!20",
+    "blue!20",
+    "green!20",
+    "yellow!20",
+    "orange!20",
+    "gray!20",
+    "white",
+    "red",
+    "blue",
+    "green",
+    "yellow",
+    "orange",
+    "gray",
+    "black",
+  ];
+
+  const forestTextColorOptions = [
+    "black",
+    "white",
+    "red",
+    "blue",
+    "green",
+    "orange",
+    "gray",
+    "brown",
+    "purple",
+    "cyan",
+    "magenta",
+  ];
+
   const [treeData, setTreeData] = useState(null);
 
   const [isChecked, setIsChecked] = useState(false);
@@ -272,7 +303,109 @@ const SyntaxTreeD3 = () => {
     });
   }
 
+  const latexColorToCss = (colorValue, fallback) => {
+    if (!colorValue) return fallback;
+
+    const value = String(colorValue).trim();
+    if (!value) return fallback;
+
+    const latexMixMatch = value.match(/^([a-zA-Z]+)!(\d{1,3})$/);
+    if (!latexMixMatch) {
+      return value;
+    }
+
+    const baseColor = latexMixMatch[1].toLowerCase();
+    const percentage = Math.min(100, Math.max(0, Number(latexMixMatch[2])));
+    const mix = percentage / 100;
+
+    const baseRgbMap = {
+      red: [255, 0, 0],
+      blue: [0, 0, 255],
+      green: [0, 128, 0],
+      black: [0, 0, 0],
+      white: [255, 255, 255],
+      yellow: [255, 255, 0],
+      orange: [255, 165, 0],
+      gray: [128, 128, 128],
+      grey: [128, 128, 128],
+      brown: [165, 42, 42],
+      purple: [128, 0, 128],
+      cyan: [0, 255, 255],
+      magenta: [255, 0, 255],
+      pink: [255, 192, 203],
+    };
+
+    const base = baseRgbMap[baseColor];
+    if (!base) return fallback;
+
+    const r = Math.round(base[0] * mix + 255 * (1 - mix));
+    const g = Math.round(base[1] * mix + 255 * (1 - mix));
+    const b = Math.round(base[2] * mix + 255 * (1 - mix));
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+
+  const ensureArrowMarker = (svg) => {
+    let defs = svg.select("defs");
+    if (defs.empty()) {
+      defs = svg.append("defs");
+    }
+
+    if (defs.select("#ast-arrowhead").empty()) {
+      defs
+        .append("marker")
+        .attr("id", "ast-arrowhead")
+        .attr("viewBox", "0 0 10 10")
+        .attr("refX", 9)
+        .attr("refY", 5)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto-start-reverse")
+        .append("path")
+        .attr("d", "M 0 0 L 10 5 L 0 10 z")
+        .attr("fill", "#ADADAD");
+    }
+  };
+
+  const edgeDashArray = (edgeStyle) => {
+    if (edgeStyle === "dashed") return "8,6";
+    if (edgeStyle === "dotted") return "2,6";
+    return null;
+  };
+
+  const edgeStrokeWidth = (edgeStyle) => (edgeStyle === "thick" ? 6 : 4);
+
+  const renderNodeShapeAndLabel = (nodes, selectedId) => {
+    const circles = nodes.filter((d) => d.data.shape !== "box");
+    circles
+      .append("circle")
+      .attr("r", 15)
+      .attr("stroke", (d) => (d.data.id === selectedId ? "#2563eb" : "black"))
+      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 1))
+      .attr("fill", (d) => latexColorToCss(d.data.fillColor, "white"));
+
+    const boxes = nodes.filter((d) => d.data.shape === "box");
+    boxes
+      .append("rect")
+      .attr("x", -20)
+      .attr("y", -15)
+      .attr("width", 40)
+      .attr("height", 30)
+      .attr("stroke", (d) => (d.data.id === selectedId ? "#2563eb" : "black"))
+      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 1))
+      .attr("fill", (d) => latexColorToCss(d.data.fillColor, "white"));
+
+    nodes
+      .append("text")
+      .attr("x", 0)
+      .attr("dy", 5)
+      .attr("text-anchor", "middle")
+      .attr("fill", (d) => latexColorToCss(d.data.textColor, "black"))
+      .text((d) => d.data.value);
+  };
+
   function renderRightToLeftTree(svg, root, svgWidth, svgHeight, selectedId) {
+    ensureArrowMarker(svg);
+
     // Draw the links (edges) between nodes
     svg
       .selectAll("path.link")
@@ -282,7 +415,11 @@ const SyntaxTreeD3 = () => {
       .attr("class", "link")
       .attr("fill", "none")
       .attr("stroke", "#ADADAD")
-      .attr("stroke-width", "4px")
+      .attr("stroke-width", (d) => edgeStrokeWidth(d.target.data.edgeStyle))
+      .attr("stroke-dasharray", (d) => edgeDashArray(d.target.data.edgeStyle))
+      .attr("marker-end", (d) =>
+        d.target.data.isArrow ? "url(#ast-arrowhead)" : null
+      )
       .attr(
         "d",
         d3
@@ -309,24 +446,12 @@ const SyntaxTreeD3 = () => {
         removeNode(d.data); // Call removeNode passing the data of the node to be removed
       });
 
-    // Add circles to represent nodes
-    nodes
-      .append("circle")
-      .attr("r", 15)
-      .attr("stroke", (d) => (d.data.id === selectedId ? "#2563eb" : "black"))
-      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 1))
-      .attr("fill", (d) => (d.data.id === selectedId ? "#e3f2fd" : "white"));
-
-    // Add labels to the nodes
-    nodes
-      .append("text")
-      .attr("x", 0)
-      .attr("dy", 5)
-      .attr("text-anchor", "middle")
-      .text((d) => d.data.value);
+    renderNodeShapeAndLabel(nodes, selectedId);
   }
 
   function renderLeftRightTree(svg, root, selectedId) {
+    ensureArrowMarker(svg);
+
     // Draw the links (edges) between nodes
     svg
       .selectAll("path.link")
@@ -336,7 +461,11 @@ const SyntaxTreeD3 = () => {
       .attr("class", "link")
       .attr("fill", "none")
       .attr("stroke", "#ADADAD")
-      .attr("stroke-width", "4px")
+      .attr("stroke-width", (d) => edgeStrokeWidth(d.target.data.edgeStyle))
+      .attr("stroke-dasharray", (d) => edgeDashArray(d.target.data.edgeStyle))
+      .attr("marker-end", (d) =>
+        d.target.data.isArrow ? "url(#ast-arrowhead)" : null
+      )
       .attr(
         "d",
         d3
@@ -360,24 +489,12 @@ const SyntaxTreeD3 = () => {
         removeNode(d.data); // Call removeNode passing the data of the node to be removed
       });
 
-    // Add circles to represent nodes
-    nodes
-      .append("circle")
-      .attr("r", 15)
-      .attr("stroke", (d) => (d.data.id === selectedId ? "#2563eb" : "black"))
-      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 1))
-      .attr("fill", (d) => (d.data.id === selectedId ? "#e3f2fd" : "white"));
-
-    // Add labels to the nodes
-    nodes
-      .append("text")
-      .attr("x", 0)
-      .attr("dy", 5)
-      .attr("text-anchor", "middle")
-      .text((d) => d.data.value);
+    renderNodeShapeAndLabel(nodes, selectedId);
   }
 
   function renderTopDownTree(svg, root, selectedId) {
+    ensureArrowMarker(svg);
+
     // Draw the links (edges) between nodes
     svg
       .selectAll("path.link")
@@ -387,7 +504,11 @@ const SyntaxTreeD3 = () => {
       .attr("class", "link")
       .attr("fill", "none")
       .attr("stroke", "#ADADAD")
-      .attr("stroke-width", "4px")
+      .attr("stroke-width", (d) => edgeStrokeWidth(d.target.data.edgeStyle))
+      .attr("stroke-dasharray", (d) => edgeDashArray(d.target.data.edgeStyle))
+      .attr("marker-end", (d) =>
+        d.target.data.isArrow ? "url(#ast-arrowhead)" : null
+      )
       .attr(
         "d",
         d3
@@ -411,24 +532,12 @@ const SyntaxTreeD3 = () => {
         removeNode(d.data); // Call removeNode passing the data of the node to be removed
       });
 
-    // Add circles to represent nodes
-    nodes
-      .append("circle")
-      .attr("r", 15)
-      .attr("stroke", (d) => (d.data.id === selectedId ? "#2563eb" : "black"))
-      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 1))
-      .attr("fill", (d) => (d.data.id === selectedId ? "#e3f2fd" : "white"));
-
-    // Add labels to the nodes
-    nodes
-      .append("text")
-      .attr("x", 0)
-      .attr("dy", 5)
-      .attr("text-anchor", "middle")
-      .text((d) => d.data.value);
+    renderNodeShapeAndLabel(nodes, selectedId);
   }
 
   function renderBottomUpTree(svg, root, svgHeight, selectedId) {
+    ensureArrowMarker(svg);
+
     // Draw the links (edges) between nodes
     const svgHeightNew = svgHeight - 150;
     svg
@@ -439,7 +548,11 @@ const SyntaxTreeD3 = () => {
       .attr("class", "link")
       .attr("fill", "none")
       .attr("stroke", "#ADADAD")
-      .attr("stroke-width", "4px")
+      .attr("stroke-width", (d) => edgeStrokeWidth(d.target.data.edgeStyle))
+      .attr("stroke-dasharray", (d) => edgeDashArray(d.target.data.edgeStyle))
+      .attr("marker-end", (d) =>
+        d.target.data.isArrow ? "url(#ast-arrowhead)" : null
+      )
       .attr(
         "d",
         d3
@@ -466,21 +579,7 @@ const SyntaxTreeD3 = () => {
         removeNode(d.data); // Call removeNode passing the data of the node to be removed
       });
 
-    // Add circles to represent nodes
-    nodes
-      .append("circle")
-      .attr("r", 15)
-      .attr("stroke", (d) => (d.data.id === selectedId ? "#2563eb" : "black"))
-      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 1))
-      .attr("fill", (d) => (d.data.id === selectedId ? "#e3f2fd" : "white"));
-
-    // Add labels to the nodes
-    nodes
-      .append("text")
-      .attr("x", 0)
-      .attr("dy", 5)
-      .attr("text-anchor", "middle")
-      .text((d) => d.data.value);
+    renderNodeShapeAndLabel(nodes, selectedId);
   }
 
   function calculateDepth(node, currentDepth = 0) {
@@ -624,16 +723,63 @@ const SyntaxTreeD3 = () => {
     setSelectedEdge(null);
   };
 
-  const generateLatexCode = (node, parentLabel = "") => {
+  const updateSelectedNodeField = (field, value) => {
+    if (!treeData || !selectedNode) return;
+    const cloned = JSON.parse(JSON.stringify(treeData));
+    const target = findNodeById(cloned, selectedNode.id);
+    if (!target) return;
+
+    if (value === "") {
+      delete target[field];
+    } else {
+      target[field] = value;
+    }
+
+    setTreeData(cloned);
+  };
+
+  const generateLatexCode = (node, parentLabel = null) => {
     if (!node) {
       return "";
     }
     let nodeLabel = isChecked ? `$${node.value}$` : node.value;
-    let latexCode = "[\n  " + nodeLabel;
+    const nodeOptions = [];
+
+    if (node.shape === "circle") {
+      nodeOptions.push("circle", "draw");
+    } else if (node.shape === "box") {
+      nodeOptions.push("draw");
+    }
+
+    if (node.fillColor) {
+      nodeOptions.push(`fill=${node.fillColor}`);
+    }
+
+    if (node.textColor) {
+      nodeOptions.push(`text=${node.textColor}`);
+    }
 
     if (parentLabel) {
       // Use parentLabel.position to set the label's position dynamically
-      latexCode += `, edge label={node[midway,${parentLabel.position},font=\\scriptsize,inner sep=1pt]{${parentLabel.text}}}`;
+      nodeOptions.push(
+        `edge label={node[midway,${parentLabel.position},font=\\scriptsize,inner sep=1pt]{${parentLabel.text}}}`
+      );
+    }
+
+    const edgeOptions = [];
+    if (["dashed", "dotted", "thick"].includes(node.edgeStyle)) {
+      edgeOptions.push(node.edgeStyle);
+    }
+    if (node.isArrow) {
+      edgeOptions.push("->");
+    }
+    if (edgeOptions.length > 0) {
+      nodeOptions.push(`edge={${edgeOptions.join(", ")}}`);
+    }
+
+    let latexCode = "[\n  " + nodeLabel;
+    if (nodeOptions.length > 0) {
+      latexCode += ", " + nodeOptions.join(", ");
     }
 
     if (node.children && node.children.length > 0) {
@@ -648,7 +794,7 @@ const SyntaxTreeD3 = () => {
         }
         let childLabel = child.label
           ? { text: child.label, position: position }
-          : "";
+          : null;
         return generateLatexCode(child, childLabel);
       });
       latexCode += childStrings.join("\n").replace(/^/gm, "  ");
@@ -995,14 +1141,92 @@ const SyntaxTreeD3 = () => {
                   type="text"
                   value={selectedNode.value ?? ""}
                   onChange={(e) => {
-                    const newValue = e.target.value;
-                    const cloned = JSON.parse(JSON.stringify(treeData));
-                    const target = findNodeById(cloned, selectedNode.id);
-                    if (target) target.value = newValue;
-                    setTreeData(cloned);
+                    updateSelectedNodeField("value", e.target.value);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Shape
+                </label>
+                <select
+                  value={selectedNode.shape ?? ""}
+                  onChange={(e) => updateSelectedNodeField("shape", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Default (none)</option>
+                  <option value="circle">Circle</option>
+                  <option value="box">Box</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fill Color (forest)
+                </label>
+                <select
+                  value={selectedNode.fillColor ?? ""}
+                  onChange={(e) => updateSelectedNodeField("fillColor", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Default (none)</option>
+                  {forestFillColorOptions.map((color) => (
+                    <option key={color} value={color}>
+                      {color}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Text Color (forest)
+                </label>
+                <select
+                  value={selectedNode.textColor ?? ""}
+                  onChange={(e) => updateSelectedNodeField("textColor", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Default (none)</option>
+                  {forestTextColorOptions.map((color) => (
+                    <option key={color} value={color}>
+                      {color}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Edge Style to Parent
+                </label>
+                <select
+                  value={selectedNode.edgeStyle ?? ""}
+                  onChange={(e) => updateSelectedNodeField("edgeStyle", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Default (none)</option>
+                  <option value="dashed">Dashed</option>
+                  <option value="dotted">Dotted</option>
+                  <option value="thick">Thick</option>
+                </select>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={Boolean(selectedNode.isArrow)}
+                  onChange={(e) =>
+                    updateSelectedNodeField("isArrow", e.target.checked ? true : "")
+                  }
+                />
+                <span>Arrow on edge to parent</span>
+              </label>
+
+              <div className="text-xs text-gray-500">
+                These options affect generated LaTeX (`forest`) for this node.
               </div>
 
               <div className="flex flex-wrap gap-2">

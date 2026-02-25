@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Editor from "@monaco-editor/react";
 import PDFViewer from "./PDFViewer";
 import { compileLaTeX } from "../../services/latex.service";
@@ -25,6 +25,12 @@ const LaTeXEditor = ({
   const [isCompiling, setIsCompiling] = useState(false);
   const [errors, setErrors] = useState([]);
   const [showPreview, setShowPreview] = useState(true);
+
+  useEffect(() => {
+    setCode(initialCode || "");
+    setPdfBase64(null);
+    setErrors([]);
+  }, [initialCode]);
 
   const handleEditorChange = (value) => {
     const newCode = value || "";
@@ -173,4 +179,3 @@ const LaTeXEditor = ({
 };
 
 export default LaTeXEditor;
-
