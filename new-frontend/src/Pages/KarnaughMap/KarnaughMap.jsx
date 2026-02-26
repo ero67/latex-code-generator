@@ -91,6 +91,40 @@ const BinaryRowLabels = ({ size }) => {
   );
 };
 
+const getSubmapGrayLabels = (count) => {
+  if (count === 2) return ["0", "1"];
+  if (count === 4) return ["00", "01", "11", "10"];
+  return ["0"];
+};
+
+const getTableConfig = (size, mapCount = 1) => {
+  const [rows, cols] = size.split("x").map(Number);
+  if (!rows || !cols) {
+    return {
+      rows: 0,
+      cols: 0,
+      rowVarsCount: 0,
+      colVarsCount: 0,
+      zVarsCount: 0,
+      totalVars: 0,
+      cellsPerMap: 0,
+    };
+  }
+
+  const rowVarsCount = Math.floor(Math.log2(rows));
+  const colVarsCount = Math.floor(Math.log2(cols));
+  const zVarsCount = Math.max(0, Math.log2(mapCount));
+  return {
+    rows,
+    cols,
+    rowVarsCount,
+    colVarsCount,
+    zVarsCount,
+    totalVars: rowVarsCount + colVarsCount + zVarsCount,
+    cellsPerMap: rows * cols,
+  };
+};
+
 const Kmap = () => {
   //edit stuff
   const { user } = useAuth();
@@ -108,6 +142,7 @@ const Kmap = () => {
   const [customVariablesAllowed, setCustomVariablesAllowed] = useState(false);
 
   const [tableSize, setTableSize] = useState("0x0");
+  const [submapCount, setSubmapCount] = useState(1);
   const [option, setOption] = useState("0");
   const [opposite, setOpposite] = useState("1");
   const [disabled, Disable] = useState(false);
@@ -115,6 +150,7 @@ const Kmap = () => {
   // edge implicant
   const [markingEdgeImplicant, setMarkingEdgeImplicant] = useState(false);
   const [edgeImplicants, addEdgeImplicant] = useState([]);
+  const [edgeImplicantSubmaps, setEdgeImplicantSubmaps] = useState([]);
   const [numberOfEdgeImplicants, setNumberOfEdgeImplicants] = useState(0);
   const [edgeImplicant, addPartOfEdgeImplicant] = useState([]);
 
@@ -126,6 +162,7 @@ const Kmap = () => {
 
   // default implicant
   const [implicants, addImplicant] = useState([]);
+  const [implicantSubmaps, setImplicantSubmaps] = useState([]);
   const [markingImplicant, setMarkingImplicant] = useState(false);
   const [numberOfImplicants, setNumberOfImplicants] = useState(0);
   const [implicant, addPartOfImplicant] = useState([]);
@@ -140,6 +177,9 @@ const Kmap = () => {
 
   // corner implicant
   const [implicantCorner, addImplicantCorner] = useState(false);
+  const [cornerImplicantSubmaps, setCornerImplicantSubmaps] = useState([0]);
+  const [selectedTargetSubmaps, setSelectedTargetSubmaps] = useState([0]);
+  const [activeSelectionMapIndex, setActiveSelectionMapIndex] = useState(null);
 
   const [latexInput, setLatexInput] = useState("");
 
@@ -155,13 +195,35 @@ const Kmap = () => {
   const [activeImplicantType, setActiveImplicantType] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
 
-  const [rows, cols] = tableSize.split("x").map(Number);
-  const rowVarsCount = Math.floor(Math.log2(rows));
-  const colVarsCount = Math.floor(Math.log2(cols));
-  const totalVars = rowVarsCount + colVarsCount;
+  const { rowVarsCount, colVarsCount, totalVars, cellsPerMap } = getTableConfig(
+    tableSize,
+    submapCount
+  );
+  const isMultiMap = submapCount > 1;
 
   const rowVariables = variables.slice(0, rowVarsCount);
-  const colVariables = variables.slice(rowVarsCount, totalVars);
+  const colVariables = variables.slice(rowVarsCount, rowVarsCount + colVarsCount);
+  const zVariables = variables.slice(rowVarsCount + colVarsCount, totalVars);
+
+  const clearImplicants = () => {
+    addImplicant([]);
+    setImplicantSubmaps([]);
+    addEdgeImplicant([]);
+    setEdgeImplicantSubmaps([]);
+    addPartOfImplicant([]);
+    addPartOfEdgeImplicant([]);
+    addPartOfSingleImplicantIndex([]);
+    addPartOfSingleEdgeImplicantIndex([]);
+    addImplicantCellIndexes([]);
+    addEdgeImplicantCellIndexes([]);
+    addImplicantCorner(false);
+    setCornerImplicantSubmaps([0]);
+    setNumberOfImplicants(0);
+    setNumberOfEdgeImplicants(0);
+    setMarkingImplicant(false);
+    setMarkingEdgeImplicant(false);
+    setActiveSelectionMapIndex(null);
+  };
 
   const VariableLabels = ({ labels, isColumn }) => (
     <div
@@ -203,6 +265,7 @@ const Kmap = () => {
   function getCellColor(
     row,
     col,
+    mapIndex,
     // activeImplicantIndex,
     activeImplicantType,
     implicantCellIndexes,
@@ -225,22 +288,50 @@ const Kmap = () => {
         return;
       }
       if (
-        activeImplicant.some((cell) => cell.row === row && cell.col === col)
+        activeImplicant.some(
+          (cell) =>
+            cell.row === row &&
+            cell.col === col &&
+            (cell.mapIndex ?? 0) === mapIndex
+        )
       ) {
         return activeColor; // Color for active implicant cells
       }
+    }
+
+    if (
+      defaultColor &&
+      (implicantCellIndexes.some((group) =>
+        group.some(
+          (cell) =>
+            cell.row === row &&
+            cell.col === col &&
+            (cell.mapIndex ?? 0) === mapIndex
+        )
+      ) ||
+        edgeimplicantCellIndexes.some((group) =>
+          group.some(
+            (cell) =>
+              cell.row === row &&
+              cell.col === col &&
+              (cell.mapIndex ?? 0) === mapIndex
+          )
+        ))
+    ) {
+      return defaultColor;
     }
 
     return null; // No color if the cell is not part of any implicant
   }
 
   // zmena velkosti tabulky
-  const handleTableSizeChange = (event) => {
-    const newSize = event.target.value;
+  const handleTableSizeChange = (newSize, maps = 1) => {
     setTableSize(newSize);
-    const [rows, cols] = newSize.split("x").map(Number);
-    const totalVars = Math.ceil(Math.log2(rows * cols));
-    setVariables(Array(totalVars).fill(""));
+    setSubmapCount(maps);
+    const config = getTableConfig(newSize, maps);
+    setVariables(Array(config.totalVars).fill(""));
+    setCellValues(Array(config.cellsPerMap * maps).fill(""));
+    clearImplicants();
   };
 
   // zmena hodnoty ktoru budeme davat do cells na ktore budeme klikat
@@ -261,27 +352,22 @@ const Kmap = () => {
     setEdgeImplicantDisabled(false);
     if (tableSize === "4x4") {
       setCornerImplicantDisabled(false);
+    } else {
+      setCornerImplicantDisabled(true);
     }
     setOption(null);
     setOpposite(null);
 
     const kmapContainer = document.querySelector(".karnaugh-map");
-    const rect = kmapContainer.getBoundingClientRect();
-    setMapHeight(rect.height);
-    setMapWidth(rect.width);
+    if (kmapContainer) {
+      const rect = kmapContainer.getBoundingClientRect();
+      setMapHeight(rect.height);
+      setMapWidth(rect.width);
+    }
   };
   // TODO len passnut array z backendu do tejto funckie
   const fillCellsOnEdit = (cellsFromBackend) => {
-    // Loop through all the cells in the table
-    const cells = document.getElementsByClassName("cell");
-    let i = 0;
-    for (let cell of cells) {
-      // If the cell is empty, set its value to the opposite number
-      // if (!cell.textContent) {
-      cell.textContent = cellsFromBackend[i];
-      i++;
-      // }
-    }
+    setCellValues(cellsFromBackend || []);
   };
 
   // Define a function to fill the cells with the opposite number
@@ -297,8 +383,7 @@ const Kmap = () => {
   // };
 
   const fillCells = () => {
-    const [rows, cols] = tableSize.split("x").map(Number);
-    const totalCells = rows * cols;
+    const totalCells = cellsPerMap * submapCount;
     const newCellValues = [...cellValues];
 
     // Fill any empty cells with the selected option
@@ -312,16 +397,16 @@ const Kmap = () => {
   };
 
   const getContentOfCells = () => {
-    const cells = document.getElementsByClassName("cell");
-    let content = [];
-    for (let cell of cells) {
-      content.push(cell.textContent);
-    }
-
-    return content;
+    const totalCells = cellsPerMap * submapCount;
+    return Array.from({ length: totalCells }, (_, i) => cellValues[i] || "");
   };
 
   const addCornerImplicant = () => {
+    const targetSubmaps =
+      isMultiMap && selectedTargetSubmaps.length > 0
+        ? [...selectedTargetSubmaps].sort((a, b) => a - b)
+        : [0];
+
     // Correctly adding all corner indices in a single update
     const newEdgeImplicant = [...edgeImplicant, 0, 2, 8, 10];
 
@@ -334,25 +419,31 @@ const Kmap = () => {
 
     addPartOfSingleEdgeImplicantIndex(newSingleEdgeImplicantIndexes);
 
+    const mappedCornerCells = targetSubmaps.flatMap((submap) =>
+      newSingleEdgeImplicantIndexes.map((cell) => ({
+        row: cell.row,
+        col: cell.col,
+        mapIndex: submap,
+      }))
+    );
+
     // Final state updates
     addEdgeImplicant([...edgeImplicants, newEdgeImplicant]);
+    setEdgeImplicantSubmaps([...edgeImplicantSubmaps, targetSubmaps]);
     addImplicantCorner(true);
-    addEdgeImplicantCellIndexes([
-      ...edgeimplicantCellIndexes,
-      newSingleEdgeImplicantIndexes,
-    ]);
+    setCornerImplicantSubmaps(targetSubmaps);
+    addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes, mappedCornerCells]);
     addPartOfEdgeImplicant([]);
     addPartOfSingleEdgeImplicantIndex([]);
     setNumberOfEdgeImplicants(0);
+    setActiveSelectionMapIndex(null);
   };
 
   const generateCodeLaTeX = () => {
-    const [rows, cols] = tableSize.split("x").map(Number);
-
-    // Calculate the number of variables based on powers of 2
-    const rowVarsCount = Math.floor(Math.log2(rows));
-    const colVarsCount = Math.floor(Math.log2(cols));
-    const totalVars = rowVarsCount + colVarsCount;
+    const { rows, cols, rowVarsCount, colVarsCount } = getTableConfig(
+      tableSize,
+      submapCount
+    );
 
     // Allocate variables based on the calculated counts
     const rowLabels = variables
@@ -361,7 +452,12 @@ const Kmap = () => {
       .map((v) => `${v}`)
       .join("][");
     const colLabels = variables
-      .slice(rowVarsCount, totalVars)
+      .slice(rowVarsCount, rowVarsCount + colVarsCount)
+      .reverse()
+      .map((v) => `${v}`)
+      .join("][");
+    const zLabels = variables
+      .slice(rowVarsCount + colVarsCount, totalVars)
       .reverse()
       .map((v) => `${v}`)
       .join("][");
@@ -376,9 +472,13 @@ const Kmap = () => {
     }
 
     if (customVariablesAllowed) {
-      code += `\\begin{karnaugh-map}[${cols}][${rows}][1][${colLabels}][${rowLabels}]\n`;
+      code += `\\begin{karnaugh-map}[${cols}][${rows}][${submapCount}][${colLabels}][${rowLabels}]`;
+      if (submapCount > 1) {
+        code += `][${zLabels}]`;
+      }
+      code += `\n`;
     } else {
-      code += `\\begin{karnaugh-map}[${cols}][${rows}][1]\n`;
+      code += `\\begin{karnaugh-map}[${cols}][${rows}][${submapCount}]\n`;
     }
 
     code += "       \\manualterms{";
@@ -398,17 +498,25 @@ const Kmap = () => {
 
     let indexes_2_x_1 = [[0], [1]];
     // generating the code for manualterms
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        if (cols === 2 && rows === 2) {
-          code += content[indexes_2_x_2[row][col]];
-        } else if (cols === 1) {
-          code += content[indexes_2_x_1[row][col]];
-        } else {
-          code += content[indexes[row][col]];
-        }
-        if (row * cols + col < content.length - 1) {
-          code += ",";
+    const totalTerms = rows * cols * submapCount;
+    let termCounter = 0;
+    for (let mapIndex = 0; mapIndex < submapCount; mapIndex++) {
+      const offset = mapIndex * rows * cols;
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          let value = "";
+          if (cols === 2 && rows === 2) {
+            value = content[offset + indexes_2_x_2[row][col]] || "";
+          } else if (cols === 1) {
+            value = content[offset + indexes_2_x_1[row][col]] || "";
+          } else {
+            value = content[offset + indexes[row][col]] || "";
+          }
+          code += value;
+          termCounter += 1;
+          if (termCounter < totalTerms) {
+            code += ",";
+          }
         }
       }
     }
@@ -418,18 +526,25 @@ const Kmap = () => {
     //required number of {} in \implicant command is 2 so we can hardcode it
     if (implicants.length > 0) {
       for (let row = 0; row < implicants.length; row++) {
+        const submaps = implicantSubmaps[row] || [0];
+        const submapArg =
+          submapCount > 1 ? `[${submaps.join(",")}]` : "";
         if (implicants[row][0] === undefined) {
           continue;
         } else if (implicants[row].length === 1) {
-          code += `       \\implicant{${implicants[row][0]}}{${implicants[row][0]}}\n`;
+          code += `       \\implicant{${implicants[row][0]}}{${implicants[row][0]}}${submapArg}\n`;
         } else {
-          code += `       \\implicant{${implicants[row][0]}}{${implicants[row][1]}}\n`;
+          code += `       \\implicant{${implicants[row][0]}}{${implicants[row][1]}}${submapArg}\n`;
         }
       }
     }
 
     if (implicantCorner && rows === 4 && cols === 4) {
-      code += "       \\implicantcorner\n";
+      const cornerSubmapArg =
+        submapCount > 1 && cornerImplicantSubmaps.length > 0
+          ? `[${cornerImplicantSubmaps.join(",")}]`
+          : "";
+      code += `       \\implicantcorner${cornerSubmapArg}\n`;
     } else if (implicantCorner && (rows !== 4 || cols !== 4)) {
       toast.error("Implicant na rohy sa dá zaznačiť len na poliach rozmeru 4x4");
     }
@@ -438,8 +553,11 @@ const Kmap = () => {
     // required number of {} for \implicantedge command is 4
     // if i want to mark only 2 cells i need to put both indexes twice
     for (let row = 0; row < edgeImplicants.length; row++) {
+      const submaps = edgeImplicantSubmaps[row] || [0];
+      const submapArg =
+        submapCount > 1 ? `[${submaps.join(",")}]` : "";
       if (edgeImplicants[row].length === 2) {
-        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}\n`;
+        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][1]}}${submapArg}\n`;
       } else if (edgeImplicants[row].length === 4) {
         const [firstindex, secondindex, thirdindex, fourthindex] =
           edgeImplicants[row];
@@ -452,14 +570,15 @@ const Kmap = () => {
         ) {
           continue;
         } else {
-          code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
+          code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}${submapArg}\n`;
         }
       } else if (edgeImplicants[row].length === 6) {
-        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}{${edgeImplicants[row][5]}}\n`;
+        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}{${edgeImplicants[row][5]}}${submapArg}\n`;
       } else if (edgeImplicants[row].length === 8) {
-        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}\n`;
+        code += `       \\implicantedge{${edgeImplicants[row][0]}}{${edgeImplicants[row][1]}}{${edgeImplicants[row][2]}}{${edgeImplicants[row][3]}}${submapArg}\n`;
       }
     }
+
     code += "\\end{karnaugh-map}";
     if (includePreamble) {
       code += "\n\\end{document}";
@@ -502,19 +621,20 @@ const Kmap = () => {
         implicantIndices.push({ row: r, col: c });
       }
     }
+    let kmIndices = [];
     if (rows === 2 && cols === 2) {
-      implicant[0] = indexes_2_x_2[topLeft.row][topLeft.col];
-      implicant[1] = indexes_2_x_2[bottomRight.row][bottomRight.col];
+      kmIndices = [
+        indexes_2_x_2[topLeft.row][topLeft.col],
+        indexes_2_x_2[bottomRight.row][bottomRight.col],
+      ];
     } else {
-      implicant[0] = indexes[topLeft.row][topLeft.col];
-      implicant[1] = indexes[bottomRight.row][bottomRight.col];
+      kmIndices = [
+        indexes[topLeft.row][topLeft.col],
+        indexes[bottomRight.row][bottomRight.col],
+      ];
     }
 
-    // Add the newly calculated implicant to the list of implicants
-    addImplicant([...implicants, implicant]);
-
-    // Return the indices of the cells forming the implicant
-    return implicantIndices;
+    return { implicantIndices, kmIndices };
   }
 
   const [isEightEdteHorizontal, setIsEightEdgeHorizontal] = useState(true);
@@ -619,6 +739,10 @@ const Kmap = () => {
   //handle logic of finish implicant button and all things that this button press triggers
   const finishImplicant = () => {
     const [rows, cols] = tableSize.split("x").map(Number);
+    const targetSubmaps =
+      isMultiMap && selectedTargetSubmaps.length > 0
+        ? [...selectedTargetSubmaps].sort((a, b) => a - b)
+        : [0];
     let indexes = [
       [0, 1, 3, 2],
       [4, 5, 7, 6],
@@ -635,26 +759,42 @@ const Kmap = () => {
       //adds implicant to the all implicants list
       if (implicant.length > 0) {
         //logic for addding indexes of all cells which are part of the implicant to the another array
-        let singeImplicantIndex = [];
+        let singleImplicantIndex = [];
+        let kmIndices = [];
         if (singeImplicantIndexes[1] === undefined) {
-          singeImplicantIndex = calculateImplicantIndices(
+          const calculated = calculateImplicantIndices(
             singeImplicantIndexes[0],
             singeImplicantIndexes[0]
           );
+          singleImplicantIndex = calculated.implicantIndices;
+          kmIndices = calculated.kmIndices;
         } else {
-          singeImplicantIndex = calculateImplicantIndices(
+          const calculated = calculateImplicantIndices(
             singeImplicantIndexes[0],
             singeImplicantIndexes[1]
           );
+          singleImplicantIndex = calculated.implicantIndices;
+          kmIndices = calculated.kmIndices;
         }
 
-        addImplicantCellIndexes([...implicantCellIndexes, singeImplicantIndex]);
+        addImplicant([...implicants, kmIndices]);
+        setImplicantSubmaps([...implicantSubmaps, targetSubmaps]);
+
+        const mappedCells = targetSubmaps.flatMap((submap) =>
+          singleImplicantIndex.map((cell) => ({
+            row: cell.row,
+            col: cell.col,
+            mapIndex: submap,
+          }))
+        );
+        addImplicantCellIndexes([...implicantCellIndexes, mappedCells]);
       }
       //reseting variables connected with adding implicant
       addPartOfSingleImplicantIndex([]);
       addPartOfImplicant([]);
       setNumberOfImplicants(0);
       setMarkingImplicant(false);
+      setActiveSelectionMapIndex(null);
     }
     // LOGIC FOR PROCESSING EDGE IMPLICANT AFTER USER IS DONE SELECTING CELLS OF THE IMPLICANT
     else if (markingEdgeImplicant) {
@@ -767,21 +907,27 @@ const Kmap = () => {
               fullimplicant[6],
             ];
           }
-          addEdgeImplicant([
-            ...edgeImplicants,
-            tempFullEdgeImplicant_kmindexes,
-          ]);
-          addEdgeImplicantCellIndexes([
-            ...edgeimplicantCellIndexes,
-            tempFullEdgeImplicant_realindexes,
-          ]);
+          addEdgeImplicant([...edgeImplicants, tempFullEdgeImplicant_kmindexes]);
+          setEdgeImplicantSubmaps([...edgeImplicantSubmaps, targetSubmaps]);
+          const mappedEdgeCells = targetSubmaps.flatMap((submap) =>
+            tempFullEdgeImplicant_realindexes.map((cell) => ({
+              row: cell.row,
+              col: cell.col,
+              mapIndex: submap,
+            }))
+          );
+          addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes, mappedEdgeCells]);
         } else {
           addEdgeImplicant([...edgeImplicants, fullEdgeImplicant]);
-
-          addEdgeImplicantCellIndexes([
-            ...edgeimplicantCellIndexes,
-            fullimplicant,
-          ]);
+          setEdgeImplicantSubmaps([...edgeImplicantSubmaps, targetSubmaps]);
+          const mappedEdgeCells = targetSubmaps.flatMap((submap) =>
+            fullimplicant.map((cell) => ({
+              row: cell.row,
+              col: cell.col,
+              mapIndex: submap,
+            }))
+          );
+          addEdgeImplicantCellIndexes([...edgeimplicantCellIndexes, mappedEdgeCells]);
         }
       }
       ////// CLEARING DATA FOR EDGE IMPLICANT AFTER ADDING IT TO HE FINAL ARRAY
@@ -789,6 +935,7 @@ const Kmap = () => {
       addPartOfSingleEdgeImplicantIndex([]);
       setNumberOfEdgeImplicants(0);
       setMarkingEdgeImplicant(false);
+      setActiveSelectionMapIndex(null);
     }
     setfinishImplicantDisabled(true);
     setClassicImplicantDisabled(false);
@@ -802,6 +949,9 @@ const Kmap = () => {
   //set up buttons settings and interface when adding deafult implicant
   const addingimplicant = () => {
     setMarkingImplicant(!markingImplicant);
+    if (markingImplicant) {
+      setActiveSelectionMapIndex(null);
+    }
     setfinishImplicantDisabled(!finishImplicantDisabled);
     setClassicImplicantDisabled(false);
     setEdgeImplicantDisabled(!edgeImplicantDisabled);
@@ -813,6 +963,9 @@ const Kmap = () => {
   //set up buttons settings and interface when adding edge implicant
   const addingEdgeimplicant = () => {
     setMarkingEdgeImplicant(!markingEdgeImplicant);
+    if (markingEdgeImplicant) {
+      setActiveSelectionMapIndex(null);
+    }
 
     setfinishImplicantDisabled(false);
     setClassicImplicantDisabled(!classicImplicantDisabled);
@@ -878,11 +1031,14 @@ const Kmap = () => {
   // };
 
   useEffect(() => {
-    const [rows, cols] = tableSize.split("x").map(Number);
-    setCellValues(Array(rows * cols).fill(""));
-  }, [tableSize]);
+    setCellValues(Array(cellsPerMap * submapCount).fill(""));
+  }, [tableSize, submapCount, cellsPerMap]);
 
-  const handleCellClick = (row, col) => {
+  useEffect(() => {
+    setSelectedTargetSubmaps(Array.from({ length: submapCount }, (_, i) => i));
+  }, [submapCount]);
+
+  const handleCellClick = (row, col, mapIndex = 0) => {
     let indexes = [];
     let rows = 0;
     let cols = 0;
@@ -910,7 +1066,7 @@ const Kmap = () => {
     // If we're in the initial configuration phase (not in the implicant part)
     if (!disabled) {
       const newCellValues = [...cellValues];
-      const index = row * cols + col;
+      const index = mapIndex * rows * cols + row * cols + col;
 
       // Store the current option value directly (0 or 1)
       newCellValues[index] = option;
@@ -920,10 +1076,24 @@ const Kmap = () => {
     }
     // The rest of your existing code for implicant handling
     if (markingImplicant && implicant.length <= 1) {
+      if (activeSelectionMapIndex !== null && activeSelectionMapIndex !== mapIndex) {
+        toast.error("Select implicant points on the same submap");
+        return;
+      }
+      if (activeSelectionMapIndex === null) {
+        setActiveSelectionMapIndex(mapIndex);
+      }
       addPartOfImplicant([...implicant, indexes[row][col]]);
       addPartOfSingleImplicantIndex([...singeImplicantIndexes, { row, col }]);
       setNumberOfImplicants(numberOfImplicants + 1);
     } else if (markingEdgeImplicant) {
+      if (activeSelectionMapIndex !== null && activeSelectionMapIndex !== mapIndex) {
+        toast.error("Select edge implicant points on the same submap");
+        return;
+      }
+      if (activeSelectionMapIndex === null) {
+        setActiveSelectionMapIndex(mapIndex);
+      }
       if (row === 0 || row === rows - 1 || col === 0 || col === cols - 1) {
         addPartOfEdgeImplicant([...edgeImplicant, indexes[row][col]]);
         addPartOfSingleEdgeImplicantIndex([
@@ -948,7 +1118,7 @@ const Kmap = () => {
     // Additional actions here based on the updated 'implicant' state
   }, [implicant, edgeImplicant]); // This effect runs whenever 'implicant' changes
 
-  const generateTable = () => {
+  const generateTable = (mapIndex = 0) => {
     // get the number of rows and columns from the tableSize string
     const [rows, cols] = tableSize.split("x").map(Number);
     const table = [];
@@ -962,18 +1132,21 @@ const Kmap = () => {
           <Cell
             key={`${row}${col}`}
             option={option}
-            onClick={handleCellClick}
+            onClick={(clickedRow, clickedCol) =>
+              handleCellClick(clickedRow, clickedCol, mapIndex)
+            }
             row={row}
             col={col}
             disabled={disabled}
-            value={cellValues[row * cols + col] || ""}
+            value={cellValues[mapIndex * rows * cols + row * cols + col] || ""}
             cellColor={getCellColor(
               row,
               col,
+              mapIndex,
               activeImplicantType,
               implicantCellIndexes,
               edgeimplicantCellIndexes,
-              null,
+              isMultiMap ? "rgba(148, 163, 184, 0.35)" : null,
               "#b5b5b5"
             )}
           />
@@ -994,13 +1167,8 @@ const Kmap = () => {
     setClassicImplicantDisabled(true);
     setEdgeImplicantDisabled(true);
     setCornerImplicantDisabled(true);
-    setMarkingEdgeImplicant(false);
-    setMarkingImplicant(false);
     setfinishImplicantDisabled(true);
-    addImplicant([]);
-    addEdgeImplicant([]);
-    addImplicantCellIndexes([]);
-    addEdgeImplicantCellIndexes([]);
+    clearImplicants();
   };
 
   // Import handler that mirrors DB-load logic using structured parse
@@ -1010,15 +1178,36 @@ const Kmap = () => {
       const mapSize = parsed.tableSize;
       setCornerImplicantDisabled(mapSize !== "4x4");
       setTableSize(mapSize);
+      const [importRows, importCols] = mapSize.split("x").map(Number);
+      const importedCellsPerMap = importRows * importCols;
+      const inferredMapCount = Math.max(
+        1,
+        Math.round((parsed.cellValues?.length || importedCellsPerMap) / importedCellsPerMap)
+      );
+      setSubmapCount(inferredMapCount);
       setCustomVariablesAllowed(parsed.customVariablesAllowed);
-      setVariables(parsed.customVariablesValues);
+      clearImplicants();
+      const importConfig = getTableConfig(mapSize, inferredMapCount);
+      const importedVariables = parsed.customVariablesValues || [];
+      setVariables([
+        ...importedVariables,
+        ...Array(Math.max(0, importConfig.totalVars - importedVariables.length)).fill(""),
+      ]);
 
       // Cells - set state first, then fill DOM cells after render
       setCellValues(parsed.cellValues);
 
       // Implicants (karnaugh-map package indices)
       addImplicant(parsed.implicants || []);
+      setImplicantSubmaps(
+        parsed.implicantSubmaps ||
+          (parsed.implicants || []).map(() => [0])
+      );
       addEdgeImplicant(parsed.edgeImplicants || []);
+      setEdgeImplicantSubmaps(
+        parsed.edgeImplicantSubmaps ||
+          (parsed.edgeImplicants || []).map(() => [0])
+      );
 
       // Derive drawing indices from imported implicants
       const [rows, cols] = parsed.tableSize.split("x").map(Number);
@@ -1055,11 +1244,32 @@ const Kmap = () => {
         return cells;
       };
 
-      const importedImplicantCells = (parsed.implicants || []).map(([a,b]) => buildRectCells(a,b));
+      const importedImplicantCells = (parsed.implicants || []).map(
+        ([a, b], index) => {
+          const cells = buildRectCells(a, b);
+          const targets =
+            parsed.implicantSubmaps?.[index] ||
+            (inferredMapCount > 1
+              ? Array.from({ length: inferredMapCount }, (_, submap) => submap)
+              : [0]);
 
-      const importedEdgeCells = (parsed.edgeImplicants || []).map((arr) => {
+          return targets.flatMap((submap) =>
+            cells.map((cell) => ({ ...cell, mapIndex: submap }))
+          );
+        }
+      );
+
+      const importedEdgeCells = (parsed.edgeImplicants || []).map((arr, index) => {
         // Map each package index to row/col; keep order
-        return arr.map((idx) => mapIndexToRowCol(idx)).filter(Boolean);
+        const cells = arr.map((idx) => mapIndexToRowCol(idx)).filter(Boolean);
+        const targets =
+          parsed.edgeImplicantSubmaps?.[index] ||
+          (inferredMapCount > 1
+            ? Array.from({ length: inferredMapCount }, (_, submap) => submap)
+            : [0]);
+        return targets.flatMap((submap) =>
+          cells.map((cell) => ({ ...cell, mapIndex: submap }))
+        );
       });
 
       addImplicantCellIndexes(importedImplicantCells);
@@ -1067,16 +1277,13 @@ const Kmap = () => {
 
       // Corner implicant flag
       addImplicantCorner(parsed.cornerImplicant === true);
+      setCornerImplicantSubmaps(parsed.cornerImplicantSubmaps || [0]);
 
       // Switch to edit view and fill cells similar to DB load
       setTimeout(() => {
         // Fill cells using the same method as DB load
         fillCellsOnEdit(parsed.cellValues);
         handleDisable();
-        if (parsed.cornerImplicant && parsed.tableSize === "4x4") {
-          // Add the visual corner implicant rectangles if applicable
-          addCornerImplicant();
-        }
       }, 100);
     } catch (e) {
       toast.error("Failed to apply imported LaTeX");
@@ -1325,10 +1532,12 @@ const Kmap = () => {
 
   const handleRemoveImplicant = (index) => {
     const newImplicants = implicants.filter((_, i) => i !== index);
+    const newImplicantSubmaps = implicantSubmaps.filter((_, i) => i !== index);
     const newImplicantsIndexes = implicantCellIndexes.filter(
       (_, i) => i !== index
     );
     addImplicant(newImplicants);
+    setImplicantSubmaps(newImplicantSubmaps);
     addImplicantCellIndexes(newImplicantsIndexes);
   };
 
@@ -1342,25 +1551,34 @@ const Kmap = () => {
       fourthindex === 10
     ) {
       addImplicantCorner(false);
+      setCornerImplicantSubmaps([0]);
     }
     const newEdgeImplicants = edgeImplicants.filter((_, i) => i !== index);
+    const newEdgeImplicantSubmaps = edgeImplicantSubmaps.filter(
+      (_, i) => i !== index
+    );
     const newEdgeImplicantsIndexes = edgeimplicantCellIndexes.filter(
       (_, i) => i !== index
     );
     addEdgeImplicant(newEdgeImplicants);
+    setEdgeImplicantSubmaps(newEdgeImplicantSubmaps);
     addEdgeImplicantCellIndexes(newEdgeImplicantsIndexes);
   };
 
   const karnaughMapStructure = {
     tableSize: tableSize,
+    submapCount,
     implicants: implicants,
+    implicantSubmaps,
     implicantCellIndexes: implicantCellIndexes,
     edgeImplicantCellIndexes: edgeimplicantCellIndexes,
     edgeImplicants: edgeImplicants,
+    edgeImplicantSubmaps,
     cellValues: getContentOfCells(),
     customVariablesAllowed: customVariablesAllowed,
     customVariablesValues: variables,
     cornerImplicant: implicantCorner,
+    cornerImplicantSubmaps,
     userId: user?.id,
   };
 
@@ -1423,36 +1641,79 @@ const Kmap = () => {
   useEffect(() => {
     if (fetchedKarnaughMap) {
       const mapSize = fetchedKarnaughMap.tableSize;
+      const [savedRows, savedCols] = mapSize.split("x").map(Number);
+      const savedCellsPerMap = savedRows * savedCols;
+      const inferredMapCount = Math.max(
+        1,
+        fetchedKarnaughMap.submapCount ||
+          Math.round(
+            (fetchedKarnaughMap.cellValues?.length || savedCellsPerMap) /
+              savedCellsPerMap
+          )
+      );
       setCornerImplicantDisabled(mapSize !== "4x4");
       setTableSize(mapSize);
+      setSubmapCount(inferredMapCount);
+      clearImplicants();
       setTimeout(() => {
         fillCellsOnEdit(fetchedKarnaughMap.cellValues);
         handleDisable();
         setCustomVariablesAllowed(fetchedKarnaughMap.customVariablesAllowed);
-        setVariables(fetchedKarnaughMap.customVariablesValues);
+        const savedConfig = getTableConfig(mapSize, inferredMapCount);
+        const savedVars = fetchedKarnaughMap.customVariablesValues || [];
+        setVariables([
+          ...savedVars,
+          ...Array(Math.max(0, savedConfig.totalVars - savedVars.length)).fill(""),
+        ]);
         addImplicantCorner(fetchedKarnaughMap.cornerImplicant || false);
-        if (
-          fetchedKarnaughMap.implicants &&
-          fetchedKarnaughMap.implicants.length > 0
-        ) {
+        setCornerImplicantSubmaps(fetchedKarnaughMap.cornerImplicantSubmaps || [0]);
+        if (fetchedKarnaughMap.implicants && fetchedKarnaughMap.implicants.length > 0) {
           const importedImplicants = fetchedKarnaughMap.implicants;
           addImplicant(importedImplicants);
-
-          addImplicantCellIndexes(fetchedKarnaughMap.implicantCellIndexes);
+          setImplicantSubmaps(
+            fetchedKarnaughMap.implicantSubmaps ||
+              importedImplicants.map(() => [0])
+          );
+          const loadedImplicantCells = (fetchedKarnaughMap.implicantCellIndexes || []).map(
+            (group, index) => {
+              const hasMapIndex = group.some((cell) => cell.mapIndex !== undefined);
+              if (hasMapIndex) return group;
+              const targets =
+                fetchedKarnaughMap.implicantSubmaps?.[index] ||
+                (inferredMapCount > 1
+                  ? Array.from({ length: inferredMapCount }, (_, submap) => submap)
+                  : [0]);
+              return targets.flatMap((submap) =>
+                group.map((cell) => ({ ...cell, mapIndex: submap }))
+              );
+            }
+          );
+          addImplicantCellIndexes(loadedImplicantCells);
         }
-        if (
-          fetchedKarnaughMap.edgeImplicants &&
-          fetchedKarnaughMap.edgeImplicants.length > 0
-        ) {
+        if (fetchedKarnaughMap.edgeImplicants && fetchedKarnaughMap.edgeImplicants.length > 0) {
           const importedEdgeImplicants = fetchedKarnaughMap.edgeImplicants;
           addEdgeImplicant(importedEdgeImplicants);
-          addEdgeImplicantCellIndexes(
-            fetchedKarnaughMap.edgeImplicantCellIndexes
+          setEdgeImplicantSubmaps(
+            fetchedKarnaughMap.edgeImplicantSubmaps ||
+              importedEdgeImplicants.map(() => [0])
           );
+          const loadedEdgeCells = (fetchedKarnaughMap.edgeImplicantCellIndexes || []).map(
+            (group, index) => {
+              const hasMapIndex = group.some((cell) => cell.mapIndex !== undefined);
+              if (hasMapIndex) return group;
+              const targets =
+                fetchedKarnaughMap.edgeImplicantSubmaps?.[index] ||
+                (inferredMapCount > 1
+                  ? Array.from({ length: inferredMapCount }, (_, submap) => submap)
+                  : [0]);
+              return targets.flatMap((submap) =>
+                group.map((cell) => ({ ...cell, mapIndex: submap }))
+              );
+            }
+          );
+          addEdgeImplicantCellIndexes(loadedEdgeCells);
         }
-        if (fetchedKarnaughMap.cornerImplicant) {
-          addCornerImplicant();
-        }
+        // Corner implicant is represented through edge implicants and flags.
       }, 100);
     }
   }, [fetchedKarnaughMap]);
@@ -1482,8 +1743,11 @@ const Kmap = () => {
   }, [isEditMode]);
 
   useEffect(() => {
+    if (isMultiMap) {
+      return;
+    }
     drawImplicants(implicantCellIndexes);
-  }, [disabled, implicantCellIndexes, edgeimplicantCellIndexes]);
+  }, [disabled, implicantCellIndexes, edgeimplicantCellIndexes, isMultiMap]);
 
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
@@ -1505,7 +1769,9 @@ const Kmap = () => {
                   <button className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800 flex items-center justify-between w-40">
                     {tableSize === "0x0"
                       ? "Select size"
-                      : tableSize.replace("x", " × ")}
+                      : submapCount === 1
+                        ? tableSize.replace("x", " × ")
+                        : `${tableSize.replace("x", " × ")} × ${submapCount} maps`}
                     <svg
                       className="w-4 h-4 ml-2"
                       fill="none"
@@ -1524,23 +1790,27 @@ const Kmap = () => {
                 menu={[
                   {
                     label: "2 × 1",
-                    onClick: () =>
-                      handleTableSizeChange({ target: { value: "2x1" } }),
+                    onClick: () => handleTableSizeChange("2x1", 1),
                   },
                   {
                     label: "2 × 2",
-                    onClick: () =>
-                      handleTableSizeChange({ target: { value: "2x2" } }),
+                    onClick: () => handleTableSizeChange("2x2", 1),
                   },
                   {
                     label: "4 × 2",
-                    onClick: () =>
-                      handleTableSizeChange({ target: { value: "2x4" } }),
+                    onClick: () => handleTableSizeChange("2x4", 1),
                   },
                   {
                     label: "4 × 4",
-                    onClick: () =>
-                      handleTableSizeChange({ target: { value: "4x4" } }),
+                    onClick: () => handleTableSizeChange("4x4", 1),
+                  },
+                  {
+                    label: "5 vars (2 maps)",
+                    onClick: () => handleTableSizeChange("4x4", 2),
+                  },
+                  {
+                    label: "6 vars (4 maps)",
+                    onClick: () => handleTableSizeChange("4x4", 4),
                   },
                 ]}
                 className="inline-block"
@@ -1655,32 +1925,103 @@ const Kmap = () => {
               </button>
             </div>
           </div>
+          {isMultiMap && (
+            <div className="mt-4 border-t pt-4">
+              <div className="text-sm font-medium text-gray-700 mb-2">
+                Apply new implicant to submaps:
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {Array.from({ length: submapCount }).map((_, index) => (
+                  <label
+                    key={`target-submap-${index}`}
+                    className="flex items-center gap-2 text-sm text-gray-700"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedTargetSubmaps.includes(index)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedTargetSubmaps(
+                            Array.from(
+                              new Set([...selectedTargetSubmaps, index])
+                            )
+                          );
+                        } else {
+                          const next = selectedTargetSubmaps.filter(
+                            (value) => value !== index
+                          );
+                          setSelectedTargetSubmaps(next);
+                        }
+                      }}
+                    />
+                    <span>{`Submap ${index}`}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
-      {/* Karnaugh Map Container */}
-      <div className="flex flex-col items-center mb-8">
-        {customVariablesAllowed && (
-          <VariableLabels labels={colVariables} isColumn={true} />
-        )}
-        {disabled && <BinaryColumnLabels size={tableSize} />}
+      {/* Karnaugh Map + Inspector */}
+      <div className="w-full mb-8 grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
+        <div className="xl:col-span-2 bg-white rounded-lg shadow p-4 overflow-auto">
+          <div className="flex flex-col items-center">
+            {Array.from({ length: submapCount }).map((_, mapIndex) => {
+              const zGray = getSubmapGrayLabels(submapCount);
+              const zVariableLabel = zVariables.length > 0 ? zVariables.join("") : "Z";
+              const mapLabel =
+                submapCount > 1 ? `${zVariableLabel}=${zGray[mapIndex]}` : null;
 
-        <div className="flex items-center">
-          {customVariablesAllowed && (
-            <VariableLabels labels={rowVariables} isColumn={false} />
-          )}
-          {/* Binary Row Labels (00, 01, 11, 10) */}
-          {disabled && <BinaryRowLabels size={tableSize} />}
-          <div className="relative">
-            {generateTable()}
-            {disabled && (
-              <canvas
-                id="kmapCanvas"
-                width={mapWidth}
-                height={mapHeight}
-                className="absolute top-0 left-0 pointer-events-none"
-              />
-            )}
+              return (
+                <div key={`kmap-${mapIndex}`} className="mb-6">
+                  {mapLabel && (
+                    <div className="text-center text-sm font-semibold text-gray-700 mb-2">
+                      {`Submap ${mapIndex + 1}: ${mapLabel}`}
+                    </div>
+                  )}
+
+                  {customVariablesAllowed && (
+                    <VariableLabels labels={colVariables} isColumn={true} />
+                  )}
+                  {disabled && <BinaryColumnLabels size={tableSize} />}
+
+                  <div className="flex items-center">
+                    {customVariablesAllowed && (
+                      <VariableLabels labels={rowVariables} isColumn={false} />
+                    )}
+                    {disabled && <BinaryRowLabels size={tableSize} />}
+                    <div className="relative">
+                      {generateTable(mapIndex)}
+                      {disabled && !isMultiMap && mapIndex === 0 && (
+                        <canvas
+                          id="kmapCanvas"
+                          width={mapWidth}
+                          height={mapHeight}
+                          className="absolute top-0 left-0 pointer-events-none"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+        </div>
+
+        <div className="xl:sticky xl:top-4 bg-white rounded-lg shadow p-4 max-h-[80vh] overflow-y-auto">
+          <h2 className="text-lg font-semibold text-gray-700 mb-3">Inspector</h2>
+          <ImplicantsList
+            implicants={implicants}
+            implicantSubmaps={implicantSubmaps}
+            onImplicantClick={handleImplicantClick}
+            onRemoveImplicant={handleRemoveImplicant}
+          />
+          <EdgeImplicantList
+            edgeImplicants={edgeImplicants}
+            edgeImplicantSubmaps={edgeImplicantSubmaps}
+            onImplicantClick={handleImplicantClick}
+            onRemoveEdgeImplicant={handleRemoveEdgeImplicant}
+          />
         </div>
       </div>
       {/* Variables Section */}
@@ -1701,17 +2042,6 @@ const Kmap = () => {
         </div>
         {customVariablesAllowed && renderVarInputs()}
       </div>
-      {/* Implicant Lists */}
-      <ImplicantsList
-        implicants={implicants}
-        onImplicantClick={handleImplicantClick}
-        onRemoveImplicant={handleRemoveImplicant}
-      />
-      <EdgeImplicantList
-        edgeImplicants={edgeImplicants}
-        onImplicantClick={handleImplicantClick}
-        onRemoveEdgeImplicant={handleRemoveEdgeImplicant}
-      />
       {/* LaTeX Settings */}
       <div className="w-full bg-gray-100 p-4 rounded-lg shadow-sm mb-8 flex flex-wrap gap-6">
         <label className="flex items-center">

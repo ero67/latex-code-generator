@@ -233,31 +233,6 @@ const UserProfile = () => {
             )}
           </div>
 
-          {/* Account Status */}
-          <div className="mt-6 bg-gray-50 p-4 rounded-lg">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <FaUserTie className="mr-2 text-purple-500" />
-              Account Status
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full bg-green-500 mr-3"></div>
-                <div>
-                  <p className="text-sm text-gray-500">Account Status</p>
-                  <p className="font-medium text-green-600">Active</p>
-                </div>
-              </div>
-              {userData.isAdmin && (
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-yellow-500 mr-3"></div>
-                  <div>
-                    <p className="text-sm text-gray-500">Role</p>
-                    <p className="font-medium text-yellow-600">Administrator</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* BYOK Settings */}
           <div className="mt-6 bg-gray-50 p-4 rounded-lg">

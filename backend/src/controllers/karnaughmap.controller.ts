@@ -8,28 +8,36 @@ export const saveKM = async (
   try {
     const {
       tableSize,
+      submapCount,
       cellValues,
       implicants,
+      implicantSubmaps,
       implicantCellIndexes,
       edgeImplicants,
+      edgeImplicantSubmaps,
       edgeImplicantCellIndexes,
       customVariablesAllowed,
       customVariablesValues,
       cornerImplicant,
+      cornerImplicantSubmaps,
       userId,
     } = req.body;
 
     // Create new Karnaugh map
     const karnaughMap = new KarnaughMap({
       tableSize,
+      submapCount,
       cellValues,
       implicants,
+      implicantSubmaps,
       implicantCellIndexes,
       edgeImplicants,
+      edgeImplicantSubmaps,
       edgeImplicantCellIndexes,
       customVariablesAllowed,
       customVariablesValues,
       cornerImplicant,
+      cornerImplicantSubmaps,
       userId,
     });
 
@@ -108,11 +116,18 @@ export const updateKM = async (
     const { id } = req.params;
     const {
       tableSize,
+      submapCount,
       cellValues,
       implicants,
+      implicantSubmaps,
       implicantCellIndexes,
       edgeImplicants,
+      edgeImplicantSubmaps,
       edgeImplicantCellIndexes,
+      customVariablesAllowed,
+      customVariablesValues,
+      cornerImplicant,
+      cornerImplicantSubmaps,
       userId,
     } = req.body;
 
@@ -120,11 +135,18 @@ export const updateKM = async (
       id,
       {
         tableSize,
+        submapCount,
         cellValues,
         implicants,
+        implicantSubmaps,
         implicantCellIndexes,
         edgeImplicants,
+        edgeImplicantSubmaps,
         edgeImplicantCellIndexes,
+        customVariablesAllowed,
+        customVariablesValues,
+        cornerImplicant,
+        cornerImplicantSubmaps,
         userId,
       },
       { new: true, runValidators: true }
