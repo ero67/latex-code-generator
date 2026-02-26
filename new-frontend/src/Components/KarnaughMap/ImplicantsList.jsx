@@ -1,10 +1,11 @@
 const ImplicantsList = ({
   implicants,
+  implicantSubmaps = [],
   onImplicantClick,
   onRemoveImplicant,
 }) => {
   return (
-    <div className="w-full my-4 bg-white p-4 rounded-lg shadow">
+    <div className="w-full mb-4 bg-white p-4 rounded-lg shadow">
       <h3 className="text-lg font-semibold text-gray-700 mb-3">Implicants</h3>
       {implicants.length === 0 ? (
         <div className="text-gray-500 italic py-2 text-center border border-dashed border-gray-300 rounded-md bg-gray-50">
@@ -28,6 +29,11 @@ const ImplicantsList = ({
                   <span className="font-normal text-gray-700">
                     {implicant.join(", ")}
                   </span>
+                  {implicantSubmaps[index] && (
+                    <span className="font-normal text-gray-500 ml-2">
+                      {`(maps: ${implicantSubmaps[index].join(",")})`}
+                    </span>
+                  )}
                 </span>
               </div>
               <button
