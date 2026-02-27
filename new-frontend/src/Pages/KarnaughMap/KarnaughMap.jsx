@@ -1355,32 +1355,39 @@ const Kmap = () => {
     assignColorsToImplicants(implicants);
 
     const [rows, cols] = tableSize.split("x").map(Number);
-    const canvas = document.getElementById("kmapCanvas");
-    if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous drawings
+    for (let mapIndex = 0; mapIndex < submapCount; mapIndex++) {
+      const canvas = document.getElementById(`kmapCanvas-${mapIndex}`);
+      if (!canvas) continue;
 
-    const cellWidth = canvas.width / cols;
-    const cellHeight = canvas.height / rows;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous drawings
 
-    implicants.forEach((implicant) => {
-      const id = generateImplicantId(implicant);
-      const color = implicantColorMap[id]; // Retrieve the assigned color
+      const cellWidth = canvas.width / cols;
+      const cellHeight = canvas.height / rows;
 
-      const { minRow, maxRow, minCol, maxCol } =
-        calculateImplicantBoundaries(implicant);
+      implicants.forEach((implicant) => {
+        // Filter cells for this specific mapIndex
+        const mapCells = implicant.filter(cell => (cell.mapIndex || 0) === mapIndex);
+        if (mapCells.length === 0) return;
 
-      const x = minCol * cellWidth;
-      const y = minRow * cellHeight;
-      const width = (maxCol - minCol + 1) * cellWidth - 20;
-      const height = (maxRow - minRow + 1) * cellHeight - 20;
+        const id = generateImplicantId(implicant);
+        const color = implicantColorMap[id]; // Retrieve the assigned color
 
-      ctx.beginPath();
-      ctx.rect(x + 10, y + 10, width, height);
-      ctx.fillStyle = color;
-      ctx.fill();
-    });
+        const { minRow, maxRow, minCol, maxCol } =
+          calculateImplicantBoundaries(mapCells);
+
+        const x = minCol * cellWidth;
+        const y = minRow * cellHeight;
+        const width = (maxCol - minCol + 1) * cellWidth - 20;
+        const height = (maxRow - minRow + 1) * cellHeight - 20;
+
+        ctx.beginPath();
+        ctx.rect(x + 10, y + 10, width, height);
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+    }
 
     drawEdgeImplicants(edgeimplicantCellIndexes);
   };
@@ -1457,35 +1464,40 @@ const Kmap = () => {
   const drawEdgeImplicants = (edgeImplicants) => {
     console.log(edgeImplicants, "drawiiing");
     const [rows, cols] = tableSize.split("x").map(Number);
-    const canvas = document.getElementById("kmapCanvas");
-    if (!canvas) return;
-
     assignColorsToImplicants(edgeImplicants);
 
-    const ctx = canvas.getContext("2d");
+    for (let mapIndex = 0; mapIndex < submapCount; mapIndex++) {
+      const canvas = document.getElementById(`kmapCanvas-${mapIndex}`);
+      if (!canvas) continue;
 
-    const cellWidth = canvas.width / cols;
-    const cellHeight = canvas.height / rows;
+      const ctx = canvas.getContext("2d");
+      const cellWidth = canvas.width / cols;
+      const cellHeight = canvas.height / rows;
 
-    edgeImplicants.forEach((implicant) => {
-      const id = generateImplicantId(implicant);
-      const color = implicantColorMap[id]; // Retrieve the assigned color
+      edgeImplicants.forEach((implicant) => {
+        // Filter cells for this specific mapIndex
+        const mapCells = implicant.filter(cell => (cell.mapIndex || 0) === mapIndex);
+        if (mapCells.length === 0) return;
 
-      const [firstPart, secondPart, thirdPart, fourthPart, isEdge] =
-        divideEdgeImplicantsIntoTwo(implicant);
-      if (isEdge) {
-        drawImplicantPart(firstPart, color, ctx, cellWidth, cellHeight);
-        drawImplicantPart(secondPart, color, ctx, cellWidth, cellHeight);
-        drawImplicantPart(thirdPart, color, ctx, cellWidth, cellHeight);
-        drawImplicantPart(fourthPart, color, ctx, cellWidth, cellHeight);
-      } else {
-        // Draw first part
-        drawImplicantPart(firstPart, color, ctx, cellWidth, cellHeight);
+        const id = generateImplicantId(implicant);
+        const color = implicantColorMap[id]; // Retrieve the assigned color
 
-        // Draw second part
-        drawImplicantPart(secondPart, color, ctx, cellWidth, cellHeight);
-      }
-    });
+        const [firstPart, secondPart, thirdPart, fourthPart, isEdge] =
+          divideEdgeImplicantsIntoTwo(mapCells);
+        if (isEdge) {
+          drawImplicantPart(firstPart, color, ctx, cellWidth, cellHeight);
+          drawImplicantPart(secondPart, color, ctx, cellWidth, cellHeight);
+          drawImplicantPart(thirdPart, color, ctx, cellWidth, cellHeight);
+          drawImplicantPart(fourthPart, color, ctx, cellWidth, cellHeight);
+        } else {
+          // Draw first part
+          drawImplicantPart(firstPart, color, ctx, cellWidth, cellHeight);
+
+          // Draw second part
+          drawImplicantPart(secondPart, color, ctx, cellWidth, cellHeight);
+        }
+      });
+    }
   };
 
   //function for drawing one implicant part
@@ -1743,9 +1755,6 @@ const Kmap = () => {
   }, [isEditMode]);
 
   useEffect(() => {
-    if (isMultiMap) {
-      return;
-    }
     drawImplicants(implicantCellIndexes);
   }, [disabled, implicantCellIndexes, edgeimplicantCellIndexes, isMultiMap]);
 
@@ -1965,7 +1974,7 @@ const Kmap = () => {
       {/* Karnaugh Map + Inspector */}
       <div className="w-full mb-8 grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
         <div className="xl:col-span-2 bg-white rounded-lg shadow p-4 overflow-auto">
-          <div className="flex flex-col items-center">
+          <div className={`grid gap-8 justify-items-center ${submapCount > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
             {Array.from({ length: submapCount }).map((_, mapIndex) => {
               const zGray = getSubmapGrayLabels(submapCount);
               const zVariableLabel = zVariables.length > 0 ? zVariables.join("") : "Z";
@@ -1973,7 +1982,7 @@ const Kmap = () => {
                 submapCount > 1 ? `${zVariableLabel}=${zGray[mapIndex]}` : null;
 
               return (
-                <div key={`kmap-${mapIndex}`} className="mb-6">
+                <div key={`kmap-${mapIndex}`} className="flex flex-col items-center">
                   {mapLabel && (
                     <div className="text-center text-sm font-semibold text-gray-700 mb-2">
                       {`Submap ${mapIndex + 1}: ${mapLabel}`}
@@ -1992,9 +2001,9 @@ const Kmap = () => {
                     {disabled && <BinaryRowLabels size={tableSize} />}
                     <div className="relative">
                       {generateTable(mapIndex)}
-                      {disabled && !isMultiMap && mapIndex === 0 && (
+                      {disabled && (
                         <canvas
-                          id="kmapCanvas"
+                          id={`kmapCanvas-${mapIndex}`}
                           width={mapWidth}
                           height={mapHeight}
                           className="absolute top-0 left-0 pointer-events-none"
