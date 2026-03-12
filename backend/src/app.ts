@@ -15,6 +15,7 @@ import { ssoRoutes } from "./routes/sso.routes";
 import { modelsRoutes } from "./routes/models.routes";
 import { byokRoutes } from "./routes/byok.routes";
 import { settingsRoutes } from "./routes/settings.routes";
+import { githubAuthRoutes } from "./routes/github-auth.routes";
 
 // Initialize express
 const app = express();
@@ -95,6 +96,7 @@ app.use(
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/auth", githubAuthRoutes);
 app.use("/api/karnaughmap", karnaughMapRoutes);
 app.use("/api/ast", abstractSyntaxTreeRoutes);
 app.use("/api/prooftree", proofTreeRoutes);

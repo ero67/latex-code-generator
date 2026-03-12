@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FaLevelDownAlt, FaMinus, FaPlus } from "react-icons/fa";
 import "../index.css";
 import GeneratedCode from "../../Components/GeneratedCode";
 import { LaTeXEditor } from "../../Components/LaTeXEditor";
@@ -10,6 +11,32 @@ import { proofTreeService } from "../../services/prooftree.service";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { parseLatexToProofTree } from "../../utils/latexParser";
+
+const findNodeById = (node, targetId) => {
+  if (!node) return null;
+  if (node.id === targetId) return node;
+  for (const child of node.children || []) {
+    const found = findNodeById(child, targetId);
+    if (found) return found;
+  }
+  return null;
+};
+
+const findParentOfNode = (node, targetId, parent = null) => {
+  if (!node) return null;
+  if (node.id === targetId) return parent;
+  for (const child of node.children || []) {
+    const found = findParentOfNode(child, targetId, node);
+    if (found) return found;
+  }
+  return null;
+};
+
+const isDescendant = (node, targetId) => {
+  if (!node) return false;
+  if (node.id === targetId) return true;
+  return (node.children || []).some((child) => isDescendant(child, targetId));
+};
 
 // --- DATA STRUCTURE ---
 let nodeId = 0;
@@ -23,7 +50,20 @@ const createProofTreeNode = (
 };
 
 // --- (CORRECTED) SVG VISUALIZATION COMPONENT ---
-const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
+const ProofTreeVisualizer = ({
+  node,
+  onNodeClick,
+  onAddChild,
+  onRemoveNode,
+  selectedNodeId,
+}) => {
+  const CONTROL_RADIUS = 10;
+  const CONTROL_GAP = 15;
+  const REMOVE_VERTICAL_OFFSET = 22;
+  const RIGHT_MARGIN = 10;
+  const ID_BADGE_RADIUS = 10;
+  const LEFT_BADGE_GAP = 15;
+
   // Estimate how wide a node box should be based on its displayed text.
   // SVG text measurement via refs/getBBox gets tricky in a recursive render,
   // so we use a stable monospace-based approximation.
@@ -40,8 +80,13 @@ const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
 
   const calculateTreeDimensions = (node) => {
     const nodeBoxWidth = estimateNodeBoxWidth(node);
+    const controlsWidth = CONTROL_GAP + CONTROL_RADIUS + RIGHT_MARGIN;
+    const leftBadgeWidth = LEFT_BADGE_GAP + ID_BADGE_RADIUS + RIGHT_MARGIN;
+    const nodeFootprintWidth =
+      nodeBoxWidth + controlsWidth + leftBadgeWidth + RIGHT_MARGIN;
+
     if (!node.children || node.children.length === 0) {
-      return { width: nodeBoxWidth, height: 50 };
+      return { width: nodeFootprintWidth, height: 50 };
     }
     const childDimensions = node.children.map(calculateTreeDimensions);
     const totalChildWidth = childDimensions.reduce(
@@ -53,7 +98,7 @@ const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
     );
     const horizontalPadding = (node.children.length - 1) * 20;
     // Ensure the parent node box fits too, not just the children spread.
-    let width = Math.max(nodeBoxWidth, totalChildWidth + horizontalPadding);
+    let width = Math.max(nodeFootprintWidth, totalChildWidth + horizontalPadding);
     if (node.rightLabel && node.children.length > 0) {
       width += 150;
     }
@@ -140,6 +185,58 @@ const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
       </g>
     );
 
+    elements.push(
+      <g key={`controls-${node.id}`}>
+        <g transform={`translate(${x - nodeWidth / 2 - LEFT_BADGE_GAP}, ${y + 20})`}>
+          <circle r={ID_BADGE_RADIUS} fill={isSelected ? "#2563eb" : "#64748b"} />
+          <text
+            x={0}
+            y={4}
+            textAnchor="middle"
+            className="select-none text-[9px] font-bold fill-white"
+          >
+            {node.id}
+          </text>
+        </g>
+
+        <g
+          transform={`translate(${x + nodeWidth / 2 + CONTROL_GAP}, ${y + 20})`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAddChild(node.id);
+          }}
+          className={`cursor-pointer ${
+            node.children.length >= 5 ? "pointer-events-none opacity-40" : ""
+          }`}
+        >
+          <circle r={CONTROL_RADIUS} fill="#16a34a" />
+          <foreignObject x="-6" y="-6" width="12" height="12">
+            <div className="flex h-full w-full items-center justify-center text-[10px] text-white">
+              <FaPlus />
+            </div>
+          </foreignObject>
+        </g>
+
+        {node.id !== 0 && (
+          <g
+            transform={`translate(${x + nodeWidth / 2 + CONTROL_GAP}, ${y + 20 + REMOVE_VERTICAL_OFFSET})`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRemoveNode(node.id);
+            }}
+            className="cursor-pointer"
+          >
+            <circle r={CONTROL_RADIUS} fill="#dc2626" />
+            <foreignObject x="-6" y="-6" width="12" height="12">
+              <div className="flex h-full w-full items-center justify-center text-[10px] text-white">
+                <FaMinus />
+              </div>
+            </foreignObject>
+          </g>
+        )}
+      </g>
+    );
+
     // This logic will now work correctly because totalChildAreaWidth is in scope.
     if (hasChildren && node.rightLabel) {
       elements.push(
@@ -159,7 +256,7 @@ const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
   };
 
   const dimensions = calculateTreeDimensions(node);
-  const viewboxWidth = dimensions.width + 40;
+  const viewboxWidth = dimensions.width + 80;
   const viewboxHeight = dimensions.height + 40;
 
   return (
@@ -168,7 +265,7 @@ const ProofTreeVisualizer = ({ node, onNodeClick, selectedNodeId }) => {
         width={viewboxWidth}
         height={viewboxHeight}
         viewBox={`0 0 ${viewboxWidth} ${viewboxHeight}`}
-        className="mx-auto"
+        className="mx-auto overflow-visible"
       >
         {renderTree(
           node,
@@ -195,6 +292,9 @@ const ProofTree = () => {
   const [treeDescription, setTreeDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [shouldAutoFocusNodeInput, setShouldAutoFocusNodeInput] = useState(false);
+  const [moveTargetId, setMoveTargetId] = useState("");
+  const [movePlacement, setMovePlacement] = useState("above");
 
   const { user } = useAuth();
   const { id } = useParams();
@@ -216,18 +316,181 @@ const ProofTree = () => {
   };
 
   const removeNode = (nodeIdToRemove) => {
-    const removeNodeRecursive = (currentNode) => {
-      currentNode.children = currentNode.children.filter(
-        (child) => child.id !== nodeIdToRemove
-      );
-      currentNode.children.forEach(removeNodeRecursive);
-    };
     const newRoot = JSON.parse(JSON.stringify(rootNode));
-    removeNodeRecursive(newRoot);
+    const parentNode = findParentOfNode(newRoot, nodeIdToRemove);
+    if (!parentNode) return;
+
+    const childIndex = parentNode.children.findIndex(
+      (child) => child.id === nodeIdToRemove
+    );
+    if (childIndex === -1) return;
+
+    const nodeToRemove = parentNode.children[childIndex];
+    parentNode.children.splice(childIndex, 1, ...(nodeToRemove.children || []));
     setRootNode(newRoot);
+
     if (selectedNodeId === nodeIdToRemove) {
-      setSelectedNodeId(null); // Deselect if removed
+      if (nodeToRemove.children?.length > 0) {
+        setSelectedNodeId(nodeToRemove.children[0].id);
+      } else {
+        setSelectedNodeId(parentNode.id);
+      }
     }
+  };
+
+  const moveNodeRelativeToTarget = (sourceNodeId, targetNodeId, placement) => {
+    if (!sourceNodeId || !targetNodeId || sourceNodeId === targetNodeId) return;
+
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    const sourceNode = findNodeById(newRoot, sourceNodeId);
+    const sourceParent = findParentOfNode(newRoot, sourceNodeId);
+
+    if (!sourceNode || !sourceParent) return;
+    if (isDescendant(sourceNode, targetNodeId)) {
+      toast.error("Cannot move a node into its own subtree.");
+      return;
+    }
+
+    const sourceIndex = sourceParent.children.findIndex(
+      (child) => child.id === sourceNodeId
+    );
+    if (sourceIndex === -1) return;
+
+    sourceParent.children.splice(sourceIndex, 1, ...(sourceNode.children || []));
+    sourceNode.children = [];
+
+    const refreshedTargetNode = findNodeById(newRoot, targetNodeId);
+    const refreshedTargetParent = findParentOfNode(newRoot, targetNodeId);
+
+    if (!refreshedTargetNode) {
+      toast.error("Target node is no longer available after restructuring.");
+      return;
+    }
+
+    if (placement === "below") {
+      sourceNode.children = [refreshedTargetNode];
+
+      if (!refreshedTargetParent) {
+        setRootNode(sourceNode);
+        setSelectedNodeId(sourceNode.id);
+        setMoveTargetId("");
+        return;
+      }
+
+      const targetIndex = refreshedTargetParent.children.findIndex(
+        (child) => child.id === targetNodeId
+      );
+      if (targetIndex === -1) return;
+
+      refreshedTargetParent.children[targetIndex] = sourceNode;
+      setRootNode(newRoot);
+      setSelectedNodeId(sourceNode.id);
+      setMoveTargetId("");
+      return;
+    } else if (placement === "above") {
+      const targetChildren = [...(refreshedTargetNode.children || [])];
+      sourceNode.children = targetChildren;
+      refreshedTargetNode.children = [sourceNode];
+
+      if (!refreshedTargetParent) {
+        setRootNode(refreshedTargetNode);
+        setSelectedNodeId(sourceNode.id);
+        setMoveTargetId("");
+        return;
+      }
+
+      const targetIndex = refreshedTargetParent.children.findIndex(
+        (child) => child.id === targetNodeId
+      );
+      if (targetIndex === -1) return;
+      refreshedTargetParent.children[targetIndex] = refreshedTargetNode;
+      setRootNode(newRoot);
+      setSelectedNodeId(sourceNode.id);
+      setMoveTargetId("");
+      return;
+    } else {
+      if (!refreshedTargetParent) {
+        toast.error("Cannot place a node to the left or right of the root node.");
+        return;
+      }
+
+      if (
+        refreshedTargetParent.children.length >= 5 &&
+        sourceParent.id !== refreshedTargetParent.id
+      ) {
+        toast.error("Target level already has the maximum number of nodes.");
+        return;
+      }
+
+      const targetIndex = refreshedTargetParent.children.findIndex(
+        (child) => child.id === targetNodeId
+      );
+      if (targetIndex === -1) return;
+
+      const insertIndex = placement === "left" ? targetIndex : targetIndex + 1;
+      refreshedTargetParent.children.splice(insertIndex, 0, sourceNode);
+    }
+
+    setRootNode(newRoot);
+    setSelectedNodeId(sourceNode.id);
+    setMoveTargetId("");
+  };
+
+  const moveNodeLeft = (nodeIdToMove) => {
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    const parentNode = findParentOfNode(newRoot, nodeIdToMove);
+    if (!parentNode) return;
+
+    const index = parentNode.children.findIndex((child) => child.id === nodeIdToMove);
+    if (index <= 0) return;
+
+    [parentNode.children[index - 1], parentNode.children[index]] = [
+      parentNode.children[index],
+      parentNode.children[index - 1],
+    ];
+    setRootNode(newRoot);
+  };
+
+  const moveNodeRight = (nodeIdToMove) => {
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    const parentNode = findParentOfNode(newRoot, nodeIdToMove);
+    if (!parentNode) return;
+
+    const index = parentNode.children.findIndex((child) => child.id === nodeIdToMove);
+    if (index === -1 || index >= parentNode.children.length - 1) return;
+
+    [parentNode.children[index], parentNode.children[index + 1]] = [
+      parentNode.children[index + 1],
+      parentNode.children[index],
+    ];
+    setRootNode(newRoot);
+  };
+
+  const insertParentAboveNode = (nodeIdToWrap) => {
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    const parentNode = findParentOfNode(newRoot, nodeIdToWrap);
+    const targetNode = findNodeById(newRoot, nodeIdToWrap);
+    if (!targetNode) return;
+
+    const wrapperNode = createProofTreeNode(
+      "",
+      [targetNode],
+      "",
+      targetNode.mathMode
+    );
+
+    if (!parentNode) {
+      setRootNode(wrapperNode);
+      setSelectedNodeId(wrapperNode.id);
+      return;
+    }
+
+    const index = parentNode.children.findIndex((child) => child.id === nodeIdToWrap);
+    if (index === -1) return;
+
+    parentNode.children[index] = wrapperNode;
+    setRootNode(newRoot);
+    setSelectedNodeId(wrapperNode.id);
   };
 
   const editNodeContent = (nodeId, newContent) => {
@@ -282,18 +545,27 @@ const ProofTree = () => {
     setRootNode(newRoot);
   };
 
-  // --- Helper to find the selected node's data ---
-  const findNodeById = (node, targetId) => {
-    if (node.id === targetId) return node;
-    for (const child of node.children) {
-      const found = findNodeById(child, targetId);
-      if (found) return found;
-    }
-    return null;
-  };
-
   const selectedNode =
     selectedNodeId !== null ? findNodeById(rootNode, selectedNodeId) : null;
+
+  const selectableMoveTargets = [];
+  const collectMoveTargets = (node) => {
+    if (!node || !selectedNode) return;
+    if (node.id !== selectedNode.id && !isDescendant(selectedNode, node.id)) {
+      selectableMoveTargets.push(node);
+    }
+    node.children.forEach(collectMoveTargets);
+  };
+
+  if (rootNode && selectedNode) {
+    collectMoveTargets(rootNode);
+  }
+
+  useEffect(() => {
+    if (selectedNodeId !== null) {
+      setShouldAutoFocusNodeInput(true);
+    }
+  }, [selectedNodeId]);
 
   const generateLatexCode = (node) => {
     // ✨ FIX: This helper function now correctly handles both global and local math modes.
@@ -529,30 +801,38 @@ const ProofTree = () => {
         <ProofTreeVisualizer
           node={rootNode}
           onNodeClick={setSelectedNodeId}
+          onAddChild={addNode}
+          onRemoveNode={removeNode}
           selectedNodeId={selectedNodeId}
         />
       </div>
       {/* --- 2. Node Editor Panel --- */}
       {selectedNode ? (
-        <div className="w-full max-w-2xl bg-white p-5 rounded-lg shadow-md mb-6 transition-all duration-300">
-          <h3 className="text-lg font-semibold mb-3 text-gray-800">
+        <div className="w-full max-w-2xl bg-white px-4 py-3 rounded-lg shadow-md mb-6 transition-all duration-300">
+          <h3 className="text-base font-semibold mb-2 text-gray-800">
             Edit Selected Node (ID: {selectedNode.id})
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Node Content
               </label>
-              <LatexInput
-                value={selectedNode.content}
-                onChange={(value) => editNodeContent(selectedNode.id, value)}
-                mathNotation={math_notation}
-              />
+                <LatexInput
+                  value={selectedNode.content}
+                  onChange={(value) => {
+                    if (shouldAutoFocusNodeInput) {
+                      setShouldAutoFocusNodeInput(false);
+                    }
+                    editNodeContent(selectedNode.id, value);
+                  }}
+                  mathNotation={math_notation}
+                  autoFocus={shouldAutoFocusNodeInput}
+                />
             </div>
 
             {selectedNode.children.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Right Label
                 </label>
                 <LatexInput
@@ -565,26 +845,50 @@ const ProofTree = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-1.5">
                 <button
                   onClick={() => addNode(selectedNode.id)}
                   disabled={selectedNode.children.length >= 5}
-                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-gray-300 text-sm font-medium"
+                  className="px-3 py-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-gray-300 text-xs font-medium"
                 >
                   Add Child
                 </button>
 
                 {selectedNode.id !== rootNode.id && (
+                  <>
+                    <button
+                      onClick={() => moveNodeLeft(selectedNode.id)}
+                      className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 text-xs font-medium"
+                    >
+                      Move Left
+                    </button>
+                    <button
+                      onClick={() => moveNodeRight(selectedNode.id)}
+                      className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 text-xs font-medium"
+                    >
+                      Move Right
+                    </button>
+                    <button
+                      onClick={() => insertParentAboveNode(selectedNode.id)}
+                      className="px-3 py-1.5 bg-amber-500 text-white rounded-md hover:bg-amber-600 text-xs font-medium inline-flex items-center gap-1.5"
+                    >
+                      <FaLevelDownAlt />
+                      Insert Node Below
+                    </button>
+                  </>
+                )}
+
+                {selectedNode.id !== rootNode.id && (
                   <button
                     onClick={() => removeNode(selectedNode.id)}
-                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 text-sm font-medium"
+                    className="px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 text-xs font-medium"
                   >
                     Remove Node
                   </button>
                 )}
               </div>
-              <label className="flex items-center cursor-pointer">
+              <label className="flex items-center cursor-pointer text-xs">
                 <input
                   type="checkbox"
                   checked={selectedNode.mathMode}
@@ -594,11 +898,59 @@ const ProofTree = () => {
                   id={`math-mode-${selectedNode.id}`}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-600 font-medium">
+                <span className="text-xs text-gray-600 font-medium">
                   Math Mode
                 </span>
               </label>
             </div>
+
+            {selectedNode.id !== rootNode.id && selectableMoveTargets.length > 0 && (
+              <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
+                <div className="mb-2 text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  Move this node relative to another node
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={moveTargetId}
+                    onChange={(e) => setMoveTargetId(e.target.value)}
+                    className="min-w-[220px] rounded-md border border-gray-300 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select target node</option>
+                    {selectableMoveTargets.map((node) => (
+                      <option key={node.id} value={node.id}>
+                        ID {node.id}: {node.content || "[Empty]"}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={movePlacement}
+                    onChange={(e) => setMovePlacement(e.target.value)}
+                    className="rounded-md border border-gray-300 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="left">To the left</option>
+                    <option value="right">To the right</option>
+                    <option value="above">Above</option>
+                    <option value="below">Below</option>
+                  </select>
+                  <button
+                    onClick={() =>
+                      moveNodeRelativeToTarget(
+                        selectedNode.id,
+                        Number(moveTargetId),
+                        movePlacement
+                      )
+                    }
+                    disabled={!moveTargetId}
+                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300 text-xs font-medium"
+                  >
+                    Move Node
+                  </button>
+                </div>
+                <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
+                  Choose a target node and where the selected node should be placed in the upside-down tree view. Above and below follow the visual layout on screen. When a node is moved or removed, its children are promoted one level up at the original location.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       ) : (

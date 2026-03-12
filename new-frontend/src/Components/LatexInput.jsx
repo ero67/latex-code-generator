@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const LATEX_COMMANDS = [
   "\\to",
@@ -18,7 +18,7 @@ const LATEX_COMMANDS = [
 ];
 
 // ✨ FIX: The 'mathNotation' prop has been removed.
-const LatexInput = ({ value, onChange }) => {
+const LatexInput = ({ value, onChange, autoFocus = false }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredCommands, setFilteredCommands] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -80,6 +80,13 @@ const LatexInput = ({ value, onChange }) => {
       setShowSuggestions(false);
     }
   };
+
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [autoFocus]);
 
   return (
     <div className="relative w-full">

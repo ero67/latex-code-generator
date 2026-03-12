@@ -54,9 +54,17 @@ export const authService = {
   },
 
   /**
-   * Initiate SSO login - redirects to SSO provider
+   * Initiate KPI SSO login - redirects to provider
    */
   initiateSSO() {
-    window.location.href = `${API_URL}/sso/login`;
+    window.location.href = `${API_URL}/sso/kpi/login`;
+  },
+
+  initiateGoogleLogin() {
+    window.location.href = `${API_URL}/sso/google/login`;
+  },
+
+  initiateGitHubLogin() {
+    window.location.href = `${API_URL}/auth/github/login`;
   },
 };
