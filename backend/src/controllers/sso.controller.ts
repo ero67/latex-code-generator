@@ -5,13 +5,17 @@ import {
   mapSSOUserInfo,
 } from "../services/sso.service";
 import { User } from "../models/User";
-import { getSSOConfig } from "../config/sso.config";
+import {
+  getSSOConfig,
+  isSSOProvider,
+  SSOProvider,
+} from "../config/sso.config";
 
 // In-memory store for SSO state (in production, use Redis or database)
 // Key: state token, Value: { codeVerifier, expiresAt }
 const ssoStateStore = new Map<
   string,
-  { codeVerifier: string; expiresAt: number }
+  { provider: SSOProvider; codeVerifier: string; expiresAt: number }
 >();
 
 // Clean up expired states every 10 minutes
@@ -30,11 +34,23 @@ setInterval(() => {
  */
 export const initiateSSO = async (req: Request, res: Response) => {
   try {
-    const { url, state, codeVerifier } = await generateAuthorizationUrl();
+    const providerValue = req.params.provider;
+    const providerParam = Array.isArray(providerValue)
+      ? providerValue[0] || "kpi"
+      : providerValue || "kpi";
+    if (!isSSOProvider(providerParam)) {
+      return res.status(400).json({
+        status: "error",
+        message: `Unsupported SSO provider: ${providerParam}`,
+      });
+    }
+
+    const { url, state, codeVerifier } = await generateAuthorizationUrl(providerParam);
 
     // Store state and code verifier for callback verification
     // State expires in 10 minutes
     ssoStateStore.set(state, {
+      provider: providerParam,
       codeVerifier,
       expiresAt: Date.now() + 10 * 60 * 1000,
     });
@@ -57,6 +73,18 @@ export const initiateSSO = async (req: Request, res: Response) => {
  */
 export const handleCallback = async (req: Request, res: Response) => {
   try {
+    const providerValue = req.params.provider;
+    const providerParam = Array.isArray(providerValue)
+      ? providerValue[0] || "kpi"
+      : providerValue || "kpi";
+    if (!isSSOProvider(providerParam)) {
+      return res.redirect(
+        `${
+          process.env.FRONTEND_URL || "http://localhost:3000"
+        }/login?error=${encodeURIComponent(`Unsupported SSO provider: ${providerParam}`)}`
+      );
+    }
+
     const { code, state, error, error_description } = req.query;
 
     // Check for errors from SSO provider
@@ -95,6 +123,16 @@ export const handleCallback = async (req: Request, res: Response) => {
       );
     }
 
+    if (storedState.provider !== providerParam) {
+      return res.redirect(
+        `${
+          process.env.FRONTEND_URL || "http://localhost:3000"
+        }/login?error=${encodeURIComponent(
+          "Invalid provider for this authentication session. Please try again."
+        )}`
+      );
+    }
+
     // Remove state from store (one-time use)
     ssoStateStore.delete(stateParam);
 
@@ -104,7 +142,7 @@ export const handleCallback = async (req: Request, res: Response) => {
     // redirect_uri mismatch during the token exchange.
     // Always use the configured redirect URI (must match the provider registration),
     // and attach the query params from the incoming request.
-    const { redirectUri } = getSSOConfig();
+    const { redirectUri } = getSSOConfig(providerParam);
     const callbackUrl = new URL(redirectUri);
     for (const [k, v] of Object.entries(req.query)) {
       if (Array.isArray(v)) {
@@ -120,19 +158,23 @@ export const handleCallback = async (req: Request, res: Response) => {
 
     // Process callback and get user info
     const { tokens, userInfo } = await processCallback(
+      providerParam,
       callbackUrl,
       stateParam,
       codeVerifier
     );
 
     // Map SSO user info to our format
-    const ssoUserData = mapSSOUserInfo(userInfo);
+    const ssoUserData = mapSSOUserInfo(providerParam, userInfo);
 
     // Get SSO provider name from config
-    const config = getSSOConfig();
-    const ssoProvider = config.issuer.includes("testing")
-      ? "kpi-testing"
-      : "kpi-production";
+    const config = getSSOConfig(providerParam);
+    const ssoProvider =
+      providerParam === "google"
+        ? "google"
+        : config.issuer.includes("testing")
+          ? "kpi-testing"
+          : "kpi-production";
 
     // Find or create user
     const user = await User.findOrCreateFromSSO({

@@ -1245,7 +1245,7 @@ const SyntaxTreeD3 = () => {
                     target.children.push(newNode);
                     setNodeId(nodeId + 1);
                     setTreeData(cloned);
-                    setSelectedNodeId(newNode.id);
+                    setSelectedNodeId(selectedNode.id);
                   }}
                   className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm font-medium"
                 >

@@ -1,30 +1,33 @@
 import * as client from "openid-client";
-import { getSSOConfig } from "../config/sso.config";
+import { getSSOConfig, SSOProvider } from "../config/sso.config";
 import jwt from "jsonwebtoken";
 
-let ssoConfig: client.Configuration | null = null;
+const ssoConfigCache = new Map<SSOProvider, client.Configuration>();
 
 /**
  * Initialize SSO configuration (lazy initialization)
  * This will discover the OIDC provider configuration
  */
-export async function initializeSSOConfig(): Promise<client.Configuration> {
-  if (ssoConfig) {
-    return ssoConfig;
+export async function initializeSSOConfig(
+  provider: SSOProvider
+): Promise<client.Configuration> {
+  const cachedConfig = ssoConfigCache.get(provider);
+  if (cachedConfig) {
+    return cachedConfig;
   }
 
   try {
-    const config = getSSOConfig();
+    const config = getSSOConfig(provider);
 
     // Discover the OIDC provider and create configuration
-    ssoConfig = await client.discovery(
+    const discoveredConfig = await client.discovery(
       new URL(config.issuer),
       config.clientId,
       config.clientSecret
     );
 
-    // SSO configuration initialized successfully
-    return ssoConfig;
+    ssoConfigCache.set(provider, discoveredConfig);
+    return discoveredConfig;
   } catch (error: any) {
     console.error("Failed to initialize SSO configuration:", error);
     throw new Error(`SSO initialization failed: ${error.message}`);
@@ -35,14 +38,14 @@ export async function initializeSSOConfig(): Promise<client.Configuration> {
  * Generate authorization URL for SSO login
  * Returns the URL and a state token for CSRF protection
  */
-export async function generateAuthorizationUrl(): Promise<{
+export async function generateAuthorizationUrl(provider: SSOProvider): Promise<{
   url: string;
   state: string;
   codeVerifier: string;
 }> {
   try {
-    const config = await initializeSSOConfig();
-    const ssoConfig = getSSOConfig();
+    const config = await initializeSSOConfig(provider);
+    const ssoConfig = getSSOConfig(provider);
 
     // Generate PKCE code verifier and challenge
     const codeVerifier: string = client.randomPKCECodeVerifier();
@@ -84,6 +87,7 @@ export async function generateAuthorizationUrl(): Promise<{
  * Process SSO callback - exchange authorization code for tokens
  */
 export async function processCallback(
+  provider: SSOProvider,
   callbackUrl: URL,
   storedState: string,
   codeVerifier: string
@@ -92,8 +96,7 @@ export async function processCallback(
   userInfo: any;
 }> {
   try {
-    const config = await initializeSSOConfig();
-    const ssoConfig = getSSOConfig();
+    const config = await initializeSSOConfig(provider);
 
     // Exchange authorization code for tokens
     const tokens: client.TokenEndpointResponse = await client.authorizationCodeGrant(
@@ -187,7 +190,20 @@ export interface SSOUserData {
   employeeType?: string; // S, D, P, N
 }
 
-export function mapSSOUserInfo(userInfo: any): SSOUserData {
+export function mapSSOUserInfo(
+  provider: SSOProvider,
+  userInfo: any
+): SSOUserData {
+  if (provider === "google") {
+    return {
+      email: userInfo.email as string,
+      name: (userInfo.name as string) || "",
+      ssoId: (userInfo.sub as string) || "",
+      givenName: userInfo.given_name as string | undefined,
+      familyName: userInfo.family_name as string | undefined,
+    };
+  }
+
   return {
     email: userInfo.email as string,
     name: (userInfo.name as string) || (userInfo.full_name as string) || "",

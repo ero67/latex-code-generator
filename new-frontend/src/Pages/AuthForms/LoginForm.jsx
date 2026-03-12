@@ -4,7 +4,15 @@ import { authService } from "../../services/auth.service";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { useAuth } from "../../context/AuthContext";
 import * as Yup from "yup";
-import { FaEye, FaEyeSlash, FaUniversity, FaLock, FaEnvelope } from "react-icons/fa";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaUniversity,
+  FaLock,
+  FaEnvelope,
+  FaGoogle,
+  FaGithub,
+} from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const validationSchema = Yup.object({
@@ -19,15 +27,28 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSSOLoading, setIsSSOLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGitHubLoading, setIsGitHubLoading] = useState(false);
 
   // Check for error from SSO callback or other sources
   useEffect(() => {
     const errorParam = searchParams.get("error");
+    const warningParam = searchParams.get("warning");
+
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
       toast.error(decodeURIComponent(errorParam));
+    } else {
+      setError("");
+    }
+
+    if (warningParam) {
+      setWarning(decodeURIComponent(warningParam));
+    } else {
+      setWarning("");
     }
   }, [searchParams]);
 
@@ -65,9 +86,49 @@ const LoginForm = () => {
     }
   };
 
+  const handleGoogleLogin = () => {
+    setIsGoogleLoading(true);
+    try {
+      authService.initiateGoogleLogin();
+    } catch (err) {
+      console.error("Google login initiation error:", err);
+      setError("Failed to initiate Google login. Please try again.");
+      toast.error("Failed to initiate Google login");
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGitHubLogin = () => {
+    setIsGitHubLoading(true);
+    try {
+      authService.initiateGitHubLogin();
+    } catch (err) {
+      console.error("GitHub login initiation error:", err);
+      setError("Failed to initiate GitHub login. Please try again.");
+      toast.error("Failed to initiate GitHub login");
+      setIsGitHubLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {warning && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 text-amber-600">
+                <FaLock className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-900">
+                  Login required for Image to LaTeX
+                </p>
+                <p className="text-sm text-amber-800">{warning}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
@@ -104,12 +165,88 @@ const LoginForm = () => {
             </div>
           )}
 
-          {/* SSO Login Button */}
-          <div className="mb-6">
+          {/* Social Login Buttons */}
+          <div className="mb-6 space-y-3">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleLoading || isGitHubLoading || isSSOLoading}
+              className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isGoogleLoading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-700"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Redirecting to Google...
+                </>
+              ) : (
+                <>
+                  <FaGoogle className="mr-3 h-5 w-5 text-red-500" />
+                  Continue with Google
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleGitHubLogin}
+              disabled={isGitHubLoading || isGoogleLoading || isSSOLoading}
+              className="w-full flex items-center justify-center px-4 py-3 border border-gray-900 rounded-lg shadow-sm bg-gray-900 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isGitHubLoading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Redirecting to GitHub...
+                </>
+              ) : (
+                <>
+                  <FaGithub className="mr-3 h-5 w-5 text-white" />
+                  Continue with GitHub
+                </>
+              )}
+            </button>
+
             <button
               type="button"
               onClick={handleSSOLogin}
-              disabled={isSSOLoading}
+              disabled={isSSOLoading || isGoogleLoading || isGitHubLoading}
               className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isSSOLoading ? (
