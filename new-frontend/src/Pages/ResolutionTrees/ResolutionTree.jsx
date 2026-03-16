@@ -8,9 +8,12 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { resolutionTreeService } from "../../services/resolutiontree.service";
 import { parseResolutionTreeTikz } from "../../utils/resolutionTreeTikzParser";
+import LatexImportModal from "../../Components/ResolutionTree/LatexImportModal";
 
 const ResolutionTree = () => {
   const svgRef = useRef();
+  const zoomLayerRef = useRef(null);
+  const zoomBehaviorRef = useRef(null);
   const [treeData, setTreeData] = useState({
     id: -1,
     value: "__root__",
@@ -25,8 +28,12 @@ const ResolutionTree = () => {
   const [generatedCode, setGeneratedCode] = useState("");
   const [showLaTeXEditor, setShowLaTeXEditor] = useState(false);
   const [includePreamble, setIncludePreamble] = useState(true);
+  const [wrapBraces, setWrapBraces] = useState(true);
   const [resolventDraft, setResolventDraft] = useState("");
   const [isSelectingParents, setIsSelectingParents] = useState(false);
+  const [selectedEdge, setSelectedEdge] = useState(null); // { sourceId, targetId, isExtra }
+  const [edgeLabelDraft1, setEdgeLabelDraft1] = useState("");
+  const [edgeLabelDraft2, setEdgeLabelDraft2] = useState("");
 
   const { user } = useAuth();
   const { id } = useParams();
@@ -36,9 +43,10 @@ const ResolutionTree = () => {
   const [treeName, setTreeName] = useState("");
   const [treeDescription, setTreeDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const addTopNode = () => {
-    const newNode = { id: nodeId, value: "", children: [] };
+    const newNode = { id: nodeId, value: "", children: [], label: "" };
     setNodeId((prev) => prev + 1);
     setTreeData((prev) => ({
       ...prev,
@@ -50,7 +58,7 @@ const ResolutionTree = () => {
   const addChildById = useCallback(
     (parentId) => {
       if (!treeData) return;
-      const newNode = { id: nodeId, value: "", children: [] };
+      const newNode = { id: nodeId, value: "", children: [], label: "" };
       const clone = structuredClone(treeData);
       const dfs = (n) => {
         if (n.id === parentId) {
@@ -115,7 +123,10 @@ const ResolutionTree = () => {
       return;
     }
 
-    const newNode = { id: nodeId, value, children: [] };
+    const label1 = (edgeLabelDraft1 ?? "").trim();
+    const label2 = (edgeLabelDraft2 ?? "").trim();
+
+    const newNode = { id: nodeId, value, children: [], label: label1 };
     const clone = structuredClone(treeData);
     const parentA = findNodeById(clone, firstId);
     if (!parentA) return;
@@ -123,13 +134,16 @@ const ResolutionTree = () => {
     parentA.children.push(newNode);
 
     setNodeId((prev) => prev + 1);
-    setExtraLinks((links) => [...links, { sourceId: secondId, targetId: newNode.id }]);
+    setExtraLinks((links) => [...links, { sourceId: secondId, targetId: newNode.id, label: label2 }]);
     setTreeData(clone);
     setSelectedIds([]);
     setResolventDraft("");
+    setEdgeLabelDraft1("");
+    setEdgeLabelDraft2("");
+    setIsSelectingParents(false);
     setSelectedNodeId(newNode.id);
     toast.success("Resolvent added.");
-  }, [treeData, selectedIds, resolventDraft, nodeId, findNodeById]);
+  }, [treeData, selectedIds, resolventDraft, edgeLabelDraft1, edgeLabelDraft2, nodeId, findNodeById]);
 
   const toggleSelect = useCallback(
     (id) => {
@@ -144,6 +158,59 @@ const ResolutionTree = () => {
     },
     []
   );
+
+  const updateEdgeLabel = useCallback(
+    (sourceId, targetId, isExtra, newLabel) => {
+      if (isExtra) {
+        setExtraLinks((links) =>
+          links.map((l) =>
+            l.sourceId === sourceId && l.targetId === targetId
+              ? { ...l, label: newLabel }
+              : l
+          )
+        );
+      } else {
+        const clone = structuredClone(treeData);
+        const parent = findNodeById(clone, sourceId);
+        if (parent?.children) {
+          const child = parent.children.find((c) => c.id === targetId);
+          if (child) child.label = newLabel;
+        }
+        setTreeData(clone);
+      }
+    },
+    [treeData, findNodeById]
+  );
+
+  const handleImportFromLatex = useCallback((result) => {
+    setTreeData(result.treeData);
+    setExtraLinks(result.extraLinks || []);
+
+    const findMaxId = (node) => {
+      if (!node) return -1;
+      let max = typeof node.id === "number" ? node.id : -1;
+      (node.children || []).forEach((c) => {
+        max = Math.max(max, findMaxId(c));
+      });
+      return max;
+    };
+    const maxTreeId = findMaxId(result.treeData);
+    const maxExtra =
+      (result.extraLinks || []).reduce(
+        (m, l) => Math.max(m, l.sourceId ?? -1, l.targetId ?? -1),
+        -1
+      ) ?? -1;
+    setNodeId(Math.max(maxTreeId, maxExtra) + 1);
+
+    setSelectedNodeId(null);
+    setSelectedEdge(null);
+    setSelectedIds([]);
+    setIsSelectingParents(false);
+    setResolventDraft("");
+    setEdgeLabelDraft1("");
+    setEdgeLabelDraft2("");
+    zoomLayerRef.current = null;
+  }, []);
 
   const selectedNode =
     selectedNodeId !== null ? findNodeById(treeData, selectedNodeId) : null;
@@ -170,6 +237,7 @@ const ResolutionTree = () => {
         setTreeData(loaded.treeData);
         setExtraLinks(loaded.extraLinks || []);
         setMathMode(loaded.settings?.mathMode ?? true);
+        setWrapBraces(loaded.settings?.wrapBraces ?? true);
         setIncludePreamble(loaded.settings?.includePreamble ?? true);
         setTreeName(loaded.name || "");
         setTreeDescription(loaded.description || "");
@@ -260,13 +328,17 @@ const ResolutionTree = () => {
     const v = normalizeClauseValue(rawValue);
     if (!v) return "";
     if (v === "\\Box") return "$\\Box$";
-    // Match the expected rendering: clauses as sets in math mode
-    const inner =
-      depth > 0
-        ? v.startsWith("\\{") && v.endsWith("\\}")
-          ? v
-          : `\\{${v}\\}`
-        : v;
+    let inner;
+    if (!wrapBraces) {
+      inner = v;
+    } else {
+      inner =
+        depth > 0
+          ? v.startsWith("\\{") && v.endsWith("\\}")
+            ? v
+            : `\\{${v}\\}`
+          : v;
+    }
     return `$${inner}$`;
   };
 
@@ -293,8 +365,16 @@ const ResolutionTree = () => {
       return `[${head} ]`;
     }
 
+    // In tikz-qtree, \edge must come BEFORE the child's [...] bracket
     const renderedChildren = children
-      .map((c) => renderNodeQtree(c, depth + 1, namedIds))
+      .map((c) => {
+        const childStr = renderNodeQtree(c, depth + 1, namedIds);
+        const edgeLabel = c.edgeLabel || "";
+        if (edgeLabel) {
+          return `\\edge node[midway,right,font=\\scriptsize]{$[${edgeLabel}]$}; ${childStr}`;
+        }
+        return childStr;
+      })
       .join(" ");
     return `[${head} ${renderedChildren} ]`;
   };
@@ -343,23 +423,25 @@ const ResolutionTree = () => {
     };
     buildPrimaryParentMap(treeData);
 
-    // reversedChildren[resultId] = [parentClauseIds...]
+    // reversedChildren[resultId] = [{ parentId, edgeLabel }...]
     const reversedChildren = new Map();
-    const pushChild = (id, childId) => {
+    const pushChild = (id, childId, edgeLabel) => {
       if (!reversedChildren.has(id)) reversedChildren.set(id, []);
-      reversedChildren.get(id).push(childId);
+      reversedChildren.get(id).push({ parentId: childId, edgeLabel: edgeLabel || "" });
     };
 
     // Reverse primary edges: child depends on parent
+    // The edge label lives on the child node (child.label = label for edge parent->child)
     for (const [childId, parentId] of primaryParentOf.entries()) {
-      pushChild(childId, parentId);
+      const childNode = nodeById.get(childId);
+      pushChild(childId, parentId, childNode?.label || "");
     }
 
     // Also include "second parent" dependencies (from extraLinks) as children in the exported tree.
-    // extraLinks store: { sourceId: secondParentId, targetId: derivedClauseId }
+    // extraLinks store: { sourceId: secondParentId, targetId: derivedClauseId, label }
     extraLinks.forEach((l) => {
       if (nodeById.has(l.sourceId) && nodeById.has(l.targetId)) {
-        pushChild(l.targetId, l.sourceId);
+        pushChild(l.targetId, l.sourceId, l.label || "");
       }
     });
 
@@ -417,24 +499,28 @@ const ResolutionTree = () => {
     // Build export tree for each leaf, tracking which nodes are included
     const globalIncluded = new Set();
 
-    const buildExportTree = (id, visited = new Set()) => {
+    const buildExportTree = (id, visited = new Set(), edgeLabel = "") => {
       if (visited.has(id)) {
         const base = nodeById.get(id);
-        return { id: base?.id ?? id, value: base?.value ?? "", children: [] };
+        return { id: base?.id ?? id, value: base?.value ?? "", children: [], edgeLabel };
       }
       visited.add(id);
       globalIncluded.add(id);
       const base = nodeById.get(id);
-      const parents = (reversedChildren.get(id) || []).filter((pid) => nodeById.has(pid));
-      const primary = primaryParentOf.get(id);
-      const orderedParents = primary
-        ? [primary, ...parents.filter((p) => p !== primary)]
-        : parents;
+      const parentEntries = (reversedChildren.get(id) || []).filter((e) => nodeById.has(e.parentId));
+      const primaryId = primaryParentOf.get(id);
+      const orderedEntries = primaryId
+        ? [
+            parentEntries.find((e) => e.parentId === primaryId),
+            ...parentEntries.filter((e) => e.parentId !== primaryId),
+          ].filter(Boolean)
+        : parentEntries;
 
       return {
         id: base.id,
         value: base.value,
-        children: orderedParents.map((pid) => buildExportTree(pid, new Set(visited))),
+        edgeLabel,
+        children: orderedEntries.map((e) => buildExportTree(e.parentId, new Set(visited), e.edgeLabel)),
       };
     };
 
@@ -464,13 +550,16 @@ const ResolutionTree = () => {
     if (includePreamble) {
       code += "\\documentclass[tikz, margin=10pt]{standalone}\n";
       code += "\\usepackage{tikz-qtree}\n";
-      code += "\\usepackage{latexsym}\n\n";
+      code += "\\usepackage{latexsym}\n";
+      code += "\\usepackage{amssymb}\n\n";
       code += "\\begin{document}\n";
     }
 
+    const tikzOptions = "grow'=up, level distance=50pt, sibling distance=5pt, every tree node/.style={align=center}";
+
     if (treeBodies.length === 1) {
       // Single tree - render as before
-      code += `\\begin{tikzpicture}[grow'=up]\n`;
+      code += `\\begin{tikzpicture}[${tikzOptions}]\n`;
       code += `\\Tree ${treeBodies[0]}\n`;
       code += `\\end{tikzpicture}`;
     } else {
@@ -480,7 +569,7 @@ const ResolutionTree = () => {
         if (index > 0) {
           code += `\n\\hspace{1cm}\n`;
         }
-        code += `\\begin{tikzpicture}[grow'=up]\n`;
+        code += `\\begin{tikzpicture}[${tikzOptions}]\n`;
         code += `\\Tree ${body}\n`;
         code += `\\end{tikzpicture}`;
       });
@@ -494,11 +583,34 @@ const ResolutionTree = () => {
   };
 
   useEffect(() => {
+    const svg = d3.select(svgRef.current);
+
     if (!treeData) {
-      d3.select(svgRef.current).selectAll("*").remove();
+      svg.selectAll("*").remove();
+      zoomLayerRef.current = null;
       return;
     }
-    d3.select(svgRef.current).selectAll("*").remove();
+
+    // First render: set up zoom layer and zoom behavior once
+    if (!zoomLayerRef.current) {
+      svg.selectAll("*").remove();
+      const zoomLayer = svg.append("g").attr("class", "resolution-zoom-layer");
+      zoomLayerRef.current = zoomLayer;
+
+      const zoom = d3
+        .zoom()
+        .scaleExtent([0.25, 3])
+        .on("zoom", (event) => {
+          zoomLayer.attr("transform", event.transform);
+        });
+
+      zoomBehaviorRef.current = zoom;
+      svg.call(zoom);
+      svg.on("dblclick.zoom", null);
+    }
+
+    const zoomLayer = zoomLayerRef.current;
+    zoomLayer.selectAll("*").remove();
 
     const width = 700;
     const height = 500;
@@ -507,33 +619,69 @@ const ResolutionTree = () => {
     const treeLayout = d3.tree().size([width - 100, height - 100]);
     treeLayout(root);
 
-    const svg = d3
-      .select(svgRef.current)
-      .attr("width", width)
-      .attr("height", height);
-
     // links
     const renderedNodes = root.descendants().filter((d) => d.data.id !== -1);
     const renderedLinks = root
       .links()
       .filter((l) => l.source.data.id !== -1 && l.target.data.id !== -1);
 
-    svg
+    zoomLayer
       .selectAll("path.link")
       .data(renderedLinks)
       .enter()
       .append("path")
       .attr("class", "link")
       .attr("fill", "none")
-      .attr("stroke", "#b6b6b6")
-      .attr("stroke-width", 3)
+      .attr("stroke", (d) =>
+        selectedEdge &&
+        !selectedEdge.isExtra &&
+        selectedEdge.sourceId === d.source.data.id &&
+        selectedEdge.targetId === d.target.data.id
+          ? "#2563eb"
+          : "#b6b6b6"
+      )
+      .attr("stroke-width", (d) =>
+        selectedEdge &&
+        !selectedEdge.isExtra &&
+        selectedEdge.sourceId === d.source.data.id &&
+        selectedEdge.targetId === d.target.data.id
+          ? 4
+          : 3
+      )
+      .style("cursor", "pointer")
       .attr(
         "d",
         d3
           .linkVertical()
           .x((d) => d.x + 50)
           .y((d) => d.y + 50)
-      );
+      )
+      .on("click", (event, d) => {
+        event.stopPropagation();
+        setSelectedEdge({
+          sourceId: d.source.data.id,
+          targetId: d.target.data.id,
+          isExtra: false,
+        });
+        setSelectedNodeId(null);
+      });
+
+    // Edge labels for primary links
+    zoomLayer
+      .selectAll("text.link-label")
+      .data(renderedLinks.filter((d) => d.target.data.label))
+      .enter()
+      .append("text")
+      .attr("class", "link-label")
+      .attr("text-anchor", "middle")
+      .attr("dy", "-6")
+      .attr("x", (d) => (d.source.x + d.target.x) / 2 + 50)
+      .attr("y", (d) => (d.source.y + d.target.y) / 2 + 50)
+      .style("font-size", "11px")
+      .style("fill", "#6b21a8")
+      .style("font-weight", "600")
+      .style("pointer-events", "none")
+      .text((d) => d.target.data.label);
 
     // Build position map for extra links
     const posMap = {};
@@ -542,16 +690,31 @@ const ResolutionTree = () => {
     });
 
     // extra links (second parent)
-    svg
+    const visibleExtraLinks = extraLinks.filter((l) => posMap[l.sourceId] && posMap[l.targetId]);
+    zoomLayer
       .selectAll("path.extra-link")
-      .data(extraLinks.filter((l) => posMap[l.sourceId] && posMap[l.targetId]))
+      .data(visibleExtraLinks)
       .enter()
       .append("path")
       .attr("class", "extra-link")
       .attr("fill", "none")
-      // Render extra links the same as regular links for now
-      .attr("stroke", "#b6b6b6")
-      .attr("stroke-width", 3)
+      .attr("stroke", (l) =>
+        selectedEdge &&
+        selectedEdge.isExtra &&
+        selectedEdge.sourceId === l.sourceId &&
+        selectedEdge.targetId === l.targetId
+          ? "#2563eb"
+          : "#b6b6b6"
+      )
+      .attr("stroke-width", (l) =>
+        selectedEdge &&
+        selectedEdge.isExtra &&
+        selectedEdge.sourceId === l.sourceId &&
+        selectedEdge.targetId === l.targetId
+          ? 4
+          : 3
+      )
+      .style("cursor", "pointer")
       .attr("d", (l) => {
         const s = posMap[l.sourceId];
         const t = posMap[l.targetId];
@@ -559,10 +722,36 @@ const ResolutionTree = () => {
           .linkVertical()
           .x((d) => d.x)
           .y((d) => d.y)({ source: s, target: t });
+      })
+      .on("click", (event, l) => {
+        event.stopPropagation();
+        setSelectedEdge({
+          sourceId: l.sourceId,
+          targetId: l.targetId,
+          isExtra: true,
+        });
+        setSelectedNodeId(null);
       });
 
+    // Edge labels for extra links
+    zoomLayer
+      .selectAll("text.extra-link-label")
+      .data(visibleExtraLinks.filter((l) => l.label))
+      .enter()
+      .append("text")
+      .attr("class", "extra-link-label")
+      .attr("text-anchor", "middle")
+      .attr("dy", "-6")
+      .attr("x", (l) => (posMap[l.sourceId].x + posMap[l.targetId].x) / 2)
+      .attr("y", (l) => (posMap[l.sourceId].y + posMap[l.targetId].y) / 2)
+      .style("font-size", "11px")
+      .style("fill", "#6b21a8")
+      .style("font-weight", "600")
+      .style("pointer-events", "none")
+      .text((l) => l.label);
+
     // nodes
-    const nodes = svg
+    const nodes = zoomLayer
       .selectAll("g.node")
       .data(renderedNodes)
       .enter()
@@ -573,6 +762,7 @@ const ResolutionTree = () => {
         event.stopPropagation();
         if (isSelectingParents) toggleSelect(d.data.id);
         setSelectedNodeId(d.data.id);
+        setSelectedEdge(null);
       });
 
     nodes
@@ -616,6 +806,7 @@ const ResolutionTree = () => {
     extraLinks,
     selectedIds,
     selectedNodeId,
+    selectedEdge,
     toggleSelect,
     isSelectingParents,
   ]);
@@ -624,8 +815,8 @@ const ResolutionTree = () => {
     <div className="flex flex-col items-center w-full max-w-5xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4 text-center">Resolution Trees</h1>
       <p className="text-gray-600 text-sm mb-6 text-center">
-        Click a node to select it. Use the Inspector to edit it or add children.
-        Use the toggle below to select up to two parent clauses for resolution.
+        Add clauses with "Add Clause", then click "Resolve Clauses" and pick any two nodes to derive a new resolvent.
+        You can add new clauses at any time and resolve them with existing nodes.
       </p>
 
       <div className="w-full flex flex-wrap gap-3 items-center mb-4">
@@ -633,10 +824,23 @@ const ResolutionTree = () => {
           onClick={addTopNode}
           className="px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2 hover:bg-blue-700"
         >
-          <FaPlus /> Add top-level clause
+          <FaPlus /> Add Clause
         </button>
         <button
-          onClick={() => setIsSelectingParents((v) => !v)}
+          onClick={() => setShowImportModal(true)}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Import from LaTeX
+        </button>
+        <button
+          onClick={() => {
+            const entering = !isSelectingParents;
+            setIsSelectingParents(entering);
+            if (entering) {
+              setSelectedIds([]);
+              setResolventDraft("");
+            }
+          }}
           className={`px-4 py-2 rounded font-medium border transition-colors ${
             isSelectingParents
               ? "bg-gray-900 text-white border-gray-900"
@@ -644,17 +848,7 @@ const ResolutionTree = () => {
           }`}
           title="Toggle mode: clicking nodes will mark/unmark them as parents (max 2)"
         >
-          {isSelectingParents ? "Selecting parents (pick 2)" : "Select 2 parents"}
-        </button>
-        <button
-          onClick={() => {
-            setSelectedIds([]);
-            setResolventDraft("");
-          }}
-          disabled={selectedIds.length === 0}
-          className="px-4 py-2 rounded font-medium border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Clear selection ({selectedIds.length}/2)
+          {isSelectingParents ? "Click 2 nodes to resolve..." : "Resolve Clauses"}
         </button>
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input
@@ -663,6 +857,14 @@ const ResolutionTree = () => {
             onChange={() => setMathMode((v) => !v)}
           />
           Math mode labels
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={wrapBraces}
+            onChange={() => setWrapBraces((v) => !v)}
+          />
+          Wrap clauses in {"{ }"}
         </label>
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input
@@ -677,9 +879,236 @@ const ResolutionTree = () => {
         </div>
       </div>
 
+      {/* Resolution workflow banner - visible when selecting parents */}
+      {isSelectingParents && (
+        <div
+          className={`w-full mb-4 rounded-lg border-2 p-4 transition-all ${
+            selectedIds.length === 2
+              ? "border-blue-500 bg-blue-50 shadow-lg"
+              : "border-amber-400 bg-amber-50"
+          }`}
+        >
+          {selectedIds.length < 2 ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      selectedIds.length >= 1
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-300 text-gray-600"
+                    }`}
+                  >
+                    1
+                  </div>
+                  <span
+                    className={`text-sm font-medium ${
+                      selectedIds.length >= 1 ? "text-green-700" : "text-gray-500"
+                    }`}
+                  >
+                    {selectedIds.length >= 1
+                      ? `Parent 1 selected (node ${selectedIds[0]})`
+                      : "Click a node to select parent 1"}
+                  </span>
+                </div>
+                <span className="text-gray-300 text-lg">&rarr;</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-gray-300 text-gray-600">
+                    2
+                  </div>
+                  <span className="text-sm font-medium text-gray-500">
+                    Click another node for parent 2
+                  </span>
+                </div>
+                <span className="text-gray-300 text-lg">&rarr;</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-gray-200 text-gray-400">
+                    3
+                  </div>
+                  <span className="text-sm text-gray-400">Enter resolvent</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={addTopNode}
+                  className="px-3 py-1 text-sm text-blue-700 border border-blue-300 rounded hover:bg-blue-50 transition-colors flex items-center gap-1"
+                  title="Add a new standalone clause that you can then select as a parent"
+                >
+                  <FaPlus className="text-xs" /> Add Clause
+                </button>
+                <button
+                  onClick={() => {
+                    setIsSelectingParents(false);
+                    setSelectedIds([]);
+                    setResolventDraft("");
+                  }}
+                  className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-green-500 text-white">
+                    1
+                  </div>
+                  <span className="text-sm font-medium text-green-700">
+                    Node {selectedIds[0]}
+                  </span>
+                </div>
+                <span className="text-blue-400 text-lg">+</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-green-500 text-white">
+                    2
+                  </div>
+                  <span className="text-sm font-medium text-green-700">
+                    Node {selectedIds[1]}
+                  </span>
+                </div>
+                <span className="text-blue-400 text-lg">&rarr;</span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-blue-500 text-white animate-pulse">
+                  3
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <label className="block text-sm font-semibold text-blue-800 mb-1">
+                      Resolvent clause
+                    </label>
+                    <input
+                      type="text"
+                      autoFocus
+                      value={resolventDraft}
+                      onChange={(e) => setResolventDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") createResolventFromSelection();
+                      }}
+                      placeholder='e.g. {m}  |  {\\neg a}  |  \\Box'
+                      className="w-full px-3 py-2 border-2 border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-base"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setResolventDraft("\\Box")}
+                    className="px-3 py-2 bg-gray-100 text-gray-800 rounded border border-gray-300 hover:bg-gray-200 transition-colors text-sm font-medium whitespace-nowrap"
+                    title="Insert empty clause symbol"
+                  >
+                    Empty clause (\Box)
+                  </button>
+                </div>
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Edge label: Parent 1 &rarr; Resolvent
+                      <span className="text-gray-400 ml-1">(optional, e.g. a/y, b/x)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={edgeLabelDraft1}
+                      onChange={(e) => setEdgeLabelDraft1(e.target.value)}
+                      placeholder="e.g. a/y, b/x"
+                      className="w-full px-3 py-1.5 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white text-sm"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Edge label: Parent 2 &rarr; Resolvent
+                      <span className="text-gray-400 ml-1">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={edgeLabelDraft2}
+                      onChange={(e) => setEdgeLabelDraft2(e.target.value)}
+                      placeholder="e.g. a/z"
+                      className="w-full px-3 py-1.5 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={createResolventFromSelection}
+                    className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-semibold whitespace-nowrap shadow"
+                  >
+                    Add Resolvent
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedIds([]);
+                      setResolventDraft("");
+                      setEdgeLabelDraft1("");
+                      setEdgeLabelDraft2("");
+                    }}
+                    className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-100 transition-colors whitespace-nowrap"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsSelectingParents(false);
+                      setSelectedIds([]);
+                      setResolventDraft("");
+                      setEdgeLabelDraft1("");
+                      setEdgeLabelDraft2("");
+                    }}
+                    className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-100 transition-colors whitespace-nowrap"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Canvas + Inspector (match AST/FSA layout) */}
       <div className="w-full mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-white rounded-lg shadow overflow-auto p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              onClick={() => {
+                if (!zoomBehaviorRef.current) return;
+                d3.select(svgRef.current)
+                  .transition()
+                  .duration(150)
+                  .call(zoomBehaviorRef.current.scaleBy, 1.2);
+              }}
+              className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
+            >
+              Zoom In
+            </button>
+            <button
+              onClick={() => {
+                if (!zoomBehaviorRef.current) return;
+                d3.select(svgRef.current)
+                  .transition()
+                  .duration(150)
+                  .call(zoomBehaviorRef.current.scaleBy, 0.8);
+              }}
+              className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
+            >
+              Zoom Out
+            </button>
+            <button
+              onClick={() => {
+                if (!zoomBehaviorRef.current) return;
+                d3.select(svgRef.current)
+                  .transition()
+                  .duration(150)
+                  .call(zoomBehaviorRef.current.transform, d3.zoomIdentity);
+              }}
+              className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
+            >
+              Reset View
+            </button>
+            <span className="text-xs text-gray-400 ml-2">
+              Scroll to zoom, drag to pan
+            </span>
+          </div>
           <svg
             ref={svgRef}
             width={700}
@@ -691,10 +1120,11 @@ const ResolutionTree = () => {
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-gray-700">Inspector</h2>
-            {(selectedNodeId !== null || selectedIds.length > 0) && (
+            {(selectedNodeId !== null || selectedEdge !== null) && (
               <button
                 onClick={() => {
                   setSelectedNodeId(null);
+                  setSelectedEdge(null);
                   setSelectedIds([]);
                   setResolventDraft("");
                 }}
@@ -705,9 +1135,55 @@ const ResolutionTree = () => {
             )}
           </div>
 
-          {!selectedNode ? (
+          {selectedEdge ? (
+            <div className="space-y-4">
+              <div className="text-xs text-purple-600 font-semibold uppercase tracking-wide">
+                Edge selected
+              </div>
+              <div className="text-sm text-gray-600">
+                Node <span className="font-mono font-bold">{selectedEdge.sourceId}</span>
+                {" \u2192 "}
+                Node <span className="font-mono font-bold">{selectedEdge.targetId}</span>
+                {selectedEdge.isExtra && (
+                  <span className="ml-2 text-xs bg-gray-100 px-1.5 py-0.5 rounded">extra link</span>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Edge label (substitution)
+                </label>
+                <input
+                  type="text"
+                  value={(() => {
+                    if (selectedEdge.isExtra) {
+                      const link = extraLinks.find(
+                        (l) => l.sourceId === selectedEdge.sourceId && l.targetId === selectedEdge.targetId
+                      );
+                      return link?.label ?? "";
+                    }
+                    const parent = findNodeById(treeData, selectedEdge.sourceId);
+                    const child = parent?.children?.find((c) => c.id === selectedEdge.targetId);
+                    return child?.label ?? "";
+                  })()}
+                  onChange={(e) =>
+                    updateEdgeLabel(
+                      selectedEdge.sourceId,
+                      selectedEdge.targetId,
+                      selectedEdge.isExtra,
+                      e.target.value
+                    )
+                  }
+                  placeholder="e.g. a/y, b/x"
+                  className="w-full px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  Shows substitution on the edge, e.g. <span className="font-mono">[a/y, b/x]</span>
+                </div>
+              </div>
+            </div>
+          ) : !selectedNode ? (
             <div className="text-sm text-gray-500">
-              Click a node in the canvas to select it.
+              Click a node or edge in the canvas to select it.
             </div>
           ) : (
             <div className="space-y-4">
@@ -757,54 +1233,6 @@ const ResolutionTree = () => {
                 </button>
               </div>
 
-              {selectedIds.length === 2 && (
-                <div className="border-t pt-4">
-                  <div className="text-sm font-semibold text-gray-700 mb-2">
-                    Resolution
-                  </div>
-                  <div className="text-sm text-gray-600 mb-2">
-                    Parents:{" "}
-                    <span className="font-mono">{selectedIds.join(", ")}</span>
-                  </div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Resolvent value
-                  </label>
-                  <input
-                    type="text"
-                    value={resolventDraft}
-                    onChange={(e) => setResolventDraft(e.target.value)}
-                    placeholder='e.g. {m}  |  {\\neg a}'
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setResolventDraft("\\Box")}
-                      className="px-3 py-1.5 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 transition-colors text-sm font-medium"
-                      title="Use □ as the final resolvent"
-                    >
-                      Final (\\Box)
-                    </button>
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={createResolventFromSelection}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm font-medium"
-                    >
-                      Add Resolvent
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedIds([]);
-                        setResolventDraft("");
-                      }}
-                      className="px-4 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 transition-colors text-sm font-medium"
-                    >
-                      Clear 2-selection
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -896,7 +1324,7 @@ const ResolutionTree = () => {
                 description: treeDescription,
                 treeData,
                 extraLinks,
-                settings: { mathMode, includePreamble },
+                settings: { mathMode, includePreamble, wrapBraces },
                 userId: user.id,
               };
               if (isEditMode) {
@@ -932,6 +1360,12 @@ const ResolutionTree = () => {
           </p>
         )}
       </div>
+
+      <LatexImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportFromLatex}
+      />
     </div>
   );
 };
