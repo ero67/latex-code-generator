@@ -62,6 +62,51 @@ function parseLabelToken(s, i) {
   return { text: s.slice(i, j), next: j };
 }
 
+function parseEdgeCommand(s, i) {
+  // Parses: \edge node[...]{...}; — extracts label text from the last {...}
+  // Returns { label, next } where next points after the ';'
+  let j = i + 5; // skip "\edge"
+  let label = "";
+
+  // Scan forward to the terminating ';'
+  while (j < s.length && s[j] !== ";") {
+    if (s[j] === "{" && (j === 0 || s[j - 1] !== "\\")) {
+      // Extract content of this brace group — it's the label content
+      const braced = parseBalancedBraces(s, j);
+      label = braced.text; // last brace group wins (the label, not the options)
+      j = braced.next;
+    } else {
+      j++;
+    }
+  }
+  if (j < s.length && s[j] === ";") j++; // skip ';'
+
+  // Clean up the extracted label: strip outer {}, $, and [] wrappers
+  let cleaned = label;
+  if (cleaned.startsWith("{") && cleaned.endsWith("}")) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  // Strip $...$
+  if (cleaned.startsWith("$") && cleaned.endsWith("$")) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  // Strip [...] wrapper
+  if (cleaned.startsWith("[") && cleaned.endsWith("]")) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  // Strip \scriptsize, \footnotesize, etc.
+  cleaned = cleaned.replace(/^\\(?:scriptsize|footnotesize|tiny|small)\s*/, "").trim();
+  // Re-check for [...] after stripping font command
+  if (cleaned.startsWith("$") && cleaned.endsWith("$")) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  if (cleaned.startsWith("[") && cleaned.endsWith("]")) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+
+  return { label: cleaned, next: j };
+}
+
 function parseQtreeNode(s, i) {
   i = skipWs(s, i);
   if (s[i] !== "[") throw new Error("Expected '[' while parsing \\Tree.");
@@ -84,8 +129,21 @@ function parseQtreeNode(s, i) {
       i++; // skip ']'
       break;
     }
+
+    // Check for \edge command before a child node
+    let pendingEdgeLabel = "";
+    if (s.startsWith("\\edge", i)) {
+      const edgeParsed = parseEdgeCommand(s, i);
+      pendingEdgeLabel = edgeParsed.label;
+      i = edgeParsed.next;
+      i = skipWs(s, i);
+    }
+
     // child node
     const childParsed = parseQtreeNode(s, i);
+    if (pendingEdgeLabel) {
+      childParsed.node.edgeLabel = pendingEdgeLabel;
+    }
     children.push(childParsed.node);
     i = childParsed.next;
   }
@@ -163,14 +221,14 @@ export function parseResolutionTreeTikz(latex) {
   const parsed = parseQtreeNode(code, i);
   const root = parsed.node;
 
-  // Assign numeric IDs
+  // Assign numeric IDs, preserve edgeLabel from \edge commands
   let nextId = 0;
   const nodes = [];
   const assign = (n) => {
     const id = nextId++;
     const value = normalizeLabel(n.labelRaw);
     const children = (n.children || []).map(assign);
-    const out = { id, value, children };
+    const out = { id, value, children, edgeLabel: n.edgeLabel || "" };
     nodes.push(out);
     return out;
   };
@@ -187,6 +245,9 @@ export function parseResolutionTreeTikz(latex) {
     return primaryChildren.get(k);
   };
 
+  // edgeLabelForResolvent[resolventId] = label from the primary parent edge
+  const edgeLabelForResolvent = new Map();
+
   const walk = (resolvent) => {
     inDegree.set(resolvent.id, inDegree.get(resolvent.id) ?? 0);
     const parents = resolvent.children || [];
@@ -196,8 +257,17 @@ export function parseResolutionTreeTikz(latex) {
       ensureArr(primaryParent.id).push(resolvent.id);
       inDegree.set(resolvent.id, (inDegree.get(resolvent.id) ?? 0) + 1);
 
+      // The edge label on the primary parent edge goes onto the resolvent node's label
+      if (primaryParent.edgeLabel) {
+        edgeLabelForResolvent.set(resolvent.id, primaryParent.edgeLabel);
+      }
+
       for (let k = 1; k < parents.length; k++) {
-        extraLinks.push({ sourceId: parents[k].id, targetId: resolvent.id });
+        extraLinks.push({
+          sourceId: parents[k].id,
+          targetId: resolvent.id,
+          label: parents[k].edgeLabel || "",
+        });
       }
     }
 
@@ -213,7 +283,14 @@ export function parseResolutionTreeTikz(latex) {
 
   const topLevelIds = allIds.filter((id) => (inDegree.get(id) ?? 0) === 0);
 
-  const byId = new Map(nodes.map((n) => [n.id, { id: n.id, value: n.value, children: [] }]));
+  const byId = new Map(nodes.map((n) => [n.id, { id: n.id, value: n.value, children: [], label: "" }]));
+
+  // Attach edge labels to resolvent nodes
+  for (const [rid, lbl] of edgeLabelForResolvent.entries()) {
+    const node = byId.get(rid);
+    if (node) node.label = lbl;
+  }
+
   for (const [p, kids] of primaryChildren.entries()) {
     const parent = byId.get(p);
     if (!parent) continue;

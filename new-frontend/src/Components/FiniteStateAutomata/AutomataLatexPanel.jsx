@@ -102,8 +102,10 @@ function buildTikz(nodes, edges, opts) {
 
     // Self loop
     if (from === to) {
+      const loopDir = e.loopDir || "top";
+      const tikzDir = loopDir === "top" ? "above" : loopDir === "bottom" ? "below" : loopDir;
       drawLines.push(
-        `(${from}) edge[loop above] node{${edgeLabel}} (${to})`
+        `(${from}) edge[loop ${tikzDir}] node{${edgeLabel}} (${to})`
       );
       continue;
     }

@@ -365,15 +365,38 @@ const FiniteStateAutomata = () => {
         const y = s.y;
         const r = NODE_R;
         const loopR = r + 16;
-        // simple loop above the node
-        const p = `M ${x - r * 0.3} ${y - r}
-                 C ${x - loopR} ${y - loopR * 1.6},
-                   ${x + loopR} ${y - loopR * 1.6},
-                   ${x + r * 0.3} ${y - r}`;
-        pathEl.attr("d", p);
+        const dir = d.loopDir || "top";
 
-        // Label at top
-        labelEl.attr("x", x).attr("y", y - loopR * 1.55);
+        let p, lx, ly;
+        if (dir === "bottom") {
+          p = `M ${x - r * 0.3} ${y + r}
+               C ${x - loopR} ${y + loopR * 1.6},
+                 ${x + loopR} ${y + loopR * 1.6},
+                 ${x + r * 0.3} ${y + r}`;
+          lx = x; ly = y + loopR * 1.55 + 12;
+        } else if (dir === "left") {
+          p = `M ${x - r} ${y - r * 0.3}
+               C ${x - loopR * 1.6} ${y - loopR},
+                 ${x - loopR * 1.6} ${y + loopR},
+                 ${x - r} ${y + r * 0.3}`;
+          lx = x - loopR * 1.55 - 6; ly = y + 4;
+        } else if (dir === "right") {
+          p = `M ${x + r} ${y - r * 0.3}
+               C ${x + loopR * 1.6} ${y - loopR},
+                 ${x + loopR * 1.6} ${y + loopR},
+                 ${x + r} ${y + r * 0.3}`;
+          lx = x + loopR * 1.55 + 6; ly = y + 4;
+        } else {
+          // top (default)
+          p = `M ${x - r * 0.3} ${y - r}
+               C ${x - loopR} ${y - loopR * 1.6},
+                 ${x + loopR} ${y - loopR * 1.6},
+                 ${x + r * 0.3} ${y - r}`;
+          lx = x; ly = y - loopR * 1.55;
+        }
+
+        pathEl.attr("d", p);
+        labelEl.attr("x", lx).attr("y", ly);
         return;
       }
 
@@ -470,16 +493,8 @@ const FiniteStateAutomata = () => {
 
           const from = String(pendingSourceId);
           const to = String(d.id);
-          const promptResult = prompt("Transition label (e.g. a,b,ε):", "");
-          // If user cancels, keep the pending source so they can click a target again.
-          if (promptResult === null) {
-            return;
-          }
-
-          // Create the edge even if label is empty; user can edit it in the Inspector.
-          const label = normalizeLabel(promptResult);
           const id = `e${nextEdgeId.current++}`;
-          setEdges((prev) => [...prev, { id, sourceId: from, targetId: to, label }]);
+          setEdges((prev) => [...prev, { id, sourceId: from, targetId: to, label: "" }]);
           setSelected({ type: "edge", id });
 
           // Keep "add_transition" mode so user can quickly add more transitions.
@@ -691,6 +706,7 @@ const FiniteStateAutomata = () => {
             onClick={() => {
               setMode("add_state");
               setPendingSourceId(null);
+              setSelected({ type: null, id: null });
             }}
             className={`px-4 py-2 rounded font-medium border transition-colors ${
               mode === "add_state"
@@ -704,6 +720,7 @@ const FiniteStateAutomata = () => {
             onClick={() => {
               setMode("add_transition");
               setPendingSourceId(null);
+              setSelected({ type: null, id: null });
             }}
             className={`px-4 py-2 rounded font-medium border transition-colors ${
               mode === "add_transition"
@@ -897,6 +914,37 @@ const FiniteStateAutomata = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+
+                {String(selectedEdge.sourceId) === String(selectedEdge.targetId) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Loop position
+                    </label>
+                    <div className="flex gap-1">
+                      {["top", "bottom", "left", "right"].map((dir) => (
+                        <button
+                          key={dir}
+                          onClick={() =>
+                            setEdges((prev) =>
+                              prev.map((ed) =>
+                                String(ed.id) === String(selectedEdge.id)
+                                  ? { ...ed, loopDir: dir }
+                                  : ed
+                              )
+                            )
+                          }
+                          className={`px-3 py-1.5 rounded text-sm font-medium border transition-colors capitalize ${
+                            (selectedEdge.loopDir || "top") === dir
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          {dir}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <button
                   onClick={deleteSelected}
