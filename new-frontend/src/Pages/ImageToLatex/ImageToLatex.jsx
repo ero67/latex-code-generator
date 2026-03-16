@@ -250,6 +250,26 @@ const ImageToLatex = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="w-full space-y-6">
+        {!byokBlocked && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <FaInfoCircle className="text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-900">
+                <p className="font-semibold mb-1">OpenRouter API key required</p>
+                <p className="text-blue-800 mb-2">
+                  You need to add your OpenRouter API key before using Image to LaTeX.
+                </p>
+                <Link
+                  to="/byok-tutorial"
+                  className="inline-flex items-center text-blue-700 font-semibold hover:text-blue-900"
+                >
+                  Add your API key now
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* File Upload Section */}
         <div className="space-y-4">
           <label
