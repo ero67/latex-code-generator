@@ -27,6 +27,33 @@ function cleanLabel(s) {
   return t;
 }
 
+function normalizeLoopAngle(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return -90;
+  const normalized = ((num % 360) + 360) % 360;
+  return normalized > 180 ? normalized - 360 : normalized;
+}
+
+function parseLoopAngle(opts) {
+  const text = String(opts ?? "");
+
+  if (/\bloop\s+above\b/.test(text)) return -90;
+  if (/\bloop\s+below\b/.test(text)) return 90;
+  if (/\bloop\s+right\b/.test(text)) return 0;
+  if (/\bloop\s+left\b/.test(text)) return 180;
+
+  const inMatch = text.match(/\bin\s*=\s*(-?\d+(?:\.\d+)?)/);
+  const outMatch = text.match(/\bout\s*=\s*(-?\d+(?:\.\d+)?)/);
+
+  if (inMatch && outMatch) {
+    const inAngle = Number(inMatch[1]);
+    const outAngle = Number(outMatch[1]);
+    return normalizeLoopAngle((inAngle + outAngle) / 2);
+  }
+
+  return -90;
+}
+
 export function tikzToSvgCoord(tx, ty) {
   const x = Number(tx) * SCALE + CX;
   const y = CY - Number(ty) * SCALE;
@@ -145,6 +172,7 @@ export function parseFsaTikz(latex) {
         sourceId,
         targetId: normalizedTarget,
         label,
+        ...(isLoop ? { loopAngle: parseLoopAngle(opts) } : {}),
       });
     }
   };
@@ -194,5 +222,4 @@ export function parseFsaTikz(latex) {
 
   return { nodes, edges: filteredEdges, validation };
 }
-
 

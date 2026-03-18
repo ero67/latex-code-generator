@@ -8,6 +8,8 @@ import { toast } from "react-toastify";
 import { parseFsaTikz } from "../../utils/fsaTikzParser";
 
 const NODE_R = 26;
+const SELF_LOOP_DEFAULT_ANGLE = -90;
+const SELF_LOOP_RADIUS = 44;
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -20,6 +22,13 @@ function asNumber(v, fallback) {
 
 function normalizeLabel(s) {
   return String(s ?? "").trim();
+}
+
+function normalizeLoopAngle(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return SELF_LOOP_DEFAULT_ANGLE;
+  const normalized = ((num % 360) + 360) % 360;
+  return normalized > 180 ? normalized - 360 : normalized;
 }
 
 function computeQuadraticPoint(sx, sy, cx, cy, tx, ty, t) {
@@ -54,6 +63,33 @@ function shortenSegment(sx, sy, tx, ty, padStart, padEnd) {
     tx - ux * padEnd,
     ty - uy * padEnd,
   ];
+}
+
+function getSelfLoopGeometry(x, y, angleDegrees, nodeRadius) {
+  const angle = (normalizeLoopAngle(angleDegrees) * Math.PI) / 180;
+  const dirX = Math.cos(angle);
+  const dirY = Math.sin(angle);
+  const normalX = -dirY;
+  const normalY = dirX;
+  const anchorX = x + dirX * nodeRadius;
+  const anchorY = y + dirY * nodeRadius;
+  const startX = anchorX - normalX * nodeRadius * 0.35;
+  const startY = anchorY - normalY * nodeRadius * 0.35;
+  const endX = anchorX + normalX * nodeRadius * 0.35;
+  const endY = anchorY + normalY * nodeRadius * 0.35;
+  const controlDistance = nodeRadius + SELF_LOOP_RADIUS;
+  const controlSpread = SELF_LOOP_RADIUS * 0.7;
+
+  const cp1X = anchorX + dirX * controlDistance - normalX * controlSpread;
+  const cp1Y = anchorY + dirY * controlDistance - normalY * controlSpread;
+  const cp2X = anchorX + dirX * controlDistance + normalX * controlSpread;
+  const cp2Y = anchorY + dirY * controlDistance + normalY * controlSpread;
+
+  return {
+    path: `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`,
+    labelX: x + dirX * (nodeRadius + SELF_LOOP_RADIUS + 22),
+    labelY: y + dirY * (nodeRadius + SELF_LOOP_RADIUS + 22),
+  };
 }
 
 function buildEdgeGroups(edges) {
@@ -361,42 +397,15 @@ const FiniteStateAutomata = () => {
 
       // Self loop
       if (String(d.sourceId) === String(d.targetId)) {
-        const x = s.x;
-        const y = s.y;
-        const r = NODE_R;
-        const loopR = r + 16;
-        const dir = d.loopDir || "top";
+        const { path, labelX, labelY } = getSelfLoopGeometry(
+          s.x,
+          s.y,
+          d.loopAngle ?? SELF_LOOP_DEFAULT_ANGLE,
+          NODE_R
+        );
 
-        let p, lx, ly;
-        if (dir === "bottom") {
-          p = `M ${x - r * 0.3} ${y + r}
-               C ${x - loopR} ${y + loopR * 1.6},
-                 ${x + loopR} ${y + loopR * 1.6},
-                 ${x + r * 0.3} ${y + r}`;
-          lx = x; ly = y + loopR * 1.55 + 12;
-        } else if (dir === "left") {
-          p = `M ${x - r} ${y - r * 0.3}
-               C ${x - loopR * 1.6} ${y - loopR},
-                 ${x - loopR * 1.6} ${y + loopR},
-                 ${x - r} ${y + r * 0.3}`;
-          lx = x - loopR * 1.55 - 6; ly = y + 4;
-        } else if (dir === "right") {
-          p = `M ${x + r} ${y - r * 0.3}
-               C ${x + loopR * 1.6} ${y - loopR},
-                 ${x + loopR * 1.6} ${y + loopR},
-                 ${x + r} ${y + r * 0.3}`;
-          lx = x + loopR * 1.55 + 6; ly = y + 4;
-        } else {
-          // top (default)
-          p = `M ${x - r * 0.3} ${y - r}
-               C ${x - loopR} ${y - loopR * 1.6},
-                 ${x + loopR} ${y - loopR * 1.6},
-                 ${x + r * 0.3} ${y - r}`;
-          lx = x; ly = y - loopR * 1.55;
-        }
-
-        pathEl.attr("d", p);
-        labelEl.attr("x", lx).attr("y", ly);
+        pathEl.attr("d", path);
+        labelEl.attr("x", labelX).attr("y", labelY);
         return;
       }
 
@@ -917,33 +926,90 @@ const FiniteStateAutomata = () => {
 
                 {String(selectedEdge.sourceId) === String(selectedEdge.targetId) && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Loop position
-                    </label>
-                    <div className="flex gap-1">
-                      {["top", "bottom", "left", "right"].map((dir) => (
-                        <button
-                          key={dir}
-                          onClick={() =>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Loop angle
+                      </label>
+                      <div className="space-y-3">
+                        <input
+                          type="range"
+                          min="-180"
+                          max="180"
+                          step="1"
+                          value={normalizeLoopAngle(selectedEdge.loopAngle ?? SELF_LOOP_DEFAULT_ANGLE)}
+                          onChange={(e) => {
+                            const angle = normalizeLoopAngle(e.target.value);
                             setEdges((prev) =>
                               prev.map((ed) =>
                                 String(ed.id) === String(selectedEdge.id)
-                                  ? { ...ed, loopDir: dir }
+                                  ? { ...ed, loopAngle: angle }
                                   : ed
                               )
-                            )
-                          }
-                          className={`px-3 py-1.5 rounded text-sm font-medium border transition-colors capitalize ${
-                            (selectedEdge.loopDir || "top") === dir
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                          }`}
-                        >
-                          {dir}
-                        </button>
-                      ))}
+                            );
+                          }}
+                          className="w-full accent-blue-600"
+                        />
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="number"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            value={normalizeLoopAngle(selectedEdge.loopAngle ?? SELF_LOOP_DEFAULT_ANGLE)}
+                            onChange={(e) => {
+                              const angle = normalizeLoopAngle(e.target.value);
+                              setEdges((prev) =>
+                                prev.map((ed) =>
+                                  String(ed.id) === String(selectedEdge.id)
+                                    ? { ...ed, loopAngle: angle }
+                                    : ed
+                                )
+                              );
+                            }}
+                            className="w-28 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-500">degrees</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { label: "Top", value: -90 },
+                            { label: "Top-right", value: -45 },
+                            { label: "Right", value: 0 },
+                            { label: "Bottom-right", value: 45 },
+                            { label: "Bottom", value: 90 },
+                            { label: "Bottom-left", value: 135 },
+                            { label: "Left", value: 180 },
+                            { label: "Top-left", value: -135 },
+                          ].map((preset) => {
+                            const current = normalizeLoopAngle(
+                              selectedEdge.loopAngle ?? SELF_LOOP_DEFAULT_ANGLE
+                            );
+                            const isActive = current === preset.value;
+
+                            return (
+                              <button
+                                key={preset.label}
+                                onClick={() =>
+                                  setEdges((prev) =>
+                                    prev.map((ed) =>
+                                      String(ed.id) === String(selectedEdge.id)
+                                        ? { ...ed, loopAngle: preset.value }
+                                        : ed
+                                    )
+                                  )
+                                }
+                                className={`px-3 py-1.5 rounded text-sm font-medium border transition-colors ${
+                                  isActive
+                                    ? "bg-blue-600 text-white border-blue-600"
+                                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                {preset.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
-                  </div>
                 )}
 
                 <button
