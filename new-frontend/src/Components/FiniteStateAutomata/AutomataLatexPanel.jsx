@@ -26,6 +26,25 @@ function toTikzCoord(x, y) {
   return [round(tx), round(ty)];
 }
 
+function normalizeLoopAngle(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return -90;
+  const normalized = ((num % 360) + 360) % 360;
+  return normalized > 180 ? normalized - 360 : normalized;
+}
+
+function loopAngleToTikz(angle) {
+  const normalized = normalizeLoopAngle(angle);
+  const rounded = Math.round(normalized);
+
+  if (rounded === -90) return "loop above";
+  if (rounded === 90) return "loop below";
+  if (rounded === 0) return "loop right";
+  if (Math.abs(rounded) === 180) return "loop left";
+
+  return `loop, in=${rounded - 25}, out=${rounded + 25}, looseness=8`;
+}
+
 function buildTikz(nodes, edges, opts) {
   const { includePreamble, includeTikzImports } = opts;
 
@@ -102,11 +121,8 @@ function buildTikz(nodes, edges, opts) {
 
     // Self loop
     if (from === to) {
-      const loopDir = e.loopDir || "top";
-      const tikzDir = loopDir === "top" ? "above" : loopDir === "bottom" ? "below" : loopDir;
-      drawLines.push(
-        `(${from}) edge[loop ${tikzDir}] node{${edgeLabel}} (${to})`
-      );
+      const loopOpts = loopAngleToTikz(e.loopAngle);
+      drawLines.push(`(${from}) edge[${loopOpts}] node{${edgeLabel}} (${to})`);
       continue;
     }
 
