@@ -70,6 +70,7 @@ const ProofTreeVisualizer = ({
   onAddChild,
   onRemoveNode,
   selectedNodeId,
+  zoom = 1,
 }) => {
   const CONTROL_RADIUS = 10;
   const CONTROL_GAP = 15;
@@ -274,12 +275,12 @@ const ProofTreeVisualizer = ({
   const viewboxHeight = dimensions.height + 40;
 
   return (
-    <div className="w-full overflow-x-auto bg-gray-50 p-4 rounded-lg border-2 border-dashed">
+    <div className="w-full overflow-auto bg-gray-50 p-4 rounded-lg border-2 border-dashed" style={{ height: 500, resize: "both", minHeight: 200, minWidth: 300 }}>
       <svg
-        width={viewboxWidth}
-        height={viewboxHeight}
+        width={viewboxWidth * zoom}
+        height={viewboxHeight * zoom}
         viewBox={`0 0 ${viewboxWidth} ${viewboxHeight}`}
-        className="mx-auto overflow-visible"
+        className="overflow-visible"
       >
         {renderTree(
           node,
@@ -309,6 +310,7 @@ const ProofTree = () => {
   const [shouldAutoFocusNodeInput, setShouldAutoFocusNodeInput] = useState(false);
   const [moveTargetId, setMoveTargetId] = useState("");
   const [movePlacement, setMovePlacement] = useState("above");
+  const [treeZoom, setTreeZoom] = useState(1);
 
   const { user } = useAuth();
   const { id } = useParams();
@@ -943,15 +945,43 @@ const ProofTree = () => {
       <ProofTreeInstructions />
       {/* --- 1. Tree Visualization Section --- */}
       <div className="w-full mb-6">
-        <h2 className="text-lg font-semibold mb-3 text-gray-700">
-          Tree Visualization
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-gray-700">
+            Tree Visualization
+          </h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTreeZoom((z) => Math.max(0.25, z - 0.25))}
+              disabled={treeZoom <= 0.25}
+              className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 text-sm font-medium"
+            >
+              −
+            </button>
+            <span className="text-xs text-gray-600 min-w-[3rem] text-center">
+              {Math.round(treeZoom * 100)}%
+            </span>
+            <button
+              onClick={() => setTreeZoom((z) => Math.min(3, z + 0.25))}
+              disabled={treeZoom >= 3}
+              className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 text-sm font-medium"
+            >
+              +
+            </button>
+            <button
+              onClick={() => setTreeZoom(1)}
+              className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-xs font-medium"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
         <ProofTreeVisualizer
           node={rootNode}
           onNodeClick={setSelectedNodeId}
           onAddChild={addNode}
           onRemoveNode={removeNode}
           selectedNodeId={selectedNodeId}
+          zoom={treeZoom}
         />
       </div>
       {/* --- 2. Node Editor Panel --- */}
