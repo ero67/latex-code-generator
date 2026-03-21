@@ -9,6 +9,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { resolutionTreeService } from "../../services/resolutiontree.service";
 import { parseResolutionTreeTikz } from "../../utils/resolutionTreeTikzParser";
 import LatexImportModal from "../../Components/ResolutionTree/LatexImportModal";
+import { buildGeometryLine } from "../../utils/latexGeometry";
 
 const ResolutionTree = () => {
   const svgRef = useRef();
@@ -29,6 +30,8 @@ const ResolutionTree = () => {
   const [showLaTeXEditor, setShowLaTeXEditor] = useState(false);
   const [includePreamble, setIncludePreamble] = useState(true);
   const [wrapBraces, setWrapBraces] = useState(true);
+  const [paperSize, setPaperSize] = useState("a4paper");
+  const [landscape, setLandscape] = useState(false);
   const [resolventDraft, setResolventDraft] = useState("");
   const [isSelectingParents, setIsSelectingParents] = useState(false);
   const [selectedEdge, setSelectedEdge] = useState(null); // { sourceId, targetId, isExtra }
@@ -549,9 +552,11 @@ const ResolutionTree = () => {
     let code = "";
     if (includePreamble) {
       code += "\\documentclass[tikz, margin=10pt]{standalone}\n";
+      code += buildGeometryLine(paperSize, landscape);
       code += "\\usepackage{tikz-qtree}\n";
       code += "\\usepackage{latexsym}\n";
       code += "\\usepackage{amssymb}\n\n";
+      code += "\\pagestyle{empty}\n";
       code += "\\begin{document}\n";
     }
 
@@ -874,6 +879,31 @@ const ResolutionTree = () => {
           />
           Include whole LaTeX preamble
         </label>
+        {includePreamble && (
+          <>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <span>Paper Size:</span>
+              <select
+                value={paperSize}
+                onChange={(e) => setPaperSize(e.target.value)}
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+              >
+                <option value="a4paper">A4</option>
+                <option value="a3paper">A3</option>
+                <option value="a2paper">A2</option>
+                <option value="a1paper">A1</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={landscape}
+                onChange={() => setLandscape((v) => !v)}
+              />
+              Landscape
+            </label>
+          </>
+        )}
         <div className="text-sm text-gray-500 flex items-center gap-2">
           <FaTrash className="text-red-500" /> Delete from Inspector
         </div>

@@ -9,6 +9,7 @@ import * as d3 from "d3";
 import GeneratedCode from "../../Components/GeneratedCode";
 import { LaTeXEditor } from "../../Components/LaTeXEditor";
 import LatexImportModal from "../../Components/AST/LatexImportModal";
+import { buildGeometryLine } from "../../utils/latexGeometry";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 import { useParams, useNavigate } from "react-router-dom";
@@ -73,6 +74,8 @@ const SyntaxTreeD3 = () => {
 
   const [includePreamble, setIncludePreamble] = useState(true);
   const [includeDocumentTags, setIncludeDocumentTags] = useState(true);
+  const [paperSize, setPaperSize] = useState("a4paper");
+  const [landscape, setLandscape] = useState(false);
 
   //Saving vars
   const [treeName, setTreeName] = useState("");
@@ -809,9 +812,9 @@ const SyntaxTreeD3 = () => {
     let latexCode = "";
     // Check if the preamble should be included
     if (includePreamble) {
-      latexCode += "\\documentclass{article}\n\\usepackage{forest}\n";
+      latexCode += "\\documentclass{article}\n" + buildGeometryLine(paperSize, landscape) + "\\usepackage{forest}\n";
       // if (includeDocumentTags) {
-      latexCode += "\\begin{document}\n";
+      latexCode += "\\pagestyle{empty}\n\\begin{document}\n";
       // }
     } else if (includeDocumentTags) {
       latexCode += "\\usepackage{forest}\n";
@@ -1320,6 +1323,34 @@ const SyntaxTreeD3 = () => {
               Include import of the forest package
             </span>
           </label>
+          {includePreamble && (
+            <>
+              <label className="flex items-center cursor-pointer">
+                <span className="text-sm text-gray-600 font-medium mr-2">Paper Size:</span>
+                <select
+                  value={paperSize}
+                  onChange={(e) => setPaperSize(e.target.value)}
+                  className="text-sm border border-gray-300 rounded px-2 py-1"
+                >
+                  <option value="a4paper">A4</option>
+                  <option value="a3paper">A3</option>
+                  <option value="a2paper">A2</option>
+                  <option value="a1paper">A1</option>
+                </select>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={landscape}
+                  onChange={() => setLandscape(!landscape)}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-600 font-medium">
+                  Landscape
+                </span>
+              </label>
+            </>
+          )}
         </div>
       </div>
 

@@ -11,6 +11,7 @@ import { proofTreeService } from "../../services/prooftree.service";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { parseLatexToProofTree } from "../../utils/latexParser";
+import { buildGeometryLine } from "../../utils/latexGeometry";
 
 const findNodeById = (node, targetId) => {
   if (!node) return null;
@@ -303,6 +304,8 @@ const ProofTree = () => {
   const [math_notation, setMathNotation] = useState(false);
   const [includePreamble, setIncludePreamble] = useState(true);
   const [includeDocumentTags, setIncludeDocumentTags] = useState(true);
+  const [paperSize, setPaperSize] = useState("a4paper");
+  const [landscape, setLandscape] = useState(false);
   const [treeName, setTreeName] = useState("");
   const [treeDescription, setTreeDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -787,7 +790,7 @@ const ProofTree = () => {
     // Check if the preamble should be included
     if (includePreamble) {
       latexCode +=
-        "\\documentclass{article}\n\\usepackage{bussproofs}\n\\begin{document}\n";
+        "\\documentclass{article}\n" + buildGeometryLine(paperSize, landscape) + "\\usepackage{bussproofs}\n\\pagestyle{empty}\n\\begin{document}\n";
     }
     if (includeDocumentTags && !includePreamble) {
       latexCode += "\\usepackage{bussproofs}\n";
@@ -1248,6 +1251,34 @@ const ProofTree = () => {
               Include import of the bussproofs package
             </span>
           </label>
+          {includePreamble && (
+            <>
+              <label className="flex items-center cursor-pointer">
+                <span className="text-sm text-gray-600 font-medium mr-2">Paper Size:</span>
+                <select
+                  value={paperSize}
+                  onChange={(e) => setPaperSize(e.target.value)}
+                  className="text-sm border border-gray-300 rounded px-2 py-1"
+                >
+                  <option value="a4paper">A4</option>
+                  <option value="a3paper">A3</option>
+                  <option value="a2paper">A2</option>
+                  <option value="a1paper">A1</option>
+                </select>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={landscape}
+                  onChange={() => setLandscape(!landscape)}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-600 font-medium">
+                  Landscape
+                </span>
+              </label>
+            </>
+          )}
         </div>
       </div>
       {/* Import/Export and Generate Code Buttons */}

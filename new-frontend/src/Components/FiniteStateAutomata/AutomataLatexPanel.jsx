@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import GeneratedCode from "../GeneratedCode";
 import { LaTeXEditor } from "../LaTeXEditor";
 import LatexImportModal from "./LatexImportModal";
+import { buildGeometryLine } from "../../utils/latexGeometry";
 
 function escapeLatexText(s) {
   // Minimal escaping for labels; users can still input raw LaTeX if they want.
@@ -46,7 +47,7 @@ function loopAngleToTikz(angle) {
 }
 
 function buildTikz(nodes, edges, opts) {
-  const { includePreamble, includeTikzImports } = opts;
+  const { includePreamble, includeTikzImports, paperSize, landscape } = opts;
 
   if (!nodes || nodes.length === 0) {
     return "% No states defined.\n\\begin{tikzpicture}\n\\end{tikzpicture}\n";
@@ -77,10 +78,13 @@ function buildTikz(nodes, edges, opts) {
 
   if (includePreamble) {
     lines.push("\\documentclass{article}");
+    const geom = buildGeometryLine(paperSize, landscape);
+    if (geom) lines.push(geom.trimEnd());
     lines.push("\\usepackage{tikz}");
     if (includeTikzImports) {
       lines.push("\\usetikzlibrary{automata,positioning,arrows}");
     }
+    lines.push("\\pagestyle{empty}");
     lines.push("\\begin{document}");
   } else if (includeTikzImports) {
     lines.push("\\usepackage{tikz}");
@@ -176,6 +180,8 @@ function buildTikz(nodes, edges, opts) {
 const AutomataLatexPanel = ({ nodes, edges, onImport }) => {
   const [includePreamble, setIncludePreamble] = useState(true);
   const [includeTikzImports, setIncludeTikzImports] = useState(true);
+  const [paperSize, setPaperSize] = useState("a4paper");
+  const [landscape, setLandscape] = useState(false);
   const [generatedCode, setGeneratedCode] = useState(
     "Your code will appear here \n after you click on Generate LaTeX button"
   );
@@ -184,8 +190,8 @@ const AutomataLatexPanel = ({ nodes, edges, onImport }) => {
 
   const tikz = useMemo(() => {
     // Keep memoized version for preview; we still only "commit" on button click.
-    return buildTikz(nodes, edges, { includePreamble, includeTikzImports });
-  }, [edges, includePreamble, includeTikzImports, nodes]);
+    return buildTikz(nodes, edges, { includePreamble, includeTikzImports, paperSize, landscape });
+  }, [edges, includePreamble, includeTikzImports, paperSize, landscape, nodes]);
 
   const handleGenerateLatex = () => {
     setGeneratedCode(tikz);
@@ -234,6 +240,34 @@ const AutomataLatexPanel = ({ nodes, edges, onImport }) => {
             Include TikZ imports (automata, positioning, arrows)
           </span>
         </label>
+        {includePreamble && (
+          <>
+            <label className="flex items-center cursor-pointer">
+              <span className="text-sm text-gray-600 font-medium mr-2">Paper Size:</span>
+              <select
+                value={paperSize}
+                onChange={(e) => setPaperSize(e.target.value)}
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+              >
+                <option value="a4paper">A4</option>
+                <option value="a3paper">A3</option>
+                <option value="a2paper">A2</option>
+                <option value="a1paper">A1</option>
+              </select>
+            </label>
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={landscape}
+                onChange={() => setLandscape(!landscape)}
+                className="mr-2"
+              />
+              <span className="text-sm text-gray-600 font-medium">
+                Landscape
+              </span>
+            </label>
+          </>
+        )}
       </div>
 
       <div className="flex items-center justify-between mb-3">
