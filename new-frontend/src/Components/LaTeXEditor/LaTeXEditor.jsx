@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import Editor from "@monaco-editor/react";
 import PDFViewer from "./PDFViewer";
-import { compileLaTeX } from "../../services/latex.service";
+import { compileLaTeX, compileLaTeXToSVG } from "../../services/latex.service";
 import { toast } from "react-toastify";
-import { FaPlay, FaDownload, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaPlay, FaDownload, FaEye, FaEyeSlash, FaFileCode, FaImage } from "react-icons/fa";
 
 /**
  * LaTeX Editor Component
@@ -23,6 +23,7 @@ const LaTeXEditor = ({
   const [code, setCode] = useState(initialCode || "");
   const [pdfBase64, setPdfBase64] = useState(null);
   const [isCompiling, setIsCompiling] = useState(false);
+  const [isCompilingSVG, setIsCompilingSVG] = useState(false);
   const [errors, setErrors] = useState([]);
   const [showPreview, setShowPreview] = useState(true);
 
@@ -78,11 +79,52 @@ const LaTeXEditor = ({
 
   const handleDownloadPDF = () => {
     if (!pdfBase64) return;
-    
+
     const link = document.createElement("a");
     link.href = `data:application/pdf;base64,${pdfBase64}`;
     link.download = "document.pdf";
     link.click();
+  };
+
+  const handleDownloadTeX = () => {
+    if (!code.trim()) return;
+
+    const blob = new Blob([code], { type: "application/x-tex" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "document.tex";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const handleDownloadSVG = async () => {
+    if (!code.trim()) return;
+
+    setIsCompilingSVG(true);
+    try {
+      const result = await compileLaTeXToSVG(code);
+
+      if (result.success && result.svg) {
+        const svgBytes = atob(result.svg);
+        const byteArray = new Uint8Array(svgBytes.length);
+        for (let i = 0; i < svgBytes.length; i++) {
+          byteArray[i] = svgBytes.charCodeAt(i);
+        }
+        const blob = new Blob([byteArray], { type: "image/svg+xml" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "document.svg";
+        link.click();
+        URL.revokeObjectURL(link.href);
+        toast.success("SVG downloaded successfully!");
+      } else {
+        toast.error(result.errors?.[0] || "SVG compilation failed");
+      }
+    } catch (error) {
+      toast.error(`Failed to generate SVG: ${error.message}`);
+    } finally {
+      setIsCompilingSVG(false);
+    }
   };
 
   return (
@@ -106,6 +148,25 @@ const LaTeXEditor = ({
               >
                 <FaDownload className="text-sm" />
                 <span>Download PDF</span>
+              </button>
+            )}
+            {code.trim() && (
+              <button
+                onClick={handleDownloadTeX}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center gap-2 transition-colors"
+              >
+                <FaFileCode className="text-sm" />
+                <span>Download .tex</span>
+              </button>
+            )}
+            {code.trim() && (
+              <button
+                onClick={handleDownloadSVG}
+                disabled={isCompilingSVG}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+              >
+                <FaImage className="text-sm" />
+                <span>{isCompilingSVG ? "Generating SVG..." : "Download SVG"}</span>
               </button>
             )}
           </div>
