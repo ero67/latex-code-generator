@@ -22,8 +22,8 @@ services:
     volumes:
       - ./infra/nginx/templates:/etc/nginx/templates:ro
       - ./infra/nginx/docker-entrypoint.d:/docker-entrypoint.d:ro
-      - certbot-www:/var/www/certbot:ro
-      - certbot-conf:/etc/letsencrypt:ro
+      # - certbot-www:/var/www/certbot:ro
+      # - certbot-conf:/etc/letsencrypt:ro
     depends_on:
       - frontend
       - backend
@@ -31,32 +31,32 @@ services:
       - app-network
 
   # Let’s Encrypt one-off runner (used for initial issuance, manual renew/debug)
-  certbot:
-    image: certbot/certbot:latest
-    container_name: latex-certbot
-    volumes:
-      - certbot-www:/var/www/certbot
-      - certbot-conf:/etc/letsencrypt
-    networks:
-      - app-network
+  # certbot:
+  #   image: certbot/certbot:latest
+  #   container_name: latex-certbot
+  #   volumes:
+  #     - certbot-www:/var/www/certbot
+  #     - certbot-conf:/etc/letsencrypt
+  #   networks:
+  #     - app-network
 
   # Let’s Encrypt auto-renew loop (runs in background)
-  certbot-renew:
-    image: certbot/certbot:latest
-    container_name: latex-certbot-renew
-    volumes:
-      - certbot-www:/var/www/certbot
-      - certbot-conf:/etc/letsencrypt
-    entrypoint: /bin/sh -c
-    # Renew twice per day; nginx reload is handled by restarting/reloading reverse-proxy.
-    command: >
-      "trap exit TERM;
-       while :; do
-         certbot renew --webroot -w /var/www/certbot --quiet;
-         sleep 12h;
-       done"
-    networks:
-      - app-network
+  # certbot-renew:
+  #   image: certbot/certbot:latest
+  #   container_name: latex-certbot-renew
+  #   volumes:
+  #     - certbot-www:/var/www/certbot
+  #     - certbot-conf:/etc/letsencrypt
+  #   entrypoint: /bin/sh -c
+  #   # Renew twice per day; nginx reload is handled by restarting/reloading reverse-proxy.
+  #   command: >
+  #     "trap exit TERM;
+  #      while :; do
+  #        certbot renew --webroot -w /var/www/certbot --quiet;
+  #        sleep 12h;
+  #      done"
+  #   networks:
+  #     - app-network
 
   # Frontend (served internally; reverse-proxy exposes it publicly)
   frontend:
@@ -196,5 +196,5 @@ services:
 volumes:
   mongodb_data:
   latex-temp:
-  certbot-www:
-  certbot-conf:
+  # certbot-www:
+  # certbot-conf:
