@@ -277,19 +277,21 @@ const ProofTreeVisualizer = ({
 
   return (
     <div className="w-full overflow-auto bg-gray-50 p-4 rounded-lg border-2 border-dashed" style={{ height: 500, resize: "both", minHeight: 200, minWidth: 300 }}>
-      <svg
-        width={viewboxWidth * zoom}
-        height={viewboxHeight * zoom}
-        viewBox={`0 0 ${viewboxWidth} ${viewboxHeight}`}
-        className="overflow-visible"
-      >
-        {renderTree(
-          node,
-          viewboxWidth / 2,
-          viewboxHeight - 60,
-          dimensions.width
-        )}
-      </svg>
+      <div className="flex items-end justify-center" style={{ minWidth: "100%", minHeight: "100%" }}>
+        <svg
+          width={viewboxWidth * zoom}
+          height={viewboxHeight * zoom}
+          viewBox={`0 0 ${viewboxWidth} ${viewboxHeight}`}
+          className="overflow-visible"
+        >
+          {renderTree(
+            node,
+            viewboxWidth / 2,
+            viewboxHeight - 60,
+            dimensions.width
+          )}
+        </svg>
+      </div>
     </div>
   );
 };
