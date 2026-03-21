@@ -28,6 +28,14 @@ class CompileResponse(BaseModel):
     log: Optional[str] = None
 
 
+class CompileSVGResponse(BaseModel):
+    success: bool
+    svg_base64: Optional[str] = None
+    errors: Optional[List[str]] = None
+    warnings: Optional[List[str]] = None
+    log: Optional[str] = None
+
+
 def parse_latex_errors(log_content: str) -> List[str]:
     """Parse LaTeX compilation errors from log file."""
     errors = []
@@ -159,6 +167,113 @@ async def compile_latex(request: CompileRequest):
                 shutil.rmtree(work_dir)
         except Exception:
             pass  # Ignore cleanup errors
+
+
+@app.post("/compile-svg", response_model=CompileSVGResponse)
+async def compile_svg(request: CompileRequest):
+    """
+    Compile LaTeX code to SVG via latex (DVI) + dvisvgm.
+    """
+    if not request.code or not request.code.strip():
+        raise HTTPException(status_code=400, detail="LaTeX code is required")
+
+    work_dir = os.path.join(LATEX_WORK_DIR, str(uuid.uuid4()))
+    os.makedirs(work_dir, exist_ok=True)
+
+    try:
+        tex_file = os.path.join(work_dir, "document.tex")
+        with open(tex_file, "w", encoding="utf-8") as f:
+            f.write(request.code)
+
+        # Step 1: latex -> DVI
+        latex_cmd = [
+            "latex",
+            "-interaction=nonstopmode",
+            "-halt-on-error",
+            "-output-directory", work_dir,
+            tex_file,
+        ]
+
+        try:
+            result = subprocess.run(
+                latex_cmd,
+                cwd=work_dir,
+                capture_output=True,
+                text=True,
+                timeout=COMPILATION_TIMEOUT,
+            )
+
+            log_path = os.path.join(work_dir, "document.log")
+            log_content = ""
+            if os.path.exists(log_path):
+                with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                    log_content = f.read()
+
+            dvi_path = os.path.join(work_dir, "document.dvi")
+            if not os.path.exists(dvi_path):
+                errors = parse_latex_errors(log_content or result.stderr)
+                return CompileSVGResponse(
+                    success=False,
+                    errors=errors,
+                    log=log_content or result.stderr,
+                )
+
+            # Step 2: dvisvgm -> SVG
+            svg_path = os.path.join(work_dir, "document.svg")
+            dvisvgm_cmd = [
+                "dvisvgm",
+                "--no-fonts",
+                dvi_path,
+                "-o", svg_path,
+            ]
+
+            svg_result = subprocess.run(
+                dvisvgm_cmd,
+                cwd=work_dir,
+                capture_output=True,
+                text=True,
+                timeout=COMPILATION_TIMEOUT,
+            )
+
+            if not os.path.exists(svg_path):
+                return CompileSVGResponse(
+                    success=False,
+                    errors=[f"dvisvgm failed: {svg_result.stderr}"],
+                    log=log_content,
+                )
+
+            with open(svg_path, "rb") as f:
+                svg_bytes = f.read()
+                svg_base64 = base64.b64encode(svg_bytes).decode("utf-8")
+
+            warnings = parse_latex_warnings(log_content or result.stdout)
+
+            return CompileSVGResponse(
+                success=True,
+                svg_base64=svg_base64,
+                warnings=warnings if warnings else None,
+                log=log_content if log_content else None,
+            )
+
+        except subprocess.TimeoutExpired:
+            return CompileSVGResponse(
+                success=False,
+                errors=["Compilation timeout exceeded"],
+                log="Compilation took longer than 30 seconds",
+            )
+        except Exception as e:
+            return CompileSVGResponse(
+                success=False,
+                errors=[f"Compilation error: {str(e)}"],
+                log=str(e),
+            )
+
+    finally:
+        try:
+            if os.path.exists(work_dir):
+                shutil.rmtree(work_dir)
+        except Exception:
+            pass
 
 
 @app.get("/health")

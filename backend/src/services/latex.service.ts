@@ -14,6 +14,14 @@ export interface CompileResult {
   log?: string;
 }
 
+export interface CompileSVGResult {
+  success: boolean;
+  svgBase64?: string;
+  errors?: string[];
+  warnings?: string[];
+  log?: string;
+}
+
 /**
  * Call the LaTeX compiler service to compile LaTeX code to PDF
  */
@@ -68,6 +76,62 @@ export async function compileLaTeX(
       return {
         success: false,
         errors: [`Failed to compile LaTeX: ${error.message}`],
+        log: error.message,
+      };
+    }
+  }
+}
+
+/**
+ * Call the LaTeX compiler service to compile LaTeX code to SVG
+ */
+export async function compileSVG(
+  latexCode: string,
+  timeoutMs = COMPILATION_TIMEOUT_MS
+): Promise<CompileSVGResult> {
+  try {
+    const response = await axios.post(
+      `${LATEX_COMPILER_URL}/compile-svg`,
+      {
+        code: latexCode,
+      },
+      {
+        timeout: timeoutMs,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const result = response.data;
+
+    return {
+      success: result.success || false,
+      svgBase64: result.svg_base64,
+      errors: result.errors,
+      warnings: result.warnings,
+      log: result.log,
+    };
+  } catch (error: any) {
+    if (error.response) {
+      const errorData = error.response.data;
+      return {
+        success: false,
+        errors: errorData.errors || [errorData.message || "SVG compilation failed"],
+        log: errorData.log,
+      };
+    } else if (error.request) {
+      return {
+        success: false,
+        errors: [
+          "LaTeX compiler service is not responding. Please try again later.",
+        ],
+        log: error.message,
+      };
+    } else {
+      return {
+        success: false,
+        errors: [`Failed to compile SVG: ${error.message}`],
         log: error.message,
       };
     }
