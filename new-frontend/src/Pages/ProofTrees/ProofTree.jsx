@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaLevelDownAlt, FaMinus, FaPlus } from "react-icons/fa";
+import { FaLevelDownAlt, FaMinus, FaPlus, FaArrowUp, FaArrowDown, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import "../index.css";
 import GeneratedCode from "../../Components/GeneratedCode";
 import { LaTeXEditor } from "../../Components/LaTeXEditor";
@@ -36,6 +36,20 @@ const isDescendant = (node, targetId) => {
   if (!node) return false;
   if (node.id === targetId) return true;
   return (node.children || []).some((child) => isDescendant(child, targetId));
+};
+
+const detachNode = (clonedRoot, nodeId) => {
+  const node = findNodeById(clonedRoot, nodeId);
+  const parent = findParentOfNode(clonedRoot, nodeId);
+  if (!node || !parent) return null;
+
+  const index = parent.children.findIndex((c) => c.id === nodeId);
+  if (index === -1) return null;
+
+  parent.children.splice(index, 1, ...(node.children || []));
+  node.children = [];
+
+  return { detachedNode: node, parentNode: parent, originalIndex: index };
 };
 
 // --- DATA STRUCTURE ---
@@ -438,32 +452,166 @@ const ProofTree = () => {
 
   const moveNodeLeft = (nodeIdToMove) => {
     const newRoot = JSON.parse(JSON.stringify(rootNode));
-    const parentNode = findParentOfNode(newRoot, nodeIdToMove);
-    if (!parentNode) return;
+    const parent = findParentOfNode(newRoot, nodeIdToMove);
+    if (!parent) return;
 
-    const index = parentNode.children.findIndex((child) => child.id === nodeIdToMove);
-    if (index <= 0) return;
+    const grandparent = findParentOfNode(newRoot, parent.id);
+    if (!grandparent) return;
 
-    [parentNode.children[index - 1], parentNode.children[index]] = [
-      parentNode.children[index],
-      parentNode.children[index - 1],
-    ];
+    const parentIndex = grandparent.children.findIndex((c) => c.id === parent.id);
+    if (parentIndex <= 0) return;
+
+    const leftBranch = grandparent.children[parentIndex - 1];
+    if (leftBranch.children.length >= 5) {
+      toast.error("Left branch already has the maximum number of children (5).");
+      return;
+    }
+
+    const result = detachNode(newRoot, nodeIdToMove);
+    if (!result) return;
+
+    const refreshedLeftBranch = findNodeById(newRoot, leftBranch.id);
+    refreshedLeftBranch.children.push(result.detachedNode);
+
     setRootNode(newRoot);
+    setSelectedNodeId(result.detachedNode.id);
   };
 
   const moveNodeRight = (nodeIdToMove) => {
     const newRoot = JSON.parse(JSON.stringify(rootNode));
-    const parentNode = findParentOfNode(newRoot, nodeIdToMove);
-    if (!parentNode) return;
+    const parent = findParentOfNode(newRoot, nodeIdToMove);
+    if (!parent) return;
 
-    const index = parentNode.children.findIndex((child) => child.id === nodeIdToMove);
-    if (index === -1 || index >= parentNode.children.length - 1) return;
+    const grandparent = findParentOfNode(newRoot, parent.id);
+    if (!grandparent) return;
 
-    [parentNode.children[index], parentNode.children[index + 1]] = [
-      parentNode.children[index + 1],
-      parentNode.children[index],
+    const parentIndex = grandparent.children.findIndex((c) => c.id === parent.id);
+    if (parentIndex === -1 || parentIndex >= grandparent.children.length - 1) return;
+
+    const rightBranch = grandparent.children[parentIndex + 1];
+    if (rightBranch.children.length >= 5) {
+      toast.error("Right branch already has the maximum number of children (5).");
+      return;
+    }
+
+    const result = detachNode(newRoot, nodeIdToMove);
+    if (!result) return;
+
+    const refreshedRightBranch = findNodeById(newRoot, rightBranch.id);
+    refreshedRightBranch.children.unshift(result.detachedNode);
+
+    setRootNode(newRoot);
+    setSelectedNodeId(result.detachedNode.id);
+  };
+
+  const swapNodeLeft = (nodeIdToMove) => {
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    const parent = findParentOfNode(newRoot, nodeIdToMove);
+    if (!parent) return;
+
+    const index = parent.children.findIndex((c) => c.id === nodeIdToMove);
+    if (index <= 0) return;
+
+    [parent.children[index - 1], parent.children[index]] = [
+      parent.children[index],
+      parent.children[index - 1],
     ];
     setRootNode(newRoot);
+  };
+
+  const swapNodeRight = (nodeIdToMove) => {
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    const parent = findParentOfNode(newRoot, nodeIdToMove);
+    if (!parent) return;
+
+    const index = parent.children.findIndex((c) => c.id === nodeIdToMove);
+    if (index === -1 || index >= parent.children.length - 1) return;
+
+    [parent.children[index], parent.children[index + 1]] = [
+      parent.children[index + 1],
+      parent.children[index],
+    ];
+    setRootNode(newRoot);
+  };
+
+  const moveNodeUp = (nodeIdToMove) => {
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    const parent = findParentOfNode(newRoot, nodeIdToMove);
+    if (!parent) return;
+
+    const grandparent = findParentOfNode(newRoot, parent.id);
+    if (!grandparent) {
+      toast.warn("Cannot move up: parent is the root node.");
+      return;
+    }
+
+    const node = findNodeById(newRoot, nodeIdToMove);
+    if (grandparent.children.length >= 5) {
+      toast.error("Cannot move up: the parent level already has the maximum number of nodes (5).");
+      return;
+    }
+    if (parent.children.length - 1 + (node.children || []).length > 5) {
+      toast.error("Cannot move: promoting children would exceed the maximum of 5 at this level.");
+      return;
+    }
+
+    const result = detachNode(newRoot, nodeIdToMove);
+    if (!result) return;
+
+    const parentIndex = grandparent.children.findIndex((c) => c.id === parent.id);
+    if (parentIndex === -1) return;
+
+    grandparent.children.splice(parentIndex + 1, 0, result.detachedNode);
+
+    setRootNode(newRoot);
+    setSelectedNodeId(result.detachedNode.id);
+  };
+
+  const moveNodeDown = (nodeIdToMove) => {
+    const newRoot = JSON.parse(JSON.stringify(rootNode));
+    const parent = findParentOfNode(newRoot, nodeIdToMove);
+    if (!parent) return;
+
+    const node = findNodeById(newRoot, nodeIdToMove);
+    const index = parent.children.findIndex((c) => c.id === nodeIdToMove);
+    if (index === -1) return;
+
+    let targetSiblingId = null;
+    let insertLeft = false;
+    if (index > 0) {
+      targetSiblingId = parent.children[index - 1].id;
+      insertLeft = true;
+    } else if (index < parent.children.length - 1) {
+      targetSiblingId = parent.children[index + 1].id;
+    } else {
+      toast.warn("Cannot move down: no sibling to become the new parent.");
+      return;
+    }
+
+    const targetSibling = findNodeById(newRoot, targetSiblingId);
+    if (targetSibling.children.length >= 5) {
+      toast.error("Cannot move down: target sibling already has the maximum number of children (5).");
+      return;
+    }
+    if (parent.children.length - 1 + (node.children || []).length > 5) {
+      toast.error("Cannot move: promoting children would exceed the maximum of 5 at this level.");
+      return;
+    }
+
+    const result = detachNode(newRoot, nodeIdToMove);
+    if (!result) return;
+
+    const refreshedTarget = findNodeById(newRoot, targetSiblingId);
+    if (!refreshedTarget) return;
+
+    if (insertLeft) {
+      refreshedTarget.children.push(result.detachedNode);
+    } else {
+      refreshedTarget.children.unshift(result.detachedNode);
+    }
+
+    setRootNode(newRoot);
+    setSelectedNodeId(result.detachedNode.id);
   };
 
   const insertParentAboveNode = (nodeIdToWrap) => {
@@ -855,29 +1003,93 @@ const ProofTree = () => {
                   Add Child
                 </button>
 
-                {selectedNode.id !== rootNode.id && (
-                  <>
-                    <button
-                      onClick={() => moveNodeLeft(selectedNode.id)}
-                      className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 text-xs font-medium"
-                    >
-                      Move Left
-                    </button>
-                    <button
-                      onClick={() => moveNodeRight(selectedNode.id)}
-                      className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 text-xs font-medium"
-                    >
-                      Move Right
-                    </button>
-                    <button
-                      onClick={() => insertParentAboveNode(selectedNode.id)}
-                      className="px-3 py-1.5 bg-amber-500 text-white rounded-md hover:bg-amber-600 text-xs font-medium inline-flex items-center gap-1.5"
-                    >
-                      <FaLevelDownAlt />
-                      Insert Node Below
-                    </button>
-                  </>
-                )}
+                {selectedNode.id !== rootNode.id && (() => {
+                  const parentOfSel = findParentOfNode(rootNode, selectedNode.id);
+                  const selIdx = parentOfSel
+                    ? parentOfSel.children.findIndex((c) => c.id === selectedNode.id)
+                    : -1;
+                  const grandparentOfSel = parentOfSel
+                    ? findParentOfNode(rootNode, parentOfSel.id)
+                    : null;
+                  const nodeChildCount = (selectedNode.children || []).length;
+                  const parentChildCount = parentOfSel ? parentOfSel.children.length : 0;
+                  const promotionFits = parentChildCount - 1 + nodeChildCount <= 5;
+
+                  const canUp = !!grandparentOfSel && grandparentOfSel.children.length < 5 && promotionFits;
+                  const canDown = parentOfSel && parentChildCount > 1 && promotionFits &&
+                    ((selIdx > 0 && parentOfSel.children[selIdx - 1].children.length < 5) ||
+                     (selIdx < parentChildCount - 1 && parentOfSel.children[selIdx + 1].children.length < 5));
+                  const parentIdx = grandparentOfSel
+                    ? grandparentOfSel.children.findIndex((c) => c.id === parentOfSel.id)
+                    : -1;
+                  const canLeft = !!grandparentOfSel && parentIdx > 0 &&
+                    grandparentOfSel.children[parentIdx - 1].children.length < 5;
+                  const canRight = !!grandparentOfSel && parentIdx >= 0 &&
+                    parentIdx < grandparentOfSel.children.length - 1 &&
+                    grandparentOfSel.children[parentIdx + 1].children.length < 5;
+                  const canSwapLeft = selIdx > 0;
+                  const canSwapRight = selIdx >= 0 && selIdx < parentChildCount - 1;
+
+                  return (
+                    <>
+                      <button
+                        onClick={() => moveNodeUp(selectedNode.id)}
+                        disabled={!canUp}
+                        className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 disabled:bg-gray-300 text-xs font-medium inline-flex items-center gap-1"
+                        title="Move node up one level (becomes sibling of parent)"
+                      >
+                        <FaArrowDown /> Down
+                      </button>
+                      <button
+                        onClick={() => moveNodeDown(selectedNode.id)}
+                        disabled={!canDown}
+                        className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 disabled:bg-gray-300 text-xs font-medium inline-flex items-center gap-1"
+                        title="Move node down one level (becomes child of sibling)"
+                      >
+                        <FaArrowUp /> Up
+                      </button>
+                      <button
+                        onClick={() => moveNodeLeft(selectedNode.id)}
+                        disabled={!canLeft}
+                        className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 disabled:bg-gray-300 text-xs font-medium inline-flex items-center gap-1"
+                        title="Move node into left sibling branch"
+                      >
+                        <FaArrowLeft /> Left
+                      </button>
+                      <button
+                        onClick={() => moveNodeRight(selectedNode.id)}
+                        disabled={!canRight}
+                        className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 disabled:bg-gray-300 text-xs font-medium inline-flex items-center gap-1"
+                        title="Move node into right sibling branch"
+                      >
+                        <FaArrowRight /> Right
+                      </button>
+                      <button
+                        onClick={() => swapNodeLeft(selectedNode.id)}
+                        disabled={!canSwapLeft}
+                        className="px-3 py-1.5 bg-slate-600 text-white rounded-md hover:bg-slate-700 disabled:bg-gray-300 text-xs font-medium"
+                        title="Swap position with left sibling"
+                      >
+                        Swap Left
+                      </button>
+                      <button
+                        onClick={() => swapNodeRight(selectedNode.id)}
+                        disabled={!canSwapRight}
+                        className="px-3 py-1.5 bg-slate-600 text-white rounded-md hover:bg-slate-700 disabled:bg-gray-300 text-xs font-medium"
+                        title="Swap position with right sibling"
+                      >
+                        Swap Right
+                      </button>
+                      <button
+                        onClick={() => insertParentAboveNode(selectedNode.id)}
+                        className="px-3 py-1.5 bg-amber-500 text-white rounded-md hover:bg-amber-600 text-xs font-medium inline-flex items-center gap-1.5"
+                      >
+                        <FaLevelDownAlt />
+                        Insert Node Below
+                      </button>
+                    </>
+                  );
+                })()}
 
                 {selectedNode.id !== rootNode.id && (
                   <button
