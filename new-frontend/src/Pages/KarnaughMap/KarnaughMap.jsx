@@ -12,6 +12,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import LatexImportModal from "../../Components/KarnaughMap/LatexImportModal";
 import { validateKmapLatex, parseKmapLatex } from "../../utils/kmapParser";
+import { buildGeometryLine } from "../../utils/latexGeometry";
 
 const BinaryColumnLabels = ({ size }) => {
   // Generate binary labels based on size with proper Gray code ordering
@@ -136,6 +137,8 @@ const Kmap = () => {
 
   const [includePreamble, setIncludePreamble] = useState(true);
   const [includeDocumentTags, setIncludeDocumentTags] = useState(true);
+  const [paperSize, setPaperSize] = useState("a4paper");
+  const [landscape, setLandscape] = useState(false);
 
   const [variables, setVariables] = useState([]);
 
@@ -465,7 +468,7 @@ const Kmap = () => {
     const content = getContentOfCells();
     let code = "";
     if (includePreamble) {
-      code += `\\documentclass{article}\n\\usepackage{karnaugh-map}\n\\begin{document}\n`;
+      code += `\\documentclass{article}\n${buildGeometryLine(paperSize, landscape)}\\usepackage{karnaugh-map}\n\\pagestyle{empty}\n\\begin{document}\n`;
     }
     if (includeDocumentTags && !includePreamble) {
       code += `\\usepackage{karnaugh-map}\n`;
@@ -2072,6 +2075,32 @@ const Kmap = () => {
           />
           Include import of the karnaugh map package
         </label>
+        {includePreamble && (
+          <>
+            <label className="flex items-center">
+              <span className="text-sm text-gray-600 font-medium mr-2">Paper Size:</span>
+              <select
+                value={paperSize}
+                onChange={(e) => setPaperSize(e.target.value)}
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+              >
+                <option value="a4paper">A4</option>
+                <option value="a3paper">A3</option>
+                <option value="a2paper">A2</option>
+                <option value="a1paper">A1</option>
+              </select>
+            </label>
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={landscape}
+                onChange={() => setLandscape(!landscape)}
+                className="mr-2"
+              />
+              Landscape
+            </label>
+          </>
+        )}
       </div>
       {/* Import + Generate Buttons (match Proof Trees layout) */}
       <div className="flex flex-wrap gap-4 justify-center mb-8">
