@@ -4,8 +4,10 @@ import { useAuth } from "../context/AuthContext";
 import { FaUser, FaEnvelope, FaIdCard, FaBuilding, FaUserTie } from "react-icons/fa";
 import { toast } from "react-toastify";
 import ByokService from "../services/byok.service";
+import { useTranslation } from "react-i18next";
 
 const UserProfile = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,10 +31,10 @@ const UserProfile = () => {
         const parsedUser = JSON.parse(storedUser);
         setUserData(parsedUser);
       } catch (err) {
-        setError("Failed to load user data");
+        setError(t('profile.load_failed'));
       }
     } else {
-      setError("No user data found");
+      setError(t('profile.no_user'));
     }
     setLoading(false);
   }, []);
@@ -50,7 +52,7 @@ const UserProfile = () => {
       });
     } catch (err) {
       console.error("Failed to load BYOK status:", err);
-      setByokError("Failed to load BYOK status");
+      setByokError(t('profile.status_load_failed'));
     } finally {
       setByokLoading(false);
     }
@@ -62,7 +64,7 @@ const UserProfile = () => {
 
   const handleSaveByokKey = async () => {
     if (!byokKeyInput.trim()) {
-      toast.error("Please enter your OpenRouter API key");
+      toast.error(t('profile.enter_key'));
       return;
     }
 
@@ -76,10 +78,10 @@ const UserProfile = () => {
         updatedAt: data.updatedAt || null,
       });
       setByokKeyInput("");
-      toast.success("OpenRouter key saved");
+      toast.success(t('profile.key_saved'));
     } catch (err) {
       console.error("Failed to save BYOK key:", err);
-      const message = err.response?.data?.message || "Failed to save key";
+      const message = err.response?.data?.message || t('profile.key_save_failed');
       toast.error(message);
     } finally {
       setByokSaving(false);
@@ -96,10 +98,10 @@ const UserProfile = () => {
         last4: data.last4 || null,
         updatedAt: data.updatedAt || null,
       });
-      toast.success("OpenRouter key removed");
+      toast.success(t('profile.key_removed'));
     } catch (err) {
       console.error("Failed to delete BYOK key:", err);
-      const message = err.response?.data?.message || "Failed to delete key";
+      const message = err.response?.data?.message || t('profile.key_remove_failed');
       toast.error(message);
     } finally {
       setByokDeleting(false);
@@ -137,7 +139,7 @@ const UserProfile = () => {
             <FaUser className="h-5 w-5 text-yellow-500" />
           </div>
           <div className="ml-3">
-            <p className="text-yellow-700">No user profile data available.</p>
+            <p className="text-yellow-700">{t('profile.no_data')}</p>
           </div>
         </div>
       </div>
@@ -153,8 +155,8 @@ const UserProfile = () => {
               <FaUser className="text-blue-500 text-2xl" />
             </div>
             <div>
-              <h1 className="text-white text-2xl font-bold">User Profile</h1>
-              <p className="text-blue-100">Welcome to your account</p>
+              <h1 className="text-white text-2xl font-bold">{t('profile.title')}</h1>
+              <p className="text-blue-100">{t('profile.welcome')}</p>
             </div>
           </div>
         </div>
@@ -165,28 +167,28 @@ const UserProfile = () => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <FaUser className="mr-2 text-blue-500" />
-                Basic Information
+                {t('profile.basic_info')}
               </h2>
               <div className="space-y-3">
                 <div className="flex items-center">
                   <FaUser className="text-gray-500 mr-3" />
                   <div>
-                    <p className="text-sm text-gray-500">Name</p>
-                    <p className="font-medium">{userData.name || "N/A"}</p>
+                    <p className="text-sm text-gray-500">{t('profile.name')}</p>
+                    <p className="font-medium">{userData.name || t('common.na')}</p>
                   </div>
                 </div>
                 <div className="flex items-center">
                   <FaEnvelope className="text-gray-500 mr-3" />
                   <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{userData.email || "N/A"}</p>
+                    <p className="text-sm text-gray-500">{t('profile.email')}</p>
+                    <p className="font-medium">{userData.email || t('common.na')}</p>
                   </div>
                 </div>
                 <div className="flex items-center">
                   <FaIdCard className="text-gray-500 mr-3" />
                   <div>
-                    <p className="text-sm text-gray-500">User ID</p>
-                    <p className="font-medium">{userData.id || "N/A"}</p>
+                    <p className="text-sm text-gray-500">{t('profile.user_id')}</p>
+                    <p className="font-medium">{userData.id || t('common.na')}</p>
                   </div>
                 </div>
               </div>
@@ -197,33 +199,33 @@ const UserProfile = () => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                   <FaBuilding className="mr-2 text-green-500" />
-                  SSO Information
+                  {t('profile.sso_info')}
                 </h2>
                 <div className="space-y-3">
                   <div className="flex items-center">
                     <FaIdCard className="text-gray-500 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-500">SSO ID</p>
-                      <p className="font-medium">{userData.ssoId || "N/A"}</p>
+                      <p className="text-sm text-gray-500">{t('profile.sso_id')}</p>
+                      <p className="font-medium">{userData.ssoId || t('common.na')}</p>
                     </div>
                   </div>
                   <div className="flex items-center">
                     <FaBuilding className="text-gray-500 mr-3" />
                     <div>
-                      <p className="text-sm text-gray-500">SSO Provider</p>
-                      <p className="font-medium">{userData.ssoProvider || "N/A"}</p>
+                      <p className="text-sm text-gray-500">{t('profile.sso_provider')}</p>
+                      <p className="font-medium">{userData.ssoProvider || t('common.na')}</p>
                     </div>
                   </div>
                   {userData.employeeType && (
                     <div className="flex items-center">
                       <FaUserTie className="text-gray-500 mr-3" />
                       <div>
-                        <p className="text-sm text-gray-500">Employee Type</p>
+                        <p className="text-sm text-gray-500">{t('profile.employee_type')}</p>
                         <p className="font-medium">
-                          {userData.employeeType === "S" && "Student"}
-                          {userData.employeeType === "D" && "PhD Student"}
-                          {userData.employeeType === "P" && "Faculty"}
-                          {userData.employeeType === "N" && "Administrative"}
+                          {userData.employeeType === "S" && t('profile.student')}
+                          {userData.employeeType === "D" && t('profile.phd_student')}
+                          {userData.employeeType === "P" && t('profile.faculty')}
+                          {userData.employeeType === "N" && t('profile.administrative')}
                         </p>
                       </div>
                     </div>
@@ -238,7 +240,7 @@ const UserProfile = () => {
           <div className="mt-6 bg-gray-50 p-4 rounded-lg">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
               <FaUserTie className="mr-2 text-blue-500" />
-              OpenRouter API Key (BYOK)
+              {t('profile.byok_title')}
             </h2>
             {byokError && (
               <p className="text-sm text-red-600 mb-3">{byokError}</p>
@@ -246,17 +248,17 @@ const UserProfile = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="text-sm text-gray-500">{t('profile.byok_status')}</p>
                   <p className="font-medium">
                     {byokLoading
-                      ? "Loading..."
+                      ? t('common.loading')
                       : byokStatus.configured
-                      ? `Configured (••••${byokStatus.last4 || ""})`
-                      : "Not configured"}
+                      ? t('profile.byok_configured', { last4: `••••${byokStatus.last4 || ""}` })
+                      : t('profile.byok_not_configured')}
                   </p>
                   {byokStatus.updatedAt && (
                     <p className="text-xs text-gray-400">
-                      Updated: {new Date(byokStatus.updatedAt).toLocaleString()}
+                      {t('profile.byok_updated')} {new Date(byokStatus.updatedAt).toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -269,7 +271,7 @@ const UserProfile = () => {
                       byokDeleting ? "opacity-60 cursor-not-allowed" : ""
                     }`}
                   >
-                    {byokDeleting ? "Removing..." : "Remove Key"}
+                    {byokDeleting ? t('profile.byok_removing') : t('profile.byok_remove')}
                   </button>
                 )}
               </div>
@@ -279,7 +281,7 @@ const UserProfile = () => {
                   type="password"
                   value={byokKeyInput}
                   onChange={(e) => setByokKeyInput(e.target.value)}
-                  placeholder="Paste your OpenRouter API key"
+                  placeholder={t('profile.byok_placeholder')}
                   className="flex-1 p-3 border border-gray-300 rounded-lg text-sm"
                   autoComplete="off"
                 />
@@ -291,17 +293,17 @@ const UserProfile = () => {
                     byokSaving ? "opacity-60 cursor-not-allowed" : ""
                   }`}
                 >
-                  {byokSaving ? "Saving..." : "Save Key"}
+                  {byokSaving ? t('profile.byok_saving') : t('profile.byok_save')}
                 </button>
               </div>
               <p className="text-xs text-gray-500">
-                Your key is stored encrypted and never shared with other users.
+                {t('profile.byok_security')}
               </p>
               <Link
                 to="/byok-tutorial"
                 className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800"
               >
-                How to get an OpenRouter key
+                {t('profile.byok_howto')}
               </Link>
             </div>
           </div>
@@ -310,11 +312,10 @@ const UserProfile = () => {
           <div className="mt-6 bg-blue-50 p-4 rounded-lg">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
               <FaUser className="mr-2 text-blue-500" />
-              About Your Account
+              {t('profile.about_account')}
             </h2>
             <p className="text-gray-600 text-sm leading-relaxed">
-              This account is connected to the KPI Single Sign-On system, providing secure access to LaTeX Generator services.
-              Your account information is synchronized with the university's authentication system.
+              {t('profile.about_account_desc')}
             </p>
           </div>
         </div>

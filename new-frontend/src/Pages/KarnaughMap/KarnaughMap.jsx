@@ -13,6 +13,7 @@ import { useAuth } from "../../context/AuthContext";
 import LatexImportModal from "../../Components/KarnaughMap/LatexImportModal";
 import { validateKmapLatex, parseKmapLatex } from "../../utils/kmapParser";
 import { buildGeometryLine } from "../../utils/latexGeometry";
+import { useTranslation } from 'react-i18next';
 
 const BinaryColumnLabels = ({ size }) => {
   // Generate binary labels based on size with proper Gray code ordering
@@ -127,6 +128,7 @@ const getTableConfig = (size, mapCount = 1) => {
 };
 
 const Kmap = () => {
+  const { t } = useTranslation();
   //edit stuff
   const { user } = useAuth();
 
@@ -187,9 +189,7 @@ const Kmap = () => {
   const [latexInput, setLatexInput] = useState("");
 
   const [showLaTeXEditor, setShowLaTeXEditor] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState(
-    "Your code will appear here \n after you click on Generate Code button"
-  );
+  const [generatedCode, setGeneratedCode] = useState("");
   // drAwing implicants
   const [mapHeight, setMapHeight] = useState(null);
   const [mapWidth, setMapWidth] = useState(null);
@@ -1619,18 +1619,18 @@ const Kmap = () => {
         // Update existing KM
         response = await karnaughMapService.updateKM(id, karnaughMapStructure);
         console.log("Update Response", response);
-        toast.success("Karnaugh Map updated successfully!");
+        toast.success(t('common.update_success', { item: t('karnaugh.name') }));
       } else {
         // Create new KM
         response = await karnaughMapService.saveKM(karnaughMapStructure);
         console.log("Save Response", response);
-        toast.success("Karnaugh Map saved successfully!");
+        toast.success(t('common.save_success', { item: t('karnaugh.name') }));
         // Navigate to edit mode after saving
         navigate(`/karnaugh-maps/edit/${response.data._id}`);
       }
     } catch (error) {
       console.error("Error while saving/updating KM: ", error);
-      toast.error("Error saving Karnaugh Map");
+      toast.error(t('common.save_failed', { item: t('karnaugh.name') }));
     }
   };
   const [fetchedKarnaughMap, setFetchedKarnaughMap] = useState(null);
@@ -1748,10 +1748,10 @@ const Kmap = () => {
         const parsed = parseKmapLatex(pendingLatexCode);
         handleImportFromLatex(parsed);
         sessionStorage.removeItem(storageKey);
-        toast.success("LaTeX code imported successfully from Image-to-LaTeX!");
+        toast.success(t('common.import_success_image'));
       } catch (error) {
         console.error("Error auto-importing LaTeX code:", error);
-        toast.error(`Error importing LaTeX code: ${error.message}`);
+        toast.error(t('common.import_error', { message: error.message }));
         sessionStorage.removeItem(storageKey);
       }
     }
@@ -1763,7 +1763,7 @@ const Kmap = () => {
 
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">Karnaugh maps</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center">{t('karnaugh.title')}</h1>
       <Instructions />
       {/* Settings Section - Initial Map Configuration */}
       {!disabled && (
@@ -2038,7 +2038,7 @@ const Kmap = () => {
       </div>
       {/* Variables Section */}
       <div className="w-full mb-8">
-        <h3 className="text-xl font-semibold mb-4">Variables</h3>
+        <h3 className="text-xl font-semibold mb-4">{t('common.variables')}</h3>
         <div className="bg-gray-100 p-4 rounded-lg shadow-sm">
           <label className="flex items-center cursor-pointer">
             <input
@@ -2049,7 +2049,7 @@ const Kmap = () => {
               }
               className="mr-2"
             />
-            Allow Custom Variable Names
+            {t('common.allow_custom_variables')}
           </label>
         </div>
         {customVariablesAllowed && renderVarInputs()}
@@ -2063,7 +2063,7 @@ const Kmap = () => {
             onChange={() => setIncludePreamble(!includePreamble)}
             className="mr-2"
           />
-          Include whole LaTeX Preamble
+          {t('common.include_preamble')}
         </label>
 
         <label className="flex items-center">
@@ -2073,12 +2073,12 @@ const Kmap = () => {
             onChange={() => setIncludeDocumentTags(!includeDocumentTags)}
             className="mr-2"
           />
-          Include import of the karnaugh map package
+          {t('common.include_karnaugh')}
         </label>
         {includePreamble && (
           <>
             <label className="flex items-center">
-              <span className="text-sm text-gray-600 font-medium mr-2">Paper Size:</span>
+              <span className="text-sm text-gray-600 font-medium mr-2">{t('common.paper_size')}</span>
               <select
                 value={paperSize}
                 onChange={(e) => setPaperSize(e.target.value)}
@@ -2097,7 +2097,7 @@ const Kmap = () => {
                 onChange={() => setLandscape(!landscape)}
                 className="mr-2"
               />
-              Landscape
+              {t('common.landscape')}
             </label>
           </>
         )}
@@ -2119,32 +2119,40 @@ const Kmap = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
             />
           </svg>
-          <span>Import LaTeX</span>
+          <span>{t('common.import_latex')}</span>
         </button>
+        {generatedCode && (
+          <button
+            onClick={() => setShowLaTeXEditor(!showLaTeXEditor)}
+            className="bg-purple-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-700 transition-colors flex items-center"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <span>{showLaTeXEditor ? t('common.show_code_only') : t('common.edit_compile')}</span>
+          </button>
+        )}
         <button
           onClick={generateCodeLaTeX}
           disabled={!disabled}
           className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center"
           data-umami-event="Generate Karnaugh Map LaTeX button"
         >
-          Generate code
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          <span>{t('common.generate_latex')}</span>
         </button>
       </div>
       {/* Generated Code */}
       {generatedCode && (
         <div className="w-full mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800">Generated LaTeX Code</h3>
-            <button
-              onClick={() => setShowLaTeXEditor(!showLaTeXEditor)}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            >
-              {showLaTeXEditor ? "Show Code Only" : "Edit & Compile"}
-            </button>
-          </div>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">{t('common.generated_latex_code')}</h3>
           
           {showLaTeXEditor ? (
             <LaTeXEditor
@@ -2165,7 +2173,7 @@ const Kmap = () => {
             disabled={!user}
             data-umami-event="Save Karnaugh Map button"
           >
-            Save Karnaugh Map
+            {t('karnaugh.save_map')}
           </button>
         </div>
       )}
@@ -2177,7 +2185,7 @@ const Kmap = () => {
             disabled={!user}
             data-umami-event="Update Karnaugh Map button"
           >
-            Update Karnaugh Map
+            {t('karnaugh.update_map')}
           </button>
         </div>
       )}

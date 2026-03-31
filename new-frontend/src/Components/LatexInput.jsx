@@ -17,6 +17,23 @@ const LATEX_COMMANDS = [
   "\\theta",
 ];
 
+const LATEX_SYMBOL_MAP = {
+  "\\to": "\u2192",
+  "\\land": "\u2227",
+  "\\lor": "\u2228",
+  "\\neg": "\u00AC",
+  "\\vdash": "\u22A2",
+  "\\models": "\u22A8",
+  "\\equiv": "\u2261",
+  "\\forall": "\u2200",
+  "\\exists": "\u2203",
+  "\\bot": "\u22A5",
+  "\\top": "\u22A4",
+  "\\psi": "\u03C8",
+  "\\phi": "\u03C6",
+  "\\theta": "\u03B8",
+};
+
 // ✨ FIX: The 'mathNotation' prop has been removed.
 const LatexInput = ({ value, onChange, autoFocus = false }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -119,13 +136,16 @@ const LatexInput = ({ value, onChange, autoFocus = false }) => {
               aria-selected={activeIndex === index}
               onMouseDown={() => selectCommand(command)}
               onMouseEnter={() => setActiveIndex(index)}
-              className={`px-3 py-1 cursor-pointer ${
+              className={`px-3 py-1.5 cursor-pointer flex items-center justify-between ${
                 activeIndex === index
                   ? "bg-blue-500 text-white"
                   : "text-gray-900"
               }`}
             >
-              {command}
+              <code className="font-mono text-sm">{command}</code>
+              {LATEX_SYMBOL_MAP[command] && (
+                <span className="text-lg ml-3 opacity-70">{LATEX_SYMBOL_MAP[command]}</span>
+              )}
             </div>
           ))}
         </div>

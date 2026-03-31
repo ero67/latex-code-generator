@@ -2,12 +2,16 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import * as FaIcons from "react-icons/fa";
 import * as AiIcons from "react-icons/ai";
 import { Link, NavLink } from "react-router-dom";
-import { SidebarData, ProfileSidebarData } from "./SidebarData.jsx";
+import { useSidebarData, useProfileSidebarData } from "./SidebarData.jsx";
+import { useTranslation } from "react-i18next";
 import { IconContext } from "react-icons";
 import { useAuth } from "../../context/AuthContext";
 
 function Navbar() {
   const { user, logout } = useAuth();
+  const { t, i18n } = useTranslation();
+  const SidebarData = useSidebarData();
+  const ProfileSidebarData = useProfileSidebarData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
@@ -36,23 +40,23 @@ function Navbar() {
     const items = [...SidebarData];
     if (user && user.isAdmin) {
       items.push({
-        title: "Analytics",
+        title: t('nav.analytics'),
         path: "/analytics",
         icon: <AiIcons.AiOutlineBarChart />,
       });
       items.push({
-        title: "Model Manager",
+        title: t('nav.model_manager'),
         path: "/admin/models",
         icon: <AiIcons.AiOutlineSetting />,
       });
       items.push({
-        title: "Benchmark",
+        title: t('nav.benchmark'),
         path: "/admin/benchmark",
         icon: <AiIcons.AiOutlineExperiment />,
       });
     }
     return items;
-  }, [user]);
+  }, [user, SidebarData, t]);
 
   const adminPaths = ["/analytics", "/admin/models", "/admin/benchmark"];
   const imageToLatexPath = "/image-to-latex";
@@ -113,7 +117,7 @@ function Navbar() {
             to="/"
             className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors shrink-0"
           >
-            LaTeX Generator
+            {t('nav.app_title')}
           </Link>
 
           {/* Center: Desktop Navigation */}
@@ -134,6 +138,34 @@ function Navbar() {
 
           {/* Spacer */}
           <div className="flex-1" />
+
+          {/* Language Toggle */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+            <button
+              onClick={() => i18n.changeLanguage('en')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors ${
+                i18n.language === 'en'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              title="English"
+            >
+              <span className="text-base leading-none">🇬🇧</span>
+              <span>EN</span>
+            </button>
+            <button
+              onClick={() => i18n.changeLanguage('sk')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors ${
+                i18n.language === 'sk'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              title="Slovenčina"
+            >
+              <span className="text-base leading-none">🇸🇰</span>
+              <span>SK</span>
+            </button>
+          </div>
 
           {/* Right: User Actions */}
           <div className="flex items-center gap-3">
@@ -182,7 +214,7 @@ function Navbar() {
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     >
                       <AiIcons.AiOutlineLogout />
-                      <span>Logout</span>
+                      <span>{t('nav.logout')}</span>
                     </button>
                   </div>
                 )}
@@ -193,13 +225,13 @@ function Navbar() {
                   to="/login"
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
                 >
-                  Login
+                  {t('nav.login')}
                 </Link>
                 <Link
                   to="/register"
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                 >
-                  Register
+                  {t('nav.register')}
                 </Link>
               </div>
             )}
@@ -208,7 +240,7 @@ function Navbar() {
             <button
               className="min-[1730px]:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
               onClick={() => setMobileMenuOpen(true)}
-              aria-label="Open menu"
+              aria-label={t('nav.open_menu')}
             >
               <FaIcons.FaBars className="text-xl" />
             </button>
@@ -223,18 +255,18 @@ function Navbar() {
           <button
             className="fixed inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
-            aria-label="Close menu"
+            aria-label={t('nav.close_menu')}
           />
 
           {/* Mobile Menu Panel */}
           <aside className="fixed top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-xl flex flex-col animate-slide-in-right">
             {/* Header */}
             <div className="h-16 px-4 border-b border-gray-200 flex items-center justify-between shrink-0">
-              <span className="text-lg font-semibold text-gray-900">Menu</span>
+              <span className="text-lg font-semibold text-gray-900">{t('nav.menu')}</span>
               <button
                 className="p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
-                aria-label="Close menu"
+                aria-label={t('nav.close_menu')}
               >
                 <AiIcons.AiOutlineClose className="text-xl" />
               </button>
@@ -279,6 +311,33 @@ function Navbar() {
 
             {/* Footer: Auth Actions */}
             <div className="shrink-0 border-t border-gray-200 p-4 bg-gray-50">
+              {/* Language Toggle */}
+              <div className="flex items-center justify-center bg-gray-100 rounded-lg p-0.5 mb-3">
+                <button
+                  onClick={() => i18n.changeLanguage('en')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    i18n.language === 'en'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="English"
+                >
+                  <span className="text-base leading-none">🇬🇧</span>
+                  <span>EN</span>
+                </button>
+                <button
+                  onClick={() => i18n.changeLanguage('sk')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    i18n.language === 'sk'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="Slovenčina"
+                >
+                  <span className="text-base leading-none">🇸🇰</span>
+                  <span>SK</span>
+                </button>
+              </div>
               {user ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
@@ -302,7 +361,7 @@ function Navbar() {
                     className="w-full py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                   >
                     <AiIcons.AiOutlineLogout />
-                    Logout
+                    {t('nav.logout')}
                   </button>
                 </div>
               ) : (
@@ -312,14 +371,14 @@ function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="py-2.5 px-4 text-center border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-md text-sm font-medium transition-colors"
                   >
-                    Login
+                    {t('nav.login')}
                   </Link>
                   <Link
                     to="/register"
                     onClick={() => setMobileMenuOpen(false)}
                     className="py-2.5 px-4 text-center bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
                   >
-                    Register
+                    {t('nav.register')}
                   </Link>
                 </div>
               )}

@@ -3,27 +3,29 @@ import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/auth.service";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-
-const validationSchema = Yup.object({
-  email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
-  name: Yup.string()
-    .min(2, "Name must be at least 2 characters")
-    .required("Name is required"),
-  password: Yup.string()
-    .min(6, "Password must be at least 6 characters")
-    .matches(
-      /^(?=.*[A-Za-z])(?=.*\d)/,
-      "Password must contain at least one letter and one number"
-    )
-    .required("Password is required"),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password"), null], "Passwords must match")
-    .required("Please confirm your password"),
-});
+import { useTranslation } from "react-i18next";
 
 const RegisterForm = () => {
+  const { t } = useTranslation();
+
+  const validationSchema = Yup.object({
+    email: Yup.string()
+      .email(t('auth.invalid_email'))
+      .required(t('auth.email_required')),
+    name: Yup.string()
+      .min(2, t('auth.name_min'))
+      .required(t('auth.name_required')),
+    password: Yup.string()
+      .min(6, t('auth.password_min'))
+      .matches(
+        /^(?=.*[A-Za-z])(?=.*\d)/,
+        t('auth.password_pattern')
+      )
+      .required(t('auth.password_required')),
+    confirmPassword: Yup.string()
+      .oneOf([Yup.ref("password"), null], t('auth.passwords_match'))
+      .required(t('auth.confirm_required')),
+  });
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -46,7 +48,7 @@ const RegisterForm = () => {
       navigate("/login");
     } catch (err) {
       console.error("Registration error:", err);
-      setError(err.message || "Registration failed. Please try again.");
+      setError(err.message || t('auth.registration_failed'));
     } finally {
       setSubmitting(false);
     }
@@ -61,7 +63,7 @@ const RegisterForm = () => {
       {({ isSubmitting }) => (
         <Form className="max-w-md mx-auto mt-8 p-8 bg-white rounded-lg shadow-xl">
           <h2 className="text-2xl font-bold mb-6 text-center">
-            Create Account
+            {t('auth.create_account')}
           </h2>
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
@@ -73,7 +75,7 @@ const RegisterForm = () => {
               htmlFor="name"
               className="block text-gray-700 text-sm font-bold mb-2"
             >
-              Name
+              {t('auth.name')}
             </label>
             <Field
               id="name"
@@ -93,7 +95,7 @@ const RegisterForm = () => {
               htmlFor="email"
               className="block text-gray-700 text-sm font-bold mb-2"
             >
-              Email
+              {t('auth.email')}
             </label>
             <Field
               id="email"
@@ -113,7 +115,7 @@ const RegisterForm = () => {
               htmlFor="password"
               className="block text-gray-700 text-sm font-bold mb-2"
             >
-              Password
+              {t('auth.password')}
             </label>
             <div className="relative">
               <Field
@@ -127,7 +129,7 @@ const RegisterForm = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 px-3 flex items-center text-sm text-gray-600"
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? t('auth.hide') : t('auth.show')}
               </button>
             </div>
             <ErrorMessage
@@ -142,7 +144,7 @@ const RegisterForm = () => {
               htmlFor="confirmPassword"
               className="block text-gray-700 text-sm font-bold mb-2"
             >
-              Confirm Password
+              {t('auth.confirm_password')}
             </label>
             <div className="relative">
               <Field
@@ -156,7 +158,7 @@ const RegisterForm = () => {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute inset-y-0 right-0 px-3 flex items-center text-sm text-gray-600"
               >
-                {showConfirmPassword ? "Hide" : "Show"}
+                {showConfirmPassword ? t('auth.hide') : t('auth.show')}
               </button>
             </div>
             <ErrorMessage
@@ -172,16 +174,16 @@ const RegisterForm = () => {
               disabled={isSubmitting}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {isSubmitting ? "Registering..." : "Register"}
+              {isSubmitting ? t('auth.registering') : t('auth.register')}
             </button>
           </div>
           <p className="text-center text-gray-600 text-sm mt-6">
-            Already have an account?{" "}
+            {t('auth.has_account')}{" "}
             <Link
               to="/login"
               className="font-bold text-blue-500 hover:text-blue-800"
             >
-              Log In
+              {t('auth.log_in')}
             </Link>
           </p>
         </Form>

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { toast } from "react-toastify";
 import ModelService from "../../services/model.service";
 import GeneratedCode from "../../Components/GeneratedCode";
+import { useTranslation } from "react-i18next";
 import {
   FaUpload,
   FaSpinner,
@@ -24,6 +25,7 @@ const STRUCTURE_TYPES = [
 ];
 
 const ModelBenchmark = () => {
+  const { t } = useTranslation();
   const [models, setModels] = useState([]);
   const [selectedModels, setSelectedModels] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -48,7 +50,7 @@ const ModelBenchmark = () => {
         setModels(modelIds);
       } catch (err) {
         console.error("Failed to load models:", err);
-        toast.error("Failed to load models");
+        toast.error(t('admin.benchmark_models_failed'));
       }
     };
     loadModels();
@@ -58,13 +60,13 @@ const ModelBenchmark = () => {
     const file = event.target.files[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
-        setError("Please select an image file.");
-        toast.error("Please select a valid image file.");
+        setError(t('admin.benchmark_select_file'));
+        toast.error(t('admin.benchmark_valid_image'));
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        setError("File size must be less than 10MB.");
-        toast.error("File size must be less than 10MB.");
+        setError(t('admin.benchmark_file_size'));
+        toast.error(t('admin.benchmark_file_size'));
         return;
       }
       setError("");
@@ -97,11 +99,11 @@ const ModelBenchmark = () => {
 
   const handleRunBenchmark = async () => {
     if (!selectedFile) {
-      toast.error("Please select an image first!");
+      toast.error(t('admin.benchmark_select_image'));
       return;
     }
     if (selectedModels.length === 0) {
-      toast.error("Please select at least one model!");
+      toast.error(t('admin.benchmark_select_model'));
       return;
     }
 
@@ -181,8 +183,8 @@ const ModelBenchmark = () => {
               toast.success(data.message);
             } else if (data.status === "error") {
               hasError = true;
-              setError(data.message || "Benchmark failed.");
-              toast.error(data.message || "Benchmark failed.");
+              setError(data.message || t('admin.benchmark_failed'));
+              toast.error(data.message || t('admin.benchmark_failed'));
             }
           } catch (e) {
             console.error("Failed to parse SSE data:", e, payload);
@@ -195,7 +197,7 @@ const ModelBenchmark = () => {
       }
     } catch (err) {
       console.error("Benchmark error:", err);
-      const msg = err.message || "Benchmark failed. Please try again.";
+      const msg = err.message || t('admin.benchmark_failed_retry');
       setError(msg);
       toast.error(msg);
     } finally {

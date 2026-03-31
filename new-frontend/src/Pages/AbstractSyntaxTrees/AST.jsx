@@ -17,8 +17,10 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { parseAstLatex } from "../../utils/astParser";
+import { useTranslation } from 'react-i18next';
 
 const SyntaxTreeD3 = () => {
+  const { t } = useTranslation();
   const forestFillColorOptions = [
     "red!20",
     "blue!20",
@@ -58,9 +60,7 @@ const SyntaxTreeD3 = () => {
   const zoomLayerRef = useRef(null);
   const zoomBehaviorRef = useRef(null);
   const [showLaTeXEditor, setShowLaTeXEditor] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState(
-    "Your code will appear here \n after you click on Generate Code button"
-  );
+  const [generatedCode, setGeneratedCode] = useState("");
 
   const [nodeId, setNodeId] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
@@ -660,10 +660,10 @@ const SyntaxTreeD3 = () => {
         const tree = parseAstLatex(pendingLatexCode);
         handleImportFromLatex(tree);
         sessionStorage.removeItem(storageKey);
-        toast.success("LaTeX code imported successfully from Image-to-LaTeX!");
+        toast.success(t('common.import_success_image'));
       } catch (error) {
         console.error("Error auto-importing LaTeX code:", error);
-        toast.error(`Error importing LaTeX code: ${error.message}`);
+        toast.error(t('common.import_error', { message: error.message }));
         sessionStorage.removeItem(storageKey);
       }
     }
@@ -695,7 +695,7 @@ const SyntaxTreeD3 = () => {
   );
 
   const handleCreateTree = () => {
-    if (treeData && !window.confirm("Replace the current tree with a new root?")) {
+    if (treeData && !window.confirm(t('common.replace_tree_confirm'))) {
       return;
     }
     setHeight(100);
@@ -856,12 +856,12 @@ const SyntaxTreeD3 = () => {
 
   const handleSave = async () => {
     if (!user || !treeData) {
-      toast.error("Please log in and create a tree first");
+      toast.error(t('common.please_login_create', { item: t('ast.name') }));
       return;
     }
 
     if (!treeName.trim()) {
-      toast.error("Please enter a name for your tree");
+      toast.error(t('common.please_enter_name', { item: t('ast.name') }));
       return;
     }
 
@@ -883,20 +883,20 @@ const SyntaxTreeD3 = () => {
       if (isEditMode) {
         // Update existing tree
         await axios.put(`${API_URL}/ast/${id}`, treeToSave);
-        toast.success("Tree updated successfully!");
+        toast.success(t('common.update_success', { item: t('ast.name') }));
       } else {
         // Create new tree
         const response = await axios.post(
           `${API_URL}/ast`,
           treeToSave
         );
-        toast.success("Tree saved successfully!");
+        toast.success(t('common.save_success', { item: t('ast.name') }));
         // Navigate to edit mode with the new tree ID
         navigate(`/ast/edit/${response.data.data._id}`);
       }
     } catch (error) {
       console.error("Error saving tree:", error);
-      toast.error("Failed to save tree. Please try again.");
+      toast.error(t('common.save_failed', { item: t('ast.name') }));
     } finally {
       setIsSaving(false);
     }
@@ -905,38 +905,32 @@ const SyntaxTreeD3 = () => {
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-8 text-center">
-        Abstract Syntax Tree
+        {t('ast.title_builder')}
       </h1>
 
       {/* Instructions Section */}
       <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
         <h2 className="text-lg font-semibold mb-3 text-gray-700">
-          How to use?
+          {t('ast.how_to_use')}
         </h2>
         <div className="space-y-2 text-gray-600">
           <p>
-            <span className="font-bold text-blue-600">1.</span> Click on Create
-            Tree button and type in the value of the root node.
+            <span className="font-bold text-blue-600">1.</span> {t('ast.instruction_1')}
           </p>
           <p>
-            <span className="font-bold text-blue-600">2.</span> Click on the
-            node you want to select. Use the Inspector to edit it or add children.
+            <span className="font-bold text-blue-600">2.</span> {t('ast.instruction_2')}
           </p>
           <p>
-            <span className="font-bold text-blue-600">3.</span> Click an edge
-            to select it, then edit the label in the Inspector.
+            <span className="font-bold text-blue-600">3.</span> {t('ast.instruction_3')}
           </p>
           <p>
-            <span className="font-bold text-blue-600">4.</span> Using Turn Left
-            button you can turn the tree 90 degrees to the left.
+            <span className="font-bold text-blue-600">4.</span> {t('ast.instruction_4')}
           </p>
           <p>
-            <span className="font-bold text-blue-600">5.</span> By using right
-            click on the node you can remove the node from the tree structure.
+            <span className="font-bold text-blue-600">5.</span> {t('ast.instruction_5')}
           </p>
           <p>
-            <span className="font-bold text-blue-600">6.</span> Use mouse wheel
-            to zoom and drag the background to pan the canvas.
+            <span className="font-bold text-blue-600">6.</span> {t('ast.instruction_6')}
           </p>
         </div>
       </div>
@@ -944,7 +938,7 @@ const SyntaxTreeD3 = () => {
       {/* Tree Configuration Section */}
       <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
         <h2 className="text-lg font-semibold mb-3 text-gray-700">
-          Tree Configuration
+          {t('common.tree_configuration')}
         </h2>
         <div className="flex flex-wrap gap-3 items-center">
           <button
@@ -965,7 +959,7 @@ const SyntaxTreeD3 = () => {
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            <span>Add Root Node</span>
+            <span>{t('ast.add_root_node')}</span>
           </button>
 
           <label className="flex items-center cursor-pointer">
@@ -979,7 +973,7 @@ const SyntaxTreeD3 = () => {
               className="mr-2"
             />
             <span className="text-sm text-gray-600 font-medium">
-              Mathematical font
+              {t('ast.mathematical_font')}
             </span>
           </label>
 
@@ -1001,7 +995,7 @@ const SyntaxTreeD3 = () => {
                 d="M7 16l-4-4m0 0l4-4m-4 4h18"
               />
             </svg>
-            <span>Turn Left</span>
+            <span>{t('ast.turn_left')}</span>
           </button>
 
           <button
@@ -1014,7 +1008,7 @@ const SyntaxTreeD3 = () => {
             }}
             className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
           >
-            Zoom In
+            {t('common.zoom_in')}
           </button>
           <button
             onClick={() => {
@@ -1026,7 +1020,7 @@ const SyntaxTreeD3 = () => {
             }}
             className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
           >
-            Zoom Out
+            {t('common.zoom_out')}
           </button>
           <button
             onClick={() => {
@@ -1038,7 +1032,7 @@ const SyntaxTreeD3 = () => {
             }}
             className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
           >
-            Reset View
+            {t('common.reset_view')}
           </button>
         </div>
       </div>
@@ -1061,7 +1055,7 @@ const SyntaxTreeD3 = () => {
 
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-700">Inspector</h2>
+            <h2 className="text-lg font-semibold text-gray-700">{t('common.inspector')}</h2>
             {(selectedNodeId !== null || selectedEdge !== null) && (
               <button
                 onClick={() => {
@@ -1070,17 +1064,17 @@ const SyntaxTreeD3 = () => {
                 }}
                 className="px-3 py-1 text-sm border rounded hover:bg-gray-100 transition-colors"
               >
-                Clear
+                {t('common.clear')}
               </button>
             )}
           </div>
 
           {!treeData ? (
-            <div className="text-sm text-gray-500">Create or import a tree to begin.</div>
+            <div className="text-sm text-gray-500">{t('ast.create_or_import')}</div>
           ) : selectedEdge ? (
             <div className="space-y-4">
               <div>
-                <div className="text-xs text-gray-500 mb-1">Edge</div>
+                <div className="text-xs text-gray-500 mb-1">{t('ast.edge')}</div>
                 <div className="font-mono text-sm text-gray-800">
                   {selectedEdge.sourceId} → {selectedEdge.targetId}
                 </div>
@@ -1088,7 +1082,7 @@ const SyntaxTreeD3 = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Label
+                  {t('common.label')}
                 </label>
                 <input
                   type="text"
@@ -1120,17 +1114,17 @@ const SyntaxTreeD3 = () => {
               </div>
 
               <div className="text-xs text-gray-500">
-                Tip: Click a node or edge in the canvas to edit it here.
+                {t('ast.click_node_tip')}
               </div>
             </div>
           ) : !selectedNode ? (
             <div className="text-sm text-gray-500">
-              Click a node in the canvas to select it.
+              {t('ast.click_node_select')}
             </div>
           ) : (
             <div className="space-y-4">
               <div>
-                <div className="text-xs text-gray-500 mb-1">Node ID</div>
+                <div className="text-xs text-gray-500 mb-1">{t('ast.node_id')}</div>
                 <div className="font-mono text-sm text-gray-800">
                   {selectedNode.id}
                 </div>
@@ -1138,7 +1132,7 @@ const SyntaxTreeD3 = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Value
+                  {t('ast.value')}
                 </label>
                 <input
                   type="text"
@@ -1152,29 +1146,29 @@ const SyntaxTreeD3 = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Shape
+                  {t('ast.shape')}
                 </label>
                 <select
                   value={selectedNode.shape ?? ""}
                   onChange={(e) => updateSelectedNodeField("shape", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Default (none)</option>
-                  <option value="circle">Circle</option>
-                  <option value="box">Box</option>
+                  <option value="">{t('ast.default_none')}</option>
+                  <option value="circle">{t('ast.circle')}</option>
+                  <option value="box">{t('ast.box')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fill Color (forest)
+                  {t('ast.fill_color')}
                 </label>
                 <select
                   value={selectedNode.fillColor ?? ""}
                   onChange={(e) => updateSelectedNodeField("fillColor", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Default (none)</option>
+                  <option value="">{t('ast.default_none')}</option>
                   {forestFillColorOptions.map((color) => (
                     <option key={color} value={color}>
                       {color}
@@ -1185,14 +1179,14 @@ const SyntaxTreeD3 = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Text Color (forest)
+                  {t('ast.text_color')}
                 </label>
                 <select
                   value={selectedNode.textColor ?? ""}
                   onChange={(e) => updateSelectedNodeField("textColor", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Default (none)</option>
+                  <option value="">{t('ast.default_none')}</option>
                   {forestTextColorOptions.map((color) => (
                     <option key={color} value={color}>
                       {color}
@@ -1203,17 +1197,17 @@ const SyntaxTreeD3 = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Edge Style to Parent
+                  {t('ast.edge_style')}
                 </label>
                 <select
                   value={selectedNode.edgeStyle ?? ""}
                   onChange={(e) => updateSelectedNodeField("edgeStyle", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Default (none)</option>
-                  <option value="dashed">Dashed</option>
-                  <option value="dotted">Dotted</option>
-                  <option value="thick">Thick</option>
+                  <option value="">{t('ast.default_none')}</option>
+                  <option value="dashed">{t('ast.dashed')}</option>
+                  <option value="dotted">{t('ast.dotted')}</option>
+                  <option value="thick">{t('ast.thick')}</option>
                 </select>
               </div>
 
@@ -1225,11 +1219,11 @@ const SyntaxTreeD3 = () => {
                     updateSelectedNodeField("isArrow", e.target.checked ? true : "")
                   }
                 />
-                <span>Arrow on edge to parent</span>
+                <span>{t('ast.arrow_on_edge')}</span>
               </label>
 
               <div className="text-xs text-gray-500">
-                These options affect generated LaTeX (`forest`) for this node.
+                {t('ast.inspector_tip')}
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -1252,17 +1246,17 @@ const SyntaxTreeD3 = () => {
                   }}
                   className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm font-medium"
                 >
-                  Add Child
+                  {t('common.add_child')}
                 </button>
 
                 <button
                   onClick={() => {
                     if (!treeData) return;
                     if (selectedNode.id === treeData.id) {
-                      toast.error("Cannot delete the root node.");
+                      toast.error(t('common.cannot_delete_root'));
                       return;
                     }
-                    if (!window.confirm("Delete this node and all its children?")) return;
+                    if (!window.confirm(t('common.confirm_delete_node'))) return;
 
                     const removeById = (targetId, currentNode) => {
                       if (!currentNode.children) return;
@@ -1280,12 +1274,12 @@ const SyntaxTreeD3 = () => {
                   }}
                   className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium"
                 >
-                  Delete Node
+                  {t('common.delete_node')}
                 </button>
               </div>
 
               <div className="text-xs text-gray-500">
-                Tip: Right-click a node to delete quickly.
+                {t('ast.right_click_tip')}
               </div>
             </div>
           )}
@@ -1295,7 +1289,7 @@ const SyntaxTreeD3 = () => {
       {/* LaTeX Settings */}
       <div className="w-full bg-gray-100 p-4 rounded-lg shadow-sm mb-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">
-          LaTeX Settings
+          {t('common.latex_settings')}
         </h3>
         <div className="flex flex-wrap gap-6">
           <label className="flex items-center cursor-pointer">
@@ -1307,7 +1301,7 @@ const SyntaxTreeD3 = () => {
               className="mr-2"
             />
             <span className="text-sm text-gray-600 font-medium">
-              Include whole LaTeX Preamble
+              {t('common.include_preamble')}
             </span>
           </label>
 
@@ -1320,13 +1314,13 @@ const SyntaxTreeD3 = () => {
               className="mr-2"
             />
             <span className="text-sm text-gray-600 font-medium">
-              Include import of the forest package
+              {t('common.include_forest')}
             </span>
           </label>
           {includePreamble && (
             <>
               <label className="flex items-center cursor-pointer">
-                <span className="text-sm text-gray-600 font-medium mr-2">Paper Size:</span>
+                <span className="text-sm text-gray-600 font-medium mr-2">{t('common.paper_size')}</span>
                 <select
                   value={paperSize}
                   onChange={(e) => setPaperSize(e.target.value)}
@@ -1346,7 +1340,7 @@ const SyntaxTreeD3 = () => {
                   className="mr-2"
                 />
                 <span className="text-sm text-gray-600 font-medium">
-                  Landscape
+                  {t('common.landscape')}
                 </span>
               </label>
             </>
@@ -1371,11 +1365,23 @@ const SyntaxTreeD3 = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
             />
           </svg>
-          <span>Import LaTeX</span>
+          <span>{t('common.import_latex')}</span>
         </button>
+        {generatedCode && (
+          <button
+            onClick={() => setShowLaTeXEditor(!showLaTeXEditor)}
+            className="bg-purple-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-700 transition-colors flex items-center"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <span>{showLaTeXEditor ? t('common.show_code_only') : t('common.edit_compile')}</span>
+          </button>
+        )}
         <button
           id="generateBtn"
           onClick={handleGenerateLatex}
@@ -1395,22 +1401,14 @@ const SyntaxTreeD3 = () => {
               d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
             />
           </svg>
-          <span>Generate LaTeX</span>
+          <span>{t('common.generate_latex_short')}</span>
         </button>
       </div>
 
       {/* Generated Code */}
       {generatedCode && (
         <div className="w-full mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800">Generated LaTeX Code</h3>
-            <button
-              onClick={() => setShowLaTeXEditor(!showLaTeXEditor)}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            >
-              {showLaTeXEditor ? "Show Code Only" : "Edit & Compile"}
-            </button>
-          </div>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">{t('common.generated_latex_code')}</h3>
           
           {showLaTeXEditor ? (
             <LaTeXEditor
@@ -1426,30 +1424,30 @@ const SyntaxTreeD3 = () => {
       {/* Tree Metadata Section */}
       <div className="w-full bg-white p-5 rounded-lg shadow mb-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">
-          Tree Information
+          {t('ast.info_title')}
         </h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tree Name *
+              {t('ast.tree_name')}
             </label>
             <input
               type="text"
               value={treeName}
               onChange={(e) => setTreeName(e.target.value)}
-              placeholder="Enter a name for your tree"
+              placeholder={t('ast.tree_name_placeholder')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description (Optional)
+              {t('common.description_optional')}
             </label>
             <textarea
               value={treeDescription}
               onChange={(e) => setTreeDescription(e.target.value)}
-              placeholder="Enter a description for your tree"
+              placeholder={t('ast.description_placeholder')}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -1468,7 +1466,7 @@ const SyntaxTreeD3 = () => {
           {isSaving ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-              <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+              <span>{isEditMode ? t('ast.updating') : t('ast.saving')}</span>
             </>
           ) : (
             <>
@@ -1485,13 +1483,13 @@ const SyntaxTreeD3 = () => {
                   d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
                 />
               </svg>
-              <span>{isEditMode ? "Update Tree" : "Save Tree"}</span>
+              <span>{isEditMode ? t('ast.update_tree') : t('ast.save_tree')}</span>
             </>
           )}
         </button>
         {!user && (
           <p className="text-sm text-red-500 mt-2">
-            Please log in to save your tree
+            {t('common.please_login_save', { item: t('ast.name') })}
           </p>
         )}
       </div>

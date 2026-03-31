@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { resolutionTreeService } from "../../services/resolutiontree.service";
 
@@ -9,6 +10,7 @@ const ResolutionTreeSelection = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const fetchSaved = async () => {
@@ -32,7 +34,7 @@ const ResolutionTreeSelection = () => {
   };
 
   const handleDelete = async (treeId) => {
-    if (!window.confirm("Are you sure you want to delete this resolution tree?")) return;
+    if (!window.confirm(t('common.confirm_delete', { item: t('resolution.name') }))) return;
     try {
       await resolutionTreeService.deleteResolutionTree(treeId);
       setSaved((prev) => prev.filter((t) => t._id !== treeId));
@@ -62,54 +64,35 @@ const ResolutionTreeSelection = () => {
 
   return (
     <div className="flex flex-col items-center w-full max-w-5xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">Resolution Trees</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center">{t('resolution.title')}</h1>
 
-      <div className="w-full mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+      <div className="w-full mb-8 flex justify-center">
+        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow max-w-md w-full">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            Create New Resolution Tree
+            {t('resolution.create_new')}
           </h2>
           <p className="text-gray-600 mb-4">
-            Build a new resolution tree from scratch and generate LaTeX.
+            {t('resolution.create_new_desc')}
           </p>
           <Link
             to="/resolution-trees/create"
             className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
           >
-            Create New Resolution Tree
+            {t('resolution.create_new')}
           </Link>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            Saved Resolution Trees
-          </h2>
-          <p className="text-gray-600 mb-4">
-            View and edit your previously saved resolution trees.
-          </p>
-          <button
-            onClick={() =>
-              document
-                .getElementById("saved-resolution-trees")
-                .scrollIntoView({ behavior: "smooth" })
-            }
-            className="block w-full py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded text-center transition-colors"
-          >
-            View Saved Trees
-          </button>
         </div>
       </div>
 
       <div id="saved-resolution-trees" className="w-full">
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-          Your Saved Resolution Trees
+          {t('resolution.your_saved')}
         </h2>
 
         {loading ? (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             <p className="mt-2 text-gray-600">
-              Loading your saved resolution trees...
+              {t('resolution.loading_saved')}
             </p>
           </div>
         ) : error ? (
@@ -117,55 +100,55 @@ const ResolutionTreeSelection = () => {
         ) : saved.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
             <p className="text-gray-600">
-              You don't have any saved resolution trees yet.
+              {t('resolution.no_saved')}
             </p>
             <Link
               to="/resolution-trees/create"
               className="inline-block mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
             >
-              Create Your First Resolution Tree
+              {t('resolution.create_first')}
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {saved.map((t) => (
+            {saved.map((item) => (
               <div
-                key={t._id}
+                key={item._id}
                 className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-medium text-gray-800">
-                    {t.name || "Untitled Resolution Tree"}
+                    {item.name || t('common.untitled', { item: t('resolution.name') })}
                   </h3>
                   <span className="text-xs text-gray-500">
-                    {new Date(t.createdAt).toLocaleDateString()}
+                    {new Date(item.createdAt).toLocaleDateString(i18n.language === 'sk' ? 'sk-SK' : 'en-US')}
                   </span>
                 </div>
 
-                {t.description && (
+                {item.description && (
                   <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                    {t.description}
+                    {item.description}
                   </p>
                 )}
 
                 <div className="text-sm text-gray-600 mb-3">
-                  <p>Nodes: {countNodes(t.treeData)}</p>
-                  <p>Depth: {getDepth(t.treeData)}</p>
-                  <p>Extra links: {t.extraLinks?.length || 0}</p>
+                  <p>{t('common.nodes')} {countNodes(item.treeData)}</p>
+                  <p>{t('common.depth')} {getDepth(item.treeData)}</p>
+                  <p>{t('resolution.extra_links')} {item.extraLinks?.length || 0}</p>
                 </div>
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleEdit(t._id)}
+                    onClick={() => handleEdit(item._id)}
                     className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center text-sm transition-colors"
                   >
-                    Edit
+                    {t('common.edit')}
                   </button>
                   <button
-                    onClick={() => handleDelete(t._id)}
+                    onClick={() => handleDelete(item._id)}
                     className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-sm transition-colors"
                   >
-                    Delete
+                    {t('common.delete')}
                   </button>
                 </div>
               </div>

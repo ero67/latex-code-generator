@@ -12,6 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { parseLatexToProofTree } from "../../utils/latexParser";
 import { buildGeometryLine } from "../../utils/latexGeometry";
+import { useTranslation } from 'react-i18next';
 
 const findNodeById = (node, targetId) => {
   if (!node) return null;
@@ -297,12 +298,11 @@ const ProofTreeVisualizer = ({
 };
 // --- MAIN PROOFTREE COMPONENT ---
 const ProofTree = () => {
+  const { t } = useTranslation();
   const [rootNode, setRootNode] = useState(createProofTreeNode());
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [showLaTeXEditor, setShowLaTeXEditor] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState(
-    "Your code will appear here after you click on Generate Code button"
-  );
+  const [generatedCode, setGeneratedCode] = useState("");
   const [math_notation, setMathNotation] = useState(false);
   const [includePreamble, setIncludePreamble] = useState(true);
   const [includeDocumentTags, setIncludeDocumentTags] = useState(true);
@@ -368,7 +368,7 @@ const ProofTree = () => {
 
     if (!sourceNode || !sourceParent) return;
     if (isDescendant(sourceNode, targetNodeId)) {
-      toast.error("Cannot move a node into its own subtree.");
+      toast.error(t('proof_tree.cannot_move_subtree'));
       return;
     }
 
@@ -384,7 +384,7 @@ const ProofTree = () => {
     const refreshedTargetParent = findParentOfNode(newRoot, targetNodeId);
 
     if (!refreshedTargetNode) {
-      toast.error("Target node is no longer available after restructuring.");
+      toast.error(t('proof_tree.target_unavailable'));
       return;
     }
 
@@ -431,7 +431,7 @@ const ProofTree = () => {
       return;
     } else {
       if (!refreshedTargetParent) {
-        toast.error("Cannot place a node to the left or right of the root node.");
+        toast.error(t('proof_tree.cannot_move_root_lr'));
         return;
       }
 
@@ -439,7 +439,7 @@ const ProofTree = () => {
         refreshedTargetParent.children.length >= 5 &&
         sourceParent.id !== refreshedTargetParent.id
       ) {
-        toast.error("Target level already has the maximum number of nodes.");
+        toast.error(t('proof_tree.target_max_nodes'));
         return;
       }
 
@@ -470,7 +470,7 @@ const ProofTree = () => {
 
     const leftBranch = grandparent.children[parentIndex - 1];
     if (leftBranch.children.length >= 5) {
-      toast.error("Left branch already has the maximum number of children (5).");
+      toast.error(t('proof_tree.left_branch_max'));
       return;
     }
 
@@ -497,7 +497,7 @@ const ProofTree = () => {
 
     const rightBranch = grandparent.children[parentIndex + 1];
     if (rightBranch.children.length >= 5) {
-      toast.error("Right branch already has the maximum number of children (5).");
+      toast.error(t('proof_tree.right_branch_max'));
       return;
     }
 
@@ -548,17 +548,17 @@ const ProofTree = () => {
 
     const grandparent = findParentOfNode(newRoot, parent.id);
     if (!grandparent) {
-      toast.warn("Cannot move up: parent is the root node.");
+      toast.warn(t('proof_tree.cannot_move_up_root'));
       return;
     }
 
     const node = findNodeById(newRoot, nodeIdToMove);
     if (grandparent.children.length >= 5) {
-      toast.error("Cannot move up: the parent level already has the maximum number of nodes (5).");
+      toast.error(t('proof_tree.cannot_move_up_max'));
       return;
     }
     if (parent.children.length - 1 + (node.children || []).length > 5) {
-      toast.error("Cannot move: promoting children would exceed the maximum of 5 at this level.");
+      toast.error(t('proof_tree.cannot_move_promote'));
       return;
     }
 
@@ -591,17 +591,17 @@ const ProofTree = () => {
     } else if (index < parent.children.length - 1) {
       targetSiblingId = parent.children[index + 1].id;
     } else {
-      toast.warn("Cannot move down: no sibling to become the new parent.");
+      toast.warn(t('proof_tree.cannot_move_down_sibling'));
       return;
     }
 
     const targetSibling = findNodeById(newRoot, targetSiblingId);
     if (targetSibling.children.length >= 5) {
-      toast.error("Cannot move down: target sibling already has the maximum number of children (5).");
+      toast.error(t('proof_tree.cannot_move_down_max'));
       return;
     }
     if (parent.children.length - 1 + (node.children || []).length > 5) {
-      toast.error("Cannot move: promoting children would exceed the maximum of 5 at this level.");
+      toast.error(t('proof_tree.cannot_move_promote'));
       return;
     }
 
@@ -816,12 +816,12 @@ const ProofTree = () => {
 
   const handleSave = async () => {
     if (!user || !rootNode) {
-      toast.error("Please log in and create a proof tree first");
+      toast.error(t('common.please_login_create', { item: t('proof_tree.name') }));
       return;
     }
 
     if (!treeName.trim()) {
-      toast.error("Please enter a name for your proof tree");
+      toast.error(t('common.please_enter_name', { item: t('proof_tree.name') }));
       return;
     }
 
@@ -842,17 +842,17 @@ const ProofTree = () => {
       if (isEditMode) {
         // Update existing proof tree
         await proofTreeService.updateProofTree(id, treeToSave);
-        toast.success("Proof tree updated successfully!");
+        toast.success(t('common.update_success', { item: t('proof_tree.name') }));
       } else {
         // Create new proof tree
         const response = await proofTreeService.saveProofTree(treeToSave);
-        toast.success("Proof tree saved successfully!");
+        toast.success(t('common.save_success', { item: t('proof_tree.name') }));
         // Navigate to edit mode with the new tree ID
         navigate(`/proof-trees/edit/${response.data._id}`);
       }
     } catch (error) {
       console.error("Error saving proof tree:", error);
-      toast.error("Failed to save proof tree. Please try again.");
+      toast.error(t('common.save_failed', { item: t('proof_tree.name') }));
     } finally {
       setIsSaving(false);
     }
@@ -874,7 +874,7 @@ const ProofTree = () => {
 
       setRootNode(importedNode);
       setSelectedNodeId(null);
-      toast.success("Proof tree imported successfully!");
+      toast.success(t('common.import_success_image'));
     }
   };
 
@@ -929,14 +929,14 @@ const ProofTree = () => {
         if (parseResult.success && parseResult.rootNode) {
           handleImport(parseResult.rootNode);
           sessionStorage.removeItem(storageKey);
-          toast.success("LaTeX code imported successfully from Image-to-LaTeX!");
+          toast.success(t('common.import_success_image'));
         } else {
-          toast.error(`Failed to import LaTeX code: ${parseResult.message || "Invalid code"}`);
+          toast.error(t('common.import_failed', { message: parseResult.message || "Invalid code" }));
           sessionStorage.removeItem(storageKey);
         }
       } catch (error) {
         console.error("Error auto-importing LaTeX code:", error);
-        toast.error(`Error importing LaTeX code: ${error.message}`);
+        toast.error(t('common.import_error', { message: error.message }));
         sessionStorage.removeItem(storageKey);
       }
     }
@@ -945,14 +945,14 @@ const ProofTree = () => {
   return (
     <div className="flex flex-col items-center w-full max-w-6xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-8 text-center">
-        Proof Tree Builder
+        {t('proof_tree.title_builder')}
       </h1>
       <ProofTreeInstructions />
       {/* --- 1. Tree Visualization Section --- */}
       <div className="w-full mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-700">
-            Tree Visualization
+            {t('common.tree_visualization')}
           </h2>
           <div className="flex items-center gap-2">
             <button
@@ -976,7 +976,7 @@ const ProofTree = () => {
               onClick={() => setTreeZoom(1)}
               className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-xs font-medium"
             >
-              Reset
+              {t('common.reset')}
             </button>
           </div>
         </div>
@@ -993,12 +993,12 @@ const ProofTree = () => {
       {selectedNode ? (
         <div className="w-full max-w-2xl bg-white px-4 py-3 rounded-lg shadow-md mb-6 transition-all duration-300">
           <h3 className="text-base font-semibold mb-2 text-gray-800">
-            Edit Selected Node (ID: {selectedNode.id})
+            {t('proof_tree.edit_node', { id: selectedNode.id })}
           </h3>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                Node Content
+                {t('proof_tree.node_content')}
               </label>
                 <LatexInput
                   value={selectedNode.content}
@@ -1016,7 +1016,7 @@ const ProofTree = () => {
             {selectedNode.children.length > 0 && (
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Right Label
+                  {t('proof_tree.right_label')}
                 </label>
                 <LatexInput
                   value={selectedNode.rightLabel}
@@ -1035,7 +1035,7 @@ const ProofTree = () => {
                   disabled={selectedNode.children.length >= 5}
                   className="px-3 py-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-gray-300 text-xs font-medium"
                 >
-                  Add Child
+                  {t('common.add_child')}
                 </button>
 
                 {selectedNode.id !== rootNode.id && (() => {
@@ -1073,7 +1073,7 @@ const ProofTree = () => {
                         className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 disabled:bg-gray-300 text-xs font-medium inline-flex items-center gap-1"
                         title="Move node up one level (becomes sibling of parent)"
                       >
-                        <FaArrowDown /> Down
+                        <FaArrowDown /> {t('common.down')}
                       </button>
                       <button
                         onClick={() => moveNodeDown(selectedNode.id)}
@@ -1081,7 +1081,7 @@ const ProofTree = () => {
                         className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 disabled:bg-gray-300 text-xs font-medium inline-flex items-center gap-1"
                         title="Move node down one level (becomes child of sibling)"
                       >
-                        <FaArrowUp /> Up
+                        <FaArrowUp /> {t('common.up')}
                       </button>
                       <button
                         onClick={() => moveNodeLeft(selectedNode.id)}
@@ -1089,7 +1089,7 @@ const ProofTree = () => {
                         className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 disabled:bg-gray-300 text-xs font-medium inline-flex items-center gap-1"
                         title="Move node into left sibling branch"
                       >
-                        <FaArrowLeft /> Left
+                        <FaArrowLeft /> {t('common.left')}
                       </button>
                       <button
                         onClick={() => moveNodeRight(selectedNode.id)}
@@ -1097,7 +1097,7 @@ const ProofTree = () => {
                         className="px-3 py-1.5 bg-slate-500 text-white rounded-md hover:bg-slate-600 disabled:bg-gray-300 text-xs font-medium inline-flex items-center gap-1"
                         title="Move node into right sibling branch"
                       >
-                        <FaArrowRight /> Right
+                        <FaArrowRight /> {t('common.right')}
                       </button>
                       <button
                         onClick={() => swapNodeLeft(selectedNode.id)}
@@ -1105,7 +1105,7 @@ const ProofTree = () => {
                         className="px-3 py-1.5 bg-slate-600 text-white rounded-md hover:bg-slate-700 disabled:bg-gray-300 text-xs font-medium"
                         title="Swap position with left sibling"
                       >
-                        Swap Left
+                        {t('common.swap_left')}
                       </button>
                       <button
                         onClick={() => swapNodeRight(selectedNode.id)}
@@ -1113,14 +1113,14 @@ const ProofTree = () => {
                         className="px-3 py-1.5 bg-slate-600 text-white rounded-md hover:bg-slate-700 disabled:bg-gray-300 text-xs font-medium"
                         title="Swap position with right sibling"
                       >
-                        Swap Right
+                        {t('common.swap_right')}
                       </button>
                       <button
                         onClick={() => insertParentAboveNode(selectedNode.id)}
                         className="px-3 py-1.5 bg-amber-500 text-white rounded-md hover:bg-amber-600 text-xs font-medium inline-flex items-center gap-1.5"
                       >
                         <FaLevelDownAlt />
-                        Insert Node Below
+                        {t('common.insert_node_below')}
                       </button>
                     </>
                   );
@@ -1131,7 +1131,7 @@ const ProofTree = () => {
                     onClick={() => removeNode(selectedNode.id)}
                     className="px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 text-xs font-medium"
                   >
-                    Remove Node
+                    {t('common.remove_node')}
                   </button>
                 )}
               </div>
@@ -1146,7 +1146,7 @@ const ProofTree = () => {
                   className="mr-2"
                 />
                 <span className="text-xs text-gray-600 font-medium">
-                  Math Mode
+                  {t('common.math_mode_label')}
                 </span>
               </label>
             </div>
@@ -1154,7 +1154,7 @@ const ProofTree = () => {
             {selectedNode.id !== rootNode.id && selectableMoveTargets.length > 0 && (
               <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
                 <div className="mb-2 text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                  Move this node relative to another node
+                  {t('proof_tree.move_relative')}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <select
@@ -1162,7 +1162,7 @@ const ProofTree = () => {
                     onChange={(e) => setMoveTargetId(e.target.value)}
                     className="min-w-[220px] rounded-md border border-gray-300 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Select target node</option>
+                    <option value="">{t('common.select_target_node')}</option>
                     {selectableMoveTargets.map((node) => (
                       <option key={node.id} value={node.id}>
                         ID {node.id}: {node.content || "[Empty]"}
@@ -1174,10 +1174,10 @@ const ProofTree = () => {
                     onChange={(e) => setMovePlacement(e.target.value)}
                     className="rounded-md border border-gray-300 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="left">To the left</option>
-                    <option value="right">To the right</option>
-                    <option value="above">Above</option>
-                    <option value="below">Below</option>
+                    <option value="left">{t('common.to_the_left')}</option>
+                    <option value="right">{t('common.to_the_right')}</option>
+                    <option value="above">{t('common.above')}</option>
+                    <option value="below">{t('common.below')}</option>
                   </select>
                   <button
                     onClick={() =>
@@ -1190,11 +1190,11 @@ const ProofTree = () => {
                     disabled={!moveTargetId}
                     className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300 text-xs font-medium"
                   >
-                    Move Node
+                    {t('common.move_node')}
                   </button>
                 </div>
                 <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
-                  Choose a target node and where the selected node should be placed in the upside-down tree view. Above and below follow the visual layout on screen. When a node is moved or removed, its children are promoted one level up at the original location.
+                  {t('proof_tree.move_help')}
                 </p>
               </div>
             )}
@@ -1202,13 +1202,13 @@ const ProofTree = () => {
         </div>
       ) : (
         <div className="text-center text-gray-500 mb-6 p-4 bg-gray-100 rounded-lg">
-          Click on a node in the tree above to edit it
+          {t('common.click_node_to_edit')}
         </div>
       )}
       {/* --- 3. Configuration & Other Sections (Largely Unchanged) --- */}
       <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
         <h2 className="text-lg font-semibold mb-3 text-gray-700">
-          Tree Configuration
+          {t('common.tree_configuration')}
         </h2>
         <label className="flex items-center cursor-pointer">
           <input
@@ -1218,14 +1218,14 @@ const ProofTree = () => {
             className="mr-2"
           />
           <span className="text-sm text-gray-600 font-medium">
-            Global Math Mode
+            {t('common.global_math_mode')}
           </span>
         </label>
       </div>
       {/* LaTeX Settings */}
       <div className="w-full bg-gray-100 p-4 rounded-lg shadow-sm mb-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">
-          LaTeX Settings
+          {t('common.latex_settings')}
         </h3>
         <div className="flex flex-wrap gap-6">
           <label className="flex items-center cursor-pointer">
@@ -1237,7 +1237,7 @@ const ProofTree = () => {
               className="mr-2"
             />
             <span className="text-sm text-gray-600 font-medium">
-              Include whole LaTeX Preamble
+              {t('common.include_preamble')}
             </span>
           </label>
 
@@ -1250,13 +1250,13 @@ const ProofTree = () => {
               className="mr-2"
             />
             <span className="text-sm text-gray-600 font-medium">
-              Include import of the bussproofs package
+              {t('common.include_bussproofs')}
             </span>
           </label>
           {includePreamble && (
             <>
               <label className="flex items-center cursor-pointer">
-                <span className="text-sm text-gray-600 font-medium mr-2">Paper Size:</span>
+                <span className="text-sm text-gray-600 font-medium mr-2">{t('common.paper_size')}</span>
                 <select
                   value={paperSize}
                   onChange={(e) => setPaperSize(e.target.value)}
@@ -1276,7 +1276,7 @@ const ProofTree = () => {
                   className="mr-2"
                 />
                 <span className="text-sm text-gray-600 font-medium">
-                  Landscape
+                  {t('common.landscape')}
                 </span>
               </label>
             </>
@@ -1300,11 +1300,23 @@ const ProofTree = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
             />
           </svg>
-          <span>Import LaTeX</span>
+          <span>{t('common.import_latex')}</span>
         </button>
+        {generatedCode && (
+          <button
+            onClick={() => setShowLaTeXEditor(!showLaTeXEditor)}
+            className="bg-purple-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-700 transition-colors flex items-center"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <span>{showLaTeXEditor ? t('common.show_code_only') : t('common.edit_compile')}</span>
+          </button>
+        )}
         <button
           onClick={generateBtn}
           className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 transition-colors flex items-center"
@@ -1323,21 +1335,13 @@ const ProofTree = () => {
               d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
             />
           </svg>
-          <span>Generate LaTeX Code</span>
+          <span>{t('common.generate_latex')}</span>
         </button>
       </div>
       {/* Generated Code */}
       {generatedCode && (
         <div className="w-full mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800">Generated LaTeX Code</h3>
-            <button
-              onClick={() => setShowLaTeXEditor(!showLaTeXEditor)}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            >
-              {showLaTeXEditor ? "Show Code Only" : "Edit & Compile"}
-            </button>
-          </div>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">{t('common.generated_latex_code')}</h3>
           
           {showLaTeXEditor ? (
             <LaTeXEditor
@@ -1353,30 +1357,30 @@ const ProofTree = () => {
       {/* Tree Metadata Section */}
       <div className="w-full bg-white p-5 rounded-lg shadow mb-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">
-          Proof Tree Information
+          {t('proof_tree.info_title')}
         </h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tree Name *
+              {t('proof_tree.tree_name')}
             </label>
             <input
               type="text"
               value={treeName}
               onChange={(e) => setTreeName(e.target.value)}
-              placeholder="Enter a name for your proof tree"
+              placeholder={t('proof_tree.tree_name_placeholder')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description (Optional)
+              {t('common.description_optional')}
             </label>
             <textarea
               value={treeDescription}
               onChange={(e) => setTreeDescription(e.target.value)}
-              placeholder="Enter a description for your proof tree"
+              placeholder={t('proof_tree.description_placeholder')}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -1394,7 +1398,7 @@ const ProofTree = () => {
           {isSaving ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-              <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+              <span>{isEditMode ? t('proof_tree.updating') : t('proof_tree.saving')}</span>
             </>
           ) : (
             <>
@@ -1412,14 +1416,14 @@ const ProofTree = () => {
                 />
               </svg>
               <span>
-                {isEditMode ? "Update Proof Tree" : "Save Proof Tree"}
+                {isEditMode ? t('proof_tree.update_tree') : t('proof_tree.save_tree')}
               </span>
             </>
           )}
         </button>
         {!user && (
           <p className="text-sm text-red-500 mt-2">
-            Please log in to save your proof tree
+            {t('common.please_login_save', { item: t('proof_tree.name') })}
           </p>
         )}
       </div>
@@ -1995,7 +1999,7 @@ export default ProofTree;
 //         </button>
 //         {!user && (
 //           <p className="text-sm text-red-500 mt-2">
-//             Please log in to save your proof tree
+//             {t('common.please_login_save', { item: t('proof_tree.name') })}
 //           </p>
 //         )}
 //       </div>
