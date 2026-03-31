@@ -10,8 +10,10 @@ import { resolutionTreeService } from "../../services/resolutiontree.service";
 import { parseResolutionTreeTikz } from "../../utils/resolutionTreeTikzParser";
 import LatexImportModal from "../../Components/ResolutionTree/LatexImportModal";
 import { buildGeometryLine } from "../../utils/latexGeometry";
+import { useTranslation } from 'react-i18next';
 
 const ResolutionTree = () => {
+  const { t } = useTranslation();
   const svgRef = useRef();
   const zoomLayerRef = useRef(null);
   const zoomBehaviorRef = useRef(null);
@@ -122,7 +124,7 @@ const ResolutionTree = () => {
 
     const value = (resolventDraft ?? "").trim();
     if (!value) {
-      toast.error("Please enter a resolvent clause value first.");
+      toast.error(t('resolution.enter_resolvent'));
       return;
     }
 
@@ -145,7 +147,7 @@ const ResolutionTree = () => {
     setEdgeLabelDraft2("");
     setIsSelectingParents(false);
     setSelectedNodeId(newNode.id);
-    toast.success("Resolvent added.");
+    toast.success(t('resolution.resolvent_added'));
   }, [treeData, selectedIds, resolventDraft, edgeLabelDraft1, edgeLabelDraft2, nodeId, findNodeById]);
 
   const toggleSelect = useCallback(
@@ -265,7 +267,7 @@ const ResolutionTree = () => {
         setSelectedIds([]);
       } catch (e) {
         console.error("Error loading resolution tree:", e);
-        toast.error("Failed to load resolution tree.");
+        toast.error(t('common.load_failed', { item: t('resolution.name') }));
       }
     };
     load();
@@ -305,10 +307,10 @@ const ResolutionTree = () => {
       setIsSelectingParents(false);
       setResolventDraft("");
       sessionStorage.removeItem(storageKey);
-      toast.success("LaTeX resolution tree imported successfully from Image-to-LaTeX!");
+      toast.success(t('common.import_success_image'));
     } catch (err) {
       console.error("Error auto-importing resolution tree LaTeX:", err);
-      toast.error(`Failed to import resolution tree: ${err.message || "Invalid LaTeX"}`);
+      toast.error(t('common.import_failed', { message: err.message || "Invalid LaTeX" }));
       sessionStorage.removeItem(storageKey);
     }
   }, [isEditMode]);
@@ -818,10 +820,9 @@ const ResolutionTree = () => {
 
   return (
     <div className="flex flex-col items-center w-full max-w-5xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4 text-center">Resolution Trees</h1>
+      <h1 className="text-3xl font-bold mb-4 text-center">{t('resolution.title')}</h1>
       <p className="text-gray-600 text-sm mb-6 text-center">
-        Add clauses with "Add Clause", then click "Resolve Clauses" and pick any two nodes to derive a new resolvent.
-        You can add new clauses at any time and resolve them with existing nodes.
+        {t('resolution.description_text')}
       </p>
 
       <div className="w-full flex flex-wrap gap-3 items-center mb-4">
@@ -829,13 +830,13 @@ const ResolutionTree = () => {
           onClick={addTopNode}
           className="px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2 hover:bg-blue-700"
         >
-          <FaPlus /> Add Clause
+          <FaPlus /> {t('resolution.add_clause')}
         </button>
         <button
           onClick={() => setShowImportModal(true)}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
-          Import from LaTeX
+          {t('resolution.import_from_latex')}
         </button>
         <button
           onClick={() => {
@@ -853,7 +854,7 @@ const ResolutionTree = () => {
           }`}
           title="Toggle mode: clicking nodes will mark/unmark them as parents (max 2)"
         >
-          {isSelectingParents ? "Click 2 nodes to resolve..." : "Resolve Clauses"}
+          {isSelectingParents ? t('resolution.selecting_nodes') : t('resolution.resolve_clauses')}
         </button>
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input
@@ -861,7 +862,7 @@ const ResolutionTree = () => {
             checked={mathMode}
             onChange={() => setMathMode((v) => !v)}
           />
-          Math mode labels
+          {t('resolution.math_mode_labels')}
         </label>
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input
@@ -869,7 +870,7 @@ const ResolutionTree = () => {
             checked={wrapBraces}
             onChange={() => setWrapBraces((v) => !v)}
           />
-          Wrap clauses in {"{ }"}
+          {t('resolution.wrap_braces')}
         </label>
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input
@@ -877,12 +878,12 @@ const ResolutionTree = () => {
             checked={includePreamble}
             onChange={() => setIncludePreamble((v) => !v)}
           />
-          Include whole LaTeX preamble
+          {t('resolution.include_preamble')}
         </label>
         {includePreamble && (
           <>
             <label className="flex items-center gap-2 text-sm text-gray-700">
-              <span>Paper Size:</span>
+              <span>{t('common.paper_size')}</span>
               <select
                 value={paperSize}
                 onChange={(e) => setPaperSize(e.target.value)}
@@ -900,12 +901,12 @@ const ResolutionTree = () => {
                 checked={landscape}
                 onChange={() => setLandscape((v) => !v)}
               />
-              Landscape
+              {t('common.landscape')}
             </label>
           </>
         )}
         <div className="text-sm text-gray-500 flex items-center gap-2">
-          <FaTrash className="text-red-500" /> Delete from Inspector
+          <FaTrash className="text-red-500" /> {t('resolution.delete_from_inspector')}
         </div>
       </div>
 
@@ -964,7 +965,7 @@ const ResolutionTree = () => {
                   className="px-3 py-1 text-sm text-blue-700 border border-blue-300 rounded hover:bg-blue-50 transition-colors flex items-center gap-1"
                   title="Add a new standalone clause that you can then select as a parent"
                 >
-                  <FaPlus className="text-xs" /> Add Clause
+                  <FaPlus className="text-xs" /> {t('resolution.add_clause')}
                 </button>
                 <button
                   onClick={() => {
@@ -974,7 +975,7 @@ const ResolutionTree = () => {
                   }}
                   className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-100 transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -1007,7 +1008,7 @@ const ResolutionTree = () => {
                 <div className="flex items-end gap-3">
                   <div className="flex-1">
                     <label className="block text-sm font-semibold text-blue-800 mb-1">
-                      Resolvent clause
+                      {t('resolution.resolvent_clause')}
                     </label>
                     <input
                       type="text"
@@ -1027,7 +1028,7 @@ const ResolutionTree = () => {
                     className="px-3 py-2 bg-gray-100 text-gray-800 rounded border border-gray-300 hover:bg-gray-200 transition-colors text-sm font-medium whitespace-nowrap"
                     title="Insert empty clause symbol"
                   >
-                    Empty clause (\Box)
+                    {t('resolution.empty_clause')}
                   </button>
                 </div>
                 <div className="flex items-end gap-3">
@@ -1063,7 +1064,7 @@ const ResolutionTree = () => {
                     onClick={createResolventFromSelection}
                     className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-semibold whitespace-nowrap shadow"
                   >
-                    Add Resolvent
+                    {t('resolution.add_resolvent')}
                   </button>
                   <button
                     onClick={() => {
@@ -1074,7 +1075,7 @@ const ResolutionTree = () => {
                     }}
                     className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-100 transition-colors whitespace-nowrap"
                   >
-                    Reset
+                    {t('common.reset')}
                   </button>
                   <button
                     onClick={() => {
@@ -1109,7 +1110,7 @@ const ResolutionTree = () => {
               }}
               className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
             >
-              Zoom In
+              {t('common.zoom_in')}
             </button>
             <button
               onClick={() => {
@@ -1121,7 +1122,7 @@ const ResolutionTree = () => {
               }}
               className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
             >
-              Zoom Out
+              {t('common.zoom_out')}
             </button>
             <button
               onClick={() => {
@@ -1133,10 +1134,10 @@ const ResolutionTree = () => {
               }}
               className="px-4 py-2 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors"
             >
-              Reset View
+              {t('common.reset_view')}
             </button>
             <span className="text-xs text-gray-400 ml-2">
-              Scroll to zoom, drag to pan
+              {t('resolution.scroll_zoom_pan')}
             </span>
           </div>
           <svg
@@ -1149,7 +1150,7 @@ const ResolutionTree = () => {
 
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-700">Inspector</h2>
+            <h2 className="text-lg font-semibold text-gray-700">{t('common.inspector')}</h2>
             {(selectedNodeId !== null || selectedEdge !== null) && (
               <button
                 onClick={() => {
@@ -1160,7 +1161,7 @@ const ResolutionTree = () => {
                 }}
                 className="px-3 py-1 text-sm border rounded hover:bg-gray-100 transition-colors"
               >
-                Clear
+                {t('common.clear')}
               </button>
             )}
           </div>
@@ -1168,7 +1169,7 @@ const ResolutionTree = () => {
           {selectedEdge ? (
             <div className="space-y-4">
               <div className="text-xs text-purple-600 font-semibold uppercase tracking-wide">
-                Edge selected
+                {t('resolution.edge_selected')}
               </div>
               <div className="text-sm text-gray-600">
                 Node <span className="font-mono font-bold">{selectedEdge.sourceId}</span>
@@ -1180,7 +1181,7 @@ const ResolutionTree = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Edge label (substitution)
+                  {t('resolution.edge_label_substitution')}
                 </label>
                 <input
                   type="text"
@@ -1213,18 +1214,18 @@ const ResolutionTree = () => {
             </div>
           ) : !selectedNode ? (
             <div className="text-sm text-gray-500">
-              Click a node or edge in the canvas to select it.
+              {t('resolution.click_node_or_edge')}
             </div>
           ) : (
             <div className="space-y-4">
               <div>
-                <div className="text-xs text-gray-500 mb-1">Node ID</div>
+                <div className="text-xs text-gray-500 mb-1">{t('resolution.node_id')}</div>
                 <div className="font-mono text-sm text-gray-800">{selectedNode.id}</div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Clause value
+                  {t('resolution.clause_value')}
                 </label>
                 <input
                   type="text"
@@ -1243,23 +1244,23 @@ const ResolutionTree = () => {
                   onClick={() => addChildById(selectedNode.id)}
                   className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm font-medium"
                 >
-                  Add Child
+                  {t('common.add_child')}
                 </button>
 
                 <button
                   onClick={() => {
                     if (!treeData) return;
                     if (selectedNode.id === treeData.id) {
-                      toast.error("Cannot delete the root node.");
+                      toast.error(t('common.cannot_delete_root'));
                       return;
                     }
-                    if (!window.confirm("Delete this node and all its children?")) return;
+                    if (!window.confirm(t('common.confirm_delete_node'))) return;
                     removeNode(selectedNode);
                     setSelectedNodeId(null);
                   }}
                   className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium"
                 >
-                  Delete Node
+                  {t('common.delete_node')}
                 </button>
               </div>
 
@@ -1270,19 +1271,27 @@ const ResolutionTree = () => {
 
       {/* LaTeX generation */}
       <div className="w-full mt-6 flex flex-col gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handleGenerateLatex}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center"
           >
-            Generate LaTeX
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+            <span>{t('common.generate_latex_short')}</span>
           </button>
           {generatedCode && (
             <button
               onClick={() => setShowLaTeXEditor((v) => !v)}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-colors flex items-center"
             >
-              {showLaTeXEditor ? "Show Code Only" : "Edit & Compile"}
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span>{showLaTeXEditor ? t('common.show_code_only') : t('common.edit_compile')}</span>
             </button>
           )}
         </div>
@@ -1305,30 +1314,30 @@ const ResolutionTree = () => {
       {/* Metadata + Save/Update (match other builders) */}
       <div className="w-full bg-white p-5 rounded-lg shadow mt-8">
         <h3 className="text-lg font-semibold mb-3 text-gray-700">
-          Resolution Tree Information
+          {t('resolution.info_title')}
         </h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tree Name *
+              {t('resolution.tree_name')}
             </label>
             <input
               type="text"
               value={treeName}
               onChange={(e) => setTreeName(e.target.value)}
-              placeholder="Enter a name for your resolution tree"
+              placeholder={t('resolution.tree_name_placeholder')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description (Optional)
+              {t('common.description_optional')}
             </label>
             <textarea
               value={treeDescription}
               onChange={(e) => setTreeDescription(e.target.value)}
-              placeholder="Enter a description for your resolution tree"
+              placeholder={t('resolution.description_placeholder')}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -1340,11 +1349,11 @@ const ResolutionTree = () => {
         <button
           onClick={async () => {
             if (!user) {
-              toast.error("Please log in to save your resolution tree.");
+              toast.error(t('common.please_login_save', { item: t('resolution.name') }));
               return;
             }
             if (!treeName.trim()) {
-              toast.error("Please enter a name for your resolution tree.");
+              toast.error(t('common.please_enter_name', { item: t('resolution.name') }));
               return;
             }
             setIsSaving(true);
@@ -1359,15 +1368,15 @@ const ResolutionTree = () => {
               };
               if (isEditMode) {
                 await resolutionTreeService.updateResolutionTree(id, payload);
-                toast.success("Resolution tree updated successfully!");
+                toast.success(t('common.update_success', { item: t('resolution.name') }));
               } else {
                 const resp = await resolutionTreeService.saveResolutionTree(payload);
-                toast.success("Resolution tree saved successfully!");
+                toast.success(t('common.save_success', { item: t('resolution.name') }));
                 navigate(`/resolution-trees/edit/${resp.data._id}`);
               }
             } catch (e) {
               console.error("Error saving resolution tree:", e);
-              toast.error("Failed to save resolution tree.");
+              toast.error(t('common.save_failed', { item: t('resolution.name') }));
             } finally {
               setIsSaving(false);
             }
@@ -1378,15 +1387,15 @@ const ResolutionTree = () => {
           {isSaving ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-              <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+              <span>{isEditMode ? t('resolution.updating') : t('resolution.saving')}</span>
             </>
           ) : (
-            <span>{isEditMode ? "Update Resolution Tree" : "Save Resolution Tree"}</span>
+            <span>{isEditMode ? t('resolution.update_tree') : t('resolution.save_tree')}</span>
           )}
         </button>
         {!user && (
           <p className="text-sm text-red-500 mt-2">
-            Please log in to save your resolution tree
+            {t('common.please_login_save', { item: t('resolution.name') })}
           </p>
         )}
       </div>

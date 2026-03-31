@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { proofTreeService } from "../../services/prooftree.service";
 import { useAuth } from "../../context/AuthContext";
 
@@ -9,6 +10,7 @@ const ProofTreeSelection = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     // Fetch saved Proof Trees from the backend
@@ -36,7 +38,7 @@ const ProofTreeSelection = () => {
   };
 
   const handleDeleteTree = async (treeId) => {
-    if (window.confirm("Are you sure you want to delete this proof tree?")) {
+    if (window.confirm(t('common.confirm_delete', { item: t('proof_tree.name') }))) {
       try {
         await proofTreeService.deleteProofTree(treeId);
         // Remove the deleted tree from state
@@ -87,61 +89,38 @@ const ProofTreeSelection = () => {
 
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">Proof Trees</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center">{t('proof_tree.title')}</h1>
 
-      <div className="w-full mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="w-full mb-8 flex justify-center">
         {/* Create New Tree Card */}
-        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow max-w-md w-full">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            Create New Proof Tree
+            {t('proof_tree.create_new')}
           </h2>
           <p className="text-gray-600 mb-4">
-            Design a new Proof Tree from scratch with custom configuration and
-            mathematical notation support.
+            {t('proof_tree.create_new_desc')}
           </p>
           <Link
             to="/proof-trees/create"
             className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
             data-umami-event="Create new proof tree button"
           >
-            Create New Proof Tree
+            {t('proof_tree.create_new')}
           </Link>
-        </div>
-
-        {/* View Saved Trees Card */}
-        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            Saved Proof Trees
-          </h2>
-          <p className="text-gray-600 mb-4">
-            View and edit your previously saved Proof Trees with their logical
-            structures.
-          </p>
-          <button
-            onClick={() =>
-              document
-                .getElementById("saved-trees")
-                .scrollIntoView({ behavior: "smooth" })
-            }
-            className="block w-full py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded text-center transition-colors"
-            data-umami-event="View saved proof trees button"
-          >
-            View Saved Trees
-          </button>
         </div>
       </div>
 
       {/* Saved Trees Section */}
       <div id="saved-trees" className="w-full">
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-          Your Saved Proof Trees
+          {t('proof_tree.your_saved')}
         </h2>
 
         {loading ? (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             <p className="mt-2 text-gray-600">
-              Loading your saved proof trees...
+              {t('proof_tree.loading_saved')}
             </p>
           </div>
         ) : error ? (
@@ -149,14 +128,14 @@ const ProofTreeSelection = () => {
         ) : savedTrees.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
             <p className="text-gray-600">
-              You don't have any saved proof trees yet.
+              {t('proof_tree.no_saved')}
             </p>
             <Link
               to="/proof-trees/create"
               className="inline-block mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
               data-umami-event="Create your first proof tree button"
             >
-              Create Your First Proof Tree
+              {t('proof_tree.create_first')}
             </Link>
           </div>
         ) : (
@@ -168,10 +147,10 @@ const ProofTreeSelection = () => {
               >
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-medium text-gray-800">
-                    {tree.name || "Untitled Proof Tree"}
+                    {tree.name || t('common.untitled', { item: t('proof_tree.name') })}
                   </h3>
                   <span className="text-xs text-gray-500">
-                    {new Date(tree.createdAt).toLocaleDateString()}
+                    {new Date(tree.createdAt).toLocaleDateString(i18n.language === 'sk' ? 'sk-SK' : 'en-US')}
                   </span>
                 </div>
 
@@ -182,14 +161,14 @@ const ProofTreeSelection = () => {
                 )}
 
                 <div className="text-sm text-gray-600 mb-3">
-                  <p>Root: {tree.treeData?.content || "Empty"}</p>
-                  <p>Nodes: {countNodes(tree.treeData)}</p>
-                  <p>Depth: {getTreeDepth(tree.treeData)}</p>
+                  <p>{t('common.root')} {tree.treeData?.content || t('common.empty')}</p>
+                  <p>{t('common.nodes')} {countNodes(tree.treeData)}</p>
+                  <p>{t('common.depth')} {getTreeDepth(tree.treeData)}</p>
                   <p>
-                    Math Mode:{" "}
-                    {tree.settings?.math_notation ? "Global" : "Per Node"}
+                    {t('common.math_mode')}{" "}
+                    {tree.settings?.math_notation ? t('common.global') : t('common.per_node')}
                   </p>
-                  <p>Math Nodes: {countMathModeNodes(tree.treeData)}</p>
+                  <p>{t('proof_tree.math_nodes')} {countMathModeNodes(tree.treeData)}</p>
                 </div>
 
                 <div className="flex gap-2">
@@ -198,14 +177,14 @@ const ProofTreeSelection = () => {
                     className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center text-sm transition-colors"
                     data-umami-event="Edit proof tree button"
                   >
-                    Edit
+                    {t('common.edit')}
                   </button>
                   <button
                     onClick={() => handleDeleteTree(tree._id)}
                     className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-sm transition-colors"
                     data-umami-event="Delete proof tree button"
                   >
-                    Delete
+                    {t('common.delete')}
                   </button>
                 </div>
               </div>

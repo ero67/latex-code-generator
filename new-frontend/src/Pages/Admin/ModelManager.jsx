@@ -3,8 +3,10 @@ import { FaPlus, FaSave } from "react-icons/fa";
 import { toast } from "react-toastify";
 import ModelService from "../../services/model.service";
 import SettingsService from "../../services/settings.service";
+import { useTranslation } from "react-i18next";
 
 const ModelManager = () => {
+  const { t } = useTranslation();
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newModelId, setNewModelId] = useState("");
@@ -30,7 +32,7 @@ const ModelManager = () => {
       setNameEdits(initialEdits);
     } catch (error) {
       console.error("Failed to load models:", error);
-      toast.error("Failed to load models");
+      toast.error(t('admin.models_load_failed'));
     } finally {
       setLoading(false);
     }
@@ -44,7 +46,7 @@ const ModelManager = () => {
       setByokEnabled(Boolean(settings?.byokEnabled));
     } catch (error) {
       console.error("Failed to load settings:", error);
-      toast.error("Failed to load settings");
+      toast.error(t('admin.models_load_failed'));
     } finally {
       setByokLoading(false);
     }
@@ -66,12 +68,12 @@ const ModelManager = () => {
       setByokEnabled(nextValue);
       toast.success(
         nextValue
-          ? "BYOK enabled. Users must add their OpenRouter key."
-          : "BYOK disabled. Using server key."
+          ? t('admin.byok_enabled_msg')
+          : t('admin.byok_disabled_msg')
       );
     } catch (error) {
       console.error("Failed to update BYOK settings:", error);
-      toast.error("Failed to update BYOK settings");
+      toast.error(t('admin.byok_update_failed'));
     } finally {
       setByokSaving(false);
     }
@@ -80,7 +82,7 @@ const ModelManager = () => {
   const handleCreateModel = async (event) => {
     event.preventDefault();
     if (!newModelId.trim()) {
-      toast.error("Model ID is required");
+      toast.error(t('admin.model_id_required'));
       return;
     }
 
@@ -90,14 +92,14 @@ const ModelManager = () => {
         displayName: newDisplayName.trim() || undefined,
         enabled: newEnabled,
       });
-      toast.success("Model added");
+      toast.success(t('admin.model_added'));
       setNewModelId("");
       setNewDisplayName("");
       setNewEnabled(true);
       loadModels();
     } catch (error) {
       console.error("Failed to create model:", error);
-      const message = error.response?.data?.message || "Failed to add model";
+      const message = error.response?.data?.message || t('admin.model_add_failed');
       toast.error(message);
     }
   };
@@ -110,7 +112,7 @@ const ModelManager = () => {
       loadModels();
     } catch (error) {
       console.error("Failed to update model:", error);
-      toast.error("Failed to update model");
+      toast.error(t('admin.model_update_failed'));
     }
   };
 
@@ -119,21 +121,20 @@ const ModelManager = () => {
       await ModelService.updateModel(token, model._id, {
         displayName: nameEdits[model._id],
       });
-      toast.success("Display name updated");
+      toast.success(t('admin.display_name_updated'));
       loadModels();
     } catch (error) {
       console.error("Failed to update display name:", error);
-      toast.error("Failed to update display name");
+      toast.error(t('admin.model_update_failed'));
     }
   };
 
   return (
     <div className="max-w-5xl mx-auto bg-white border border-gray-200 rounded-xl shadow-lg p-6 md:p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">OpenRouter Models</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t('admin.models_title')}</h2>
         <p className="text-sm text-gray-600 mt-1">
-          Manage the list of OpenRouter models available in the Image to LaTeX
-          dropdown.
+          {t('admin.models_desc')}
         </p>
       </div>
 
@@ -141,11 +142,10 @@ const ModelManager = () => {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              Bring Your Own Key (BYOK)
+              {t('admin.byok_title')}
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              When enabled, Image to LaTeX requires users to add their own
-              OpenRouter API key.
+              {t('admin.byok_desc')}
             </p>
           </div>
           <button
@@ -159,10 +159,10 @@ const ModelManager = () => {
             } ${byokLoading || byokSaving ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             {byokLoading
-              ? "Loading..."
+              ? t('common.loading')
               : byokEnabled
-              ? "BYOK Enabled"
-              : "BYOK Disabled"}
+              ? t('admin.byok_enabled')
+              : t('admin.byok_disabled')}
           </button>
         </div>
       </div>
@@ -173,25 +173,25 @@ const ModelManager = () => {
       >
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Model ID
+            {t('admin.model_id')}
           </label>
           <input
             type="text"
             value={newModelId}
             onChange={(e) => setNewModelId(e.target.value)}
-            placeholder="openai/gpt-4.1"
+            placeholder={t('admin.model_id_placeholder')}
             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Display Name (optional)
+            {t('admin.display_name')}
           </label>
           <input
             type="text"
             value={newDisplayName}
             onChange={(e) => setNewDisplayName(e.target.value)}
-            placeholder="GPT-4.1"
+            placeholder={t('admin.display_name_placeholder')}
             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>

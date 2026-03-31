@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import GeneratedCode from "../GeneratedCode";
 import { LaTeXEditor } from "../LaTeXEditor";
 import LatexImportModal from "./LatexImportModal";
@@ -178,13 +179,12 @@ function buildTikz(nodes, edges, opts) {
 }
 
 const AutomataLatexPanel = ({ nodes, edges, onImport }) => {
+  const { t } = useTranslation();
   const [includePreamble, setIncludePreamble] = useState(true);
   const [includeTikzImports, setIncludeTikzImports] = useState(true);
   const [paperSize, setPaperSize] = useState("a4paper");
   const [landscape, setLandscape] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState(
-    "Your code will appear here \n after you click on Generate LaTeX button"
-  );
+  const [generatedCode, setGeneratedCode] = useState(null);
   const [showLaTeXEditor, setShowLaTeXEditor] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
 
@@ -206,13 +206,13 @@ const AutomataLatexPanel = ({ nodes, edges, onImport }) => {
             onClick={() => setShowImportModal(true)}
             className="bg-blue-500 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-600 transition-colors"
           >
-            Import LaTeX
+            {t('common.import_latex')}
           </button>
           <button
             onClick={handleGenerateLatex}
             className="bg-green-500 text-white px-5 py-2 rounded-lg font-bold hover:bg-green-600 transition-colors"
           >
-            Generate LaTeX
+            {t('common.generate_latex_short')}
           </button>
         </div>
       </div>
@@ -226,7 +226,7 @@ const AutomataLatexPanel = ({ nodes, edges, onImport }) => {
             className="mr-2"
           />
           <span className="text-sm text-gray-600 font-medium">
-            Include whole LaTeX Preamble
+            {t('common.include_preamble')}
           </span>
         </label>
         <label className="flex items-center cursor-pointer">
@@ -237,13 +237,13 @@ const AutomataLatexPanel = ({ nodes, edges, onImport }) => {
             className="mr-2"
           />
           <span className="text-sm text-gray-600 font-medium">
-            Include TikZ imports (automata, positioning, arrows)
+            {t('fsa.include_tikz')}
           </span>
         </label>
         {includePreamble && (
           <>
             <label className="flex items-center cursor-pointer">
-              <span className="text-sm text-gray-600 font-medium mr-2">Paper Size:</span>
+              <span className="text-sm text-gray-600 font-medium mr-2">{t('common.paper_size')}</span>
               <select
                 value={paperSize}
                 onChange={(e) => setPaperSize(e.target.value)}
@@ -263,7 +263,7 @@ const AutomataLatexPanel = ({ nodes, edges, onImport }) => {
                 className="mr-2"
               />
               <span className="text-sm text-gray-600 font-medium">
-                Landscape
+                {t('common.landscape')}
               </span>
             </label>
           </>
@@ -271,23 +271,23 @@ const AutomataLatexPanel = ({ nodes, edges, onImport }) => {
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-bold text-gray-800">Generated LaTeX Code</h3>
+        <h3 className="text-lg font-bold text-gray-800">{t('common.generated_latex_code')}</h3>
         <button
           onClick={() => setShowLaTeXEditor(!showLaTeXEditor)}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
         >
-          {showLaTeXEditor ? "Show Code Only" : "Edit & Compile"}
+          {showLaTeXEditor ? t('common.show_code_only') : t('common.edit_compile')}
         </button>
       </div>
 
       {showLaTeXEditor ? (
         <LaTeXEditor
-          initialCode={generatedCode}
+          initialCode={generatedCode || t('fsa.code_placeholder')}
           onCodeChange={(newCode) => setGeneratedCode(newCode)}
           height="700px"
         />
       ) : (
-        <GeneratedCode code={generatedCode} />
+        <GeneratedCode code={generatedCode || t('fsa.code_placeholder')} />
       )}
 
       <LatexImportModal

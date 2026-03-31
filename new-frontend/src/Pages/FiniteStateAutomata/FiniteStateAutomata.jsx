@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { fsaService } from "../../services/fsa.service";
 import { toast } from "react-toastify";
 import { parseFsaTikz } from "../../utils/fsaTikzParser";
+import { useTranslation } from 'react-i18next';
 
 const NODE_R = 26;
 const SELF_LOOP_DEFAULT_ANGLE = -90;
@@ -112,6 +113,7 @@ function buildEdgeGroups(edges) {
 }
 
 const FiniteStateAutomata = () => {
+  const { t } = useTranslation();
   const svgRef = useRef(null);
   const viewportRef = useRef(null);
 
@@ -196,7 +198,7 @@ const FiniteStateAutomata = () => {
         nextEdgeId.current = Math.max(nextEdgeId.current, maxE + 1);
       } catch (err) {
         console.error("Error loading FSA:", err);
-        toast.error("Failed to load automata");
+        toast.error(t('common.load_failed', { item: t('fsa.name') }));
       }
     };
 
@@ -234,10 +236,10 @@ const FiniteStateAutomata = () => {
       setIsInspectorOpen(true);
 
       sessionStorage.removeItem(storageKey);
-      toast.success("LaTeX automata imported successfully from Image-to-LaTeX!");
+      toast.success(t('common.import_success_image'));
     } catch (err) {
       console.error("Error auto-importing FSA LaTeX:", err);
-      toast.error(`Failed to import automata: ${err.message || "Invalid LaTeX"}`);
+      toast.error(t('common.import_failed', { message: err.message || "Invalid LaTeX" }));
       sessionStorage.removeItem(storageKey);
     }
   }, [isEditMode]);
@@ -645,11 +647,11 @@ const FiniteStateAutomata = () => {
 
   const handleSave = async () => {
     if (!user) {
-      toast.error("Please log in to save your automata");
+      toast.error(t('common.please_login_save', { item: t('fsa.name') }));
       return;
     }
     if (!automataName.trim()) {
-      toast.error("Please enter a name for your automata");
+      toast.error(t('common.please_enter_name', { item: t('fsa.name') }));
       return;
     }
 
@@ -669,15 +671,15 @@ const FiniteStateAutomata = () => {
 
       if (isEditMode) {
         await fsaService.updateFSA(id, payload);
-        toast.success("Automata updated successfully!");
+        toast.success(t('common.update_success', { item: t('fsa.name') }));
       } else {
         const response = await fsaService.saveFSA(payload);
-        toast.success("Automata saved successfully!");
+        toast.success(t('common.save_success', { item: t('fsa.name') }));
         navigate(`/finite-state-automata/edit/${response.data._id}`);
       }
     } catch (err) {
       console.error("Error saving FSA:", err);
-      toast.error("Failed to save automata. Please try again.");
+      toast.error(t('common.save_failed', { item: t('fsa.name') }));
     } finally {
       setIsSaving(false);
     }
@@ -685,26 +687,22 @@ const FiniteStateAutomata = () => {
 
   return (
     <div className="flex flex-col items-center w-full max-w-6xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">Finite State Automata</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">{t('fsa.title')}</h1>
 
       <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
-        <h2 className="text-lg font-semibold mb-3 text-gray-700">How to use?</h2>
+        <h2 className="text-lg font-semibold mb-3 text-gray-700">{t('fsa.how_to_use')}</h2>
         <div className="space-y-2 text-gray-600">
           <p>
-            <span className="font-bold text-blue-600">1.</span> Click{" "}
-            <span className="font-semibold">Add State</span>, then click on the canvas to place it.
+            <span className="font-bold text-blue-600">1.</span> {t('fsa.instruction_1')}
           </p>
           <p>
-            <span className="font-bold text-blue-600">2.</span> Drag states to move them around.
+            <span className="font-bold text-blue-600">2.</span> {t('fsa.instruction_2')}
           </p>
           <p>
-            <span className="font-bold text-blue-600">3.</span> Click{" "}
-            <span className="font-semibold">Add Transition</span>, click a source state, then a
-            target state, and enter the label.
+            <span className="font-bold text-blue-600">3.</span> {t('fsa.instruction_3')}
           </p>
           <p>
-            <span className="font-bold text-blue-600">4.</span> Click a state/transition to edit it
-            on the right. Press <span className="font-semibold">Delete</span> to remove it.
+            <span className="font-bold text-blue-600">4.</span> {t('fsa.instruction_4')}
           </p>
         </div>
       </div>
@@ -723,7 +721,7 @@ const FiniteStateAutomata = () => {
                 : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
             }`}
           >
-            Add State
+            {t('fsa.add_state')}
           </button>
           <button
             onClick={() => {
@@ -737,7 +735,7 @@ const FiniteStateAutomata = () => {
                 : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
             }`}
           >
-            Add Transition
+            {t('fsa.add_transition')}
           </button>
           <button
             onClick={() => {
@@ -750,13 +748,13 @@ const FiniteStateAutomata = () => {
                 : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
             }`}
           >
-            Select / Pan
+            {t('fsa.select_pan')}
           </button>
           <button
             onClick={autoLayout}
             className="px-4 py-2 rounded font-medium border border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
           >
-            Auto layout
+            {t('fsa.auto_layout')}
           </button>
         </div>
 
@@ -766,13 +764,13 @@ const FiniteStateAutomata = () => {
             disabled={!selected.type}
             className="px-4 py-2 rounded font-medium border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Delete selected
+            {t('fsa.delete_selected')}
           </button>
           <button
             onClick={clearAll}
             className="px-4 py-2 rounded font-medium border border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
           >
-            Clear
+            {t('common.clear')}
           </button>
         </div>
       </div>
@@ -780,14 +778,14 @@ const FiniteStateAutomata = () => {
       <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-white p-4 rounded-lg shadow">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-700">Automata Canvas</h2>
+            <h2 className="text-lg font-semibold text-gray-700">{t('fsa.automata_canvas')}</h2>
             <div className="text-sm text-gray-500">
-              {mode === "add_state" && "Click to place a state"}
+              {mode === "add_state" && t('fsa.click_to_place')}
               {mode === "add_transition" &&
                 (pendingSourceId
-                  ? `Select target for transition from ${pendingSourceId}`
-                  : "Select source state")}
-              {mode === "select" && "Drag to move states, scroll to zoom"}
+                  ? t('fsa.select_target_transition', { id: pendingSourceId })
+                  : t('fsa.select_source_state'))}
+              {mode === "select" && t('fsa.drag_zoom_hint')}
             </div>
           </div>
           <svg
@@ -801,7 +799,7 @@ const FiniteStateAutomata = () => {
         {isInspectorOpen && (
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-700">Inspector</h2>
+              <h2 className="text-lg font-semibold text-gray-700">{t('common.inspector')}</h2>
               <button
                 onClick={() => setIsInspectorOpen(false)}
                 className="w-8 h-8 inline-flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-600"
@@ -814,20 +812,20 @@ const FiniteStateAutomata = () => {
 
             {!selected.type && (
               <div className="text-sm text-gray-500">
-                Select a state or transition to edit it.
+                {t('fsa.select_to_edit')}
               </div>
             )}
 
             {selectedNode && (
               <div className="space-y-4">
                 <div>
-                  <div className="text-xs text-gray-500 mb-1">State ID</div>
+                  <div className="text-xs text-gray-500 mb-1">{t('fsa.state_id')}</div>
                   <div className="font-mono text-sm text-gray-800">{selectedNode.id}</div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Label
+                    {t('common.label')}
                   </label>
                   <input
                     type="text"
@@ -863,7 +861,7 @@ const FiniteStateAutomata = () => {
                     }}
                     className="mr-2"
                   />
-                  <span className="text-sm text-gray-700 font-medium">Start state</span>
+                  <span className="text-sm text-gray-700 font-medium">{t('fsa.start_state')}</span>
                 </label>
 
                 <label className="flex items-center cursor-pointer">
@@ -882,14 +880,14 @@ const FiniteStateAutomata = () => {
                     }}
                     className="mr-2"
                   />
-                  <span className="text-sm text-gray-700 font-medium">Accepting state</span>
+                  <span className="text-sm text-gray-700 font-medium">{t('fsa.accepting_state')}</span>
                 </label>
 
                 <button
                   onClick={deleteSelected}
                   className="w-full px-4 py-2 rounded font-medium border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
                 >
-                  Delete state
+                  {t('fsa.delete_state')}
                 </button>
               </div>
             )}
@@ -897,7 +895,7 @@ const FiniteStateAutomata = () => {
             {selectedEdge && (
               <div className="space-y-4">
                 <div>
-                  <div className="text-xs text-gray-500 mb-1">Transition</div>
+                  <div className="text-xs text-gray-500 mb-1">{t('fsa.transition')}</div>
                   <div className="font-mono text-sm text-gray-800">
                     {selectedEdge.sourceId} → {selectedEdge.targetId}
                   </div>
@@ -905,7 +903,7 @@ const FiniteStateAutomata = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Label
+                    {t('common.label')}
                   </label>
                   <input
                     type="text"
@@ -927,7 +925,7 @@ const FiniteStateAutomata = () => {
                 {String(selectedEdge.sourceId) === String(selectedEdge.targetId) && (
                   <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Loop angle
+                        {t('fsa.loop_angle')}
                       </label>
                       <div className="space-y-3">
                         <input
@@ -967,7 +965,7 @@ const FiniteStateAutomata = () => {
                             }}
                             className="w-28 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
-                          <span className="text-sm text-gray-500">degrees</span>
+                          <span className="text-sm text-gray-500">{t('fsa.degrees')}</span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {[
@@ -1016,7 +1014,7 @@ const FiniteStateAutomata = () => {
                   onClick={deleteSelected}
                   className="w-full px-4 py-2 rounded font-medium border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
                 >
-                  Delete transition
+                  {t('fsa.delete_transition')}
                 </button>
               </div>
             )}
@@ -1051,30 +1049,30 @@ const FiniteStateAutomata = () => {
 
       <div className="w-full bg-white p-5 rounded-lg shadow mt-6">
         <h2 className="text-lg font-semibold mb-3 text-gray-700">
-          Automata Information
+          {t('fsa.info_title')}
         </h2>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name *
+              {t('fsa.automata_name')}
             </label>
             <input
               type="text"
               value={automataName}
               onChange={(e) => setAutomataName(e.target.value)}
-              placeholder="Enter a name for your automata"
+              placeholder={t('fsa.automata_name_placeholder')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description (Optional)
+              {t('common.description_optional')}
             </label>
             <textarea
               value={automataDescription}
               onChange={(e) => setAutomataDescription(e.target.value)}
-              placeholder="Enter a description for your automata"
+              placeholder={t('fsa.description_placeholder')}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -1090,15 +1088,15 @@ const FiniteStateAutomata = () => {
             {isSaving ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                <span>{isEditMode ? "Updating..." : "Saving..."}</span>
+                <span>{isEditMode ? t('fsa.updating') : t('fsa.saving')}</span>
               </>
             ) : (
-              <span>{isEditMode ? "Update Automata" : "Save Automata"}</span>
+              <span>{isEditMode ? t('fsa.update_automata') : t('fsa.save_automata')}</span>
             )}
           </button>
           {!user && (
             <p className="text-sm text-red-500 mt-2">
-              Please log in to save your automata
+              {t('common.please_login_save', { item: t('fsa.name') })}
             </p>
           )}
         </div>

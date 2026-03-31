@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 const ProofTreeInstructions = () => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleInstructions = () => {
@@ -14,7 +16,7 @@ const ProofTreeInstructions = () => {
         onClick={toggleInstructions}
         className="w-full p-4 text-left font-semibold text-lg flex items-center justify-between bg-blue-50 hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-inset"
       >
-        <span>{isOpen ? "Hide Instructions" : "Show Instructions"}</span>
+        <span>{isOpen ? t('common.hide_instructions') : t('common.show_instructions')}</span>
         <span className="text-blue-600">
           {isOpen ? <FaChevronUp /> : <FaChevronDown />}
         </span>
@@ -23,7 +25,7 @@ const ProofTreeInstructions = () => {
         <div className="p-5 border-t border-gray-200 animate-fadeIn">
           <div className="mb-5">
             <h3 className="text-xl font-bold text-gray-800 mb-3">
-              How to use Proof Trees?
+              {t('instructions.proof_tree_title')}
             </h3>
             <ol className="space-y-2 pl-2">
               <li className="flex items-start">
@@ -31,23 +33,21 @@ const ProofTreeInstructions = () => {
                   1
                 </span>
                 <span>
-                  Choose if you want to use mathematical font or not by clicking
-                  on the checkbox
+                  {t('instructions.proof_tree_1')}
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold mr-2">
                   2
                 </span>
-                <span>Put the content of the node in the input field</span>
+                <span>{t('instructions.proof_tree_2')}</span>
               </li>
               <li className="flex items-start">
                 <span className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold mr-2">
                   3
                 </span>
                 <span>
-                  To add a child node click on the "+" button, to remove node
-                  click the "-" button
+                  {t('instructions.proof_tree_3')}
                 </span>
               </li>
               <li className="flex items-start">
@@ -55,8 +55,7 @@ const ProofTreeInstructions = () => {
                   4
                 </span>
                 <span>
-                  If you want to put a Right Label between parent and child node
-                  fill the bottom input field
+                  {t('instructions.proof_tree_4')}
                 </span>
               </li>
               <li className="flex items-start">
@@ -64,36 +63,32 @@ const ProofTreeInstructions = () => {
                   5
                 </span>
                 <span>
-                  You can also select which nodes should have math mode by
-                  clicking the checkbox in the node
+                  {t('instructions.proof_tree_5')}
                 </span>
               </li>
             </ol>
           </div>
           <div>
             <h3 className="text-xl font-bold text-gray-800 mb-3">
-              Math Mode Options
+              {t('instructions.math_mode_options')}
             </h3>
             <ul className="space-y-2">
               <li className="flex items-start">
                 <span className="text-blue-600 font-bold mr-2">•</span>
                 <span>
-                  <strong>Global Math Mode:</strong> Enable mathematical font
-                  for all nodes at once using the main checkbox
+                  <strong>{t('instructions.global_math_mode')}</strong> {t('instructions.global_math_mode_desc')}
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="text-blue-600 font-bold mr-2">•</span>
                 <span>
-                  <strong>Individual Math Mode:</strong> Enable mathematical
-                  font for specific nodes using the checkbox next to each node
+                  <strong>{t('instructions.individual_math_mode')}</strong> {t('instructions.individual_math_mode_desc')}
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="text-blue-600 font-bold mr-2">•</span>
                 <span>
-                  <strong>LaTeX Commands:</strong> Use backslash (\) to access
-                  LaTeX symbols and commands in your content
+                  <strong>{t('instructions.latex_commands')}</strong> {t('instructions.latex_commands_desc')}
                 </span>
               </li>
             </ul>

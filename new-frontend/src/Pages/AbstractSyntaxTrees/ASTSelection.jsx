@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
@@ -12,6 +13,7 @@ const ASTSelection = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     // Fetch saved ASTs from the backend
@@ -41,7 +43,7 @@ const ASTSelection = () => {
   };
 
   const handleDeleteTree = async (treeId) => {
-    if (window.confirm("Are you sure you want to delete this tree?")) {
+    if (window.confirm(t('common.confirm_delete', { item: t('ast.name') }))) {
       try {
         await axios.delete(`${API_URL}/ast/${treeId}`);
         // Remove the deleted tree from state
@@ -74,72 +76,50 @@ const ASTSelection = () => {
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-8 text-center">
-        Abstract Syntax Trees
+        {t('ast.title')}
       </h1>
 
-      <div className="w-full mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="w-full mb-8 flex justify-center">
         {/* Create New Tree Card */}
-        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow max-w-md w-full">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            Create New Tree
+            {t('ast.create_new')}
           </h2>
           <p className="text-gray-600 mb-4">
-            Design a new Abstract Syntax Tree from scratch with custom
-            configuration.
+            {t('ast.create_new_desc')}
           </p>
           <Link
             to="/ast/create"
             className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
             data-umami-event="Create new AST button"
           >
-            Create New Tree
+            {t('ast.create_new')}
           </Link>
-        </div>
-
-        {/* View Saved Trees Card */}
-        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            Saved Trees
-          </h2>
-          <p className="text-gray-600 mb-4">
-            View and edit your previously saved Abstract Syntax Trees.
-          </p>
-          <button
-            onClick={() =>
-              document
-                .getElementById("saved-trees")
-                .scrollIntoView({ behavior: "smooth" })
-            }
-            className="block w-full py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded text-center transition-colors"
-            data-umami-event="View saved ASTs button"
-          >
-            View Saved Trees
-          </button>
         </div>
       </div>
 
       {/* Saved Trees Section */}
       <div id="saved-trees" className="w-full">
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-          Your Saved Trees
+          {t('ast.your_saved')}
         </h2>
 
         {loading ? (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-            <p className="mt-2 text-gray-600">Loading your saved trees...</p>
+            <p className="mt-2 text-gray-600">{t('ast.loading_saved')}</p>
           </div>
         ) : error ? (
           <div className="text-center py-8 text-red-500">{error}</div>
         ) : savedTrees.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <p className="text-gray-600">You don't have any saved trees yet.</p>
+            <p className="text-gray-600">{t('ast.no_saved')}</p>
             <Link
               to="/ast/create"
               className="inline-block mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
               data-umami-event="Create your first AST button"
             >
-              Create Your First Tree
+              {t('ast.create_first')}
             </Link>
           </div>
         ) : (
@@ -151,46 +131,47 @@ const ASTSelection = () => {
               >
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-medium text-gray-800">
-                    {tree.name || "Untitled Tree"}
+                    {tree.name || t('common.untitled', { item: t('ast.name') })}
                   </h3>
                   <span className="text-xs text-gray-500">
-                    {new Date(tree.createdAt).toLocaleDateString()}
+                    {new Date(tree.createdAt).toLocaleDateString(i18n.language === 'sk' ? 'sk-SK' : 'en-US')}
                   </span>
                 </div>
-                
+
                 {tree.description && (
                   <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                     {tree.description}
                   </p>
                 )}
-                
+
                 <div className="text-sm text-gray-600 mb-3">
-                  <p>Root: {tree.treeData?.value || "N/A"}</p>
-                  <p>Nodes: {countNodes(tree.treeData)}</p>
-                  <p>Edges: {countEdges(tree.treeData)}</p>
+                  <p>{t('common.root')} {tree.treeData?.value || t('common.na')}</p>
+                  <p>{t('common.nodes')} {countNodes(tree.treeData)}</p>
+                  <p>{t('ast.edges')} {countEdges(tree.treeData)}</p>
                   <p>
-                    Orientation: {
-                      ["Top-Down", "Left-Right", "Bottom-Up", "Right-Left"][
+                    {t('ast.orientation')}{" "}
+                    {
+                      [t('ast.top_down'), t('ast.left_right'), t('ast.bottom_up'), t('ast.right_left')][
                         tree.settings?.indexOfOrientation || 0
                       ]
                     }
                   </p>
                 </div>
-                
+
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEditTree(tree._id)}
                     className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center text-sm transition-colors"
                     data-umami-event="Edit AST button"
                   >
-                    Edit
+                    {t('common.edit')}
                   </button>
                   <button
                     onClick={() => handleDeleteTree(tree._id)}
                     className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-sm transition-colors"
                     data-umami-event="Delete AST button"
                   >
-                    Delete
+                    {t('common.delete')}
                   </button>
                 </div>
               </div>

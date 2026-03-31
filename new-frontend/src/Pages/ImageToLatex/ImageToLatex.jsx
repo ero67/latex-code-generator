@@ -6,6 +6,7 @@ import SettingsService from "../../services/settings.service";
 import ByokService from "../../services/byok.service";
 import GeneratedCode from "../../Components/GeneratedCode";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import {
   FaUpload,
   FaImage,
@@ -24,6 +25,7 @@ const OPENROUTER_MODELS = [
 ];
 
 const ImageToLatex = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -89,20 +91,20 @@ const ImageToLatex = () => {
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        setError("Please select an image file.");
+        setError(t('image.select_image'));
         setSelectedFile(null);
         setPreviewUrl(null);
-        toast.error("Please select a valid image file.");
+        toast.error(t('image.valid_image'));
         return;
       }
-      
+
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
-        setError("File size must be less than 10MB.");
+        setError(t('image.file_size'));
         setSelectedFile(null);
         setPreviewUrl(null);
-        toast.error("File size must be less than 10MB.");
+        toast.error(t('image.file_size'));
         return;
       }
       
@@ -140,7 +142,7 @@ const ImageToLatex = () => {
 
   const handleEditInApp = () => {
     if (!latexCode) {
-      toast.error("No LaTeX code to import!");
+      toast.error(t('image.no_latex'));
       return;
     }
 
@@ -155,7 +157,7 @@ const ImageToLatex = () => {
 
     const targetRoute = routeMap[structureType];
     if (!targetRoute) {
-      toast.error(`Unknown structure type: ${structureType}`);
+      toast.error(t('image.unknown_type', { type: structureType }));
       return;
     }
 
@@ -165,13 +167,13 @@ const ImageToLatex = () => {
 
     // Navigate to the appropriate page
     navigate(targetRoute);
-    toast.success(`Redirecting to ${structureType} editor...`);
+    toast.success(t('image.redirecting', { type: structureType }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!selectedFile) {
-      toast.error("Please select an image file first!");
+      toast.error(t('image.select_first'));
       return;
     }
 
@@ -196,7 +198,7 @@ const ImageToLatex = () => {
           cost: response.data.cost,
           usage: response.data.usage,
         });
-        toast.success("LaTeX code generated successfully!");
+        toast.success(t('image.success'));
         if (response.data.message) {
           console.log("Server message:", response.data.message);
         }

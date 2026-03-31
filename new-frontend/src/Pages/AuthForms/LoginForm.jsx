@@ -14,15 +14,17 @@ import {
   FaGithub,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
-
-const validationSchema = Yup.object({
-  email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
-  password: Yup.string().required("Password is required"),
-});
+import { useTranslation } from "react-i18next";
 
 const LoginForm = () => {
+  const { t } = useTranslation();
+
+  const validationSchema = Yup.object({
+    email: Yup.string()
+      .email(t('auth.invalid_email'))
+      .required(t('auth.email_required')),
+    password: Yup.string().required(t('auth.password_required')),
+  });
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -62,11 +64,11 @@ const LoginForm = () => {
     try {
       const response = await authService.login(values);
       login(response.token);
-      toast.success("Login successful!");
+      toast.success(t('auth.login_success'));
       navigate("/");
     } catch (err) {
       console.error("Login error:", err);
-      const errorMessage = err.message || "Login failed. Please try again.";
+      const errorMessage = err.message || t('auth.login_failed');
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -80,8 +82,8 @@ const LoginForm = () => {
       authService.initiateSSO();
     } catch (err) {
       console.error("SSO initiation error:", err);
-      setError("Failed to initiate SSO login. Please try again.");
-      toast.error("Failed to initiate SSO login");
+      setError(t('auth.sso_failed'));
+      toast.error(t('auth.sso_failed'));
       setIsSSOLoading(false);
     }
   };
@@ -92,8 +94,8 @@ const LoginForm = () => {
       authService.initiateGoogleLogin();
     } catch (err) {
       console.error("Google login initiation error:", err);
-      setError("Failed to initiate Google login. Please try again.");
-      toast.error("Failed to initiate Google login");
+      setError(t('auth.google_failed'));
+      toast.error(t('auth.google_failed'));
       setIsGoogleLoading(false);
     }
   };
@@ -104,8 +106,8 @@ const LoginForm = () => {
       authService.initiateGitHubLogin();
     } catch (err) {
       console.error("GitHub login initiation error:", err);
-      setError("Failed to initiate GitHub login. Please try again.");
-      toast.error("Failed to initiate GitHub login");
+      setError(t('auth.github_failed'));
+      toast.error(t('auth.github_failed'));
       setIsGitHubLoading(false);
     }
   };
@@ -121,7 +123,7 @@ const LoginForm = () => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-amber-900">
-                  Login required for Image to LaTeX
+                  {t('auth.login_required')}
                 </p>
                 <p className="text-sm text-amber-800">{warning}</p>
               </div>
@@ -134,9 +136,9 @@ const LoginForm = () => {
           <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
             <FaLock className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-3xl font-extrabold text-gray-900">Welcome back</h2>
+          <h2 className="text-3xl font-extrabold text-gray-900">{t('auth.login_title')}</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to your account to continue
+            {t('auth.login_subtitle')}
           </p>
         </div>
 
@@ -195,12 +197,12 @@ const LoginForm = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Redirecting to Google...
+                  {t('auth.redirecting_google')}
                 </>
               ) : (
                 <>
                   <FaGoogle className="mr-3 h-5 w-5 text-red-500" />
-                  Continue with Google
+                  {t('auth.continue_google')}
                 </>
               )}
             </button>
@@ -233,12 +235,12 @@ const LoginForm = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Redirecting to GitHub...
+                  {t('auth.redirecting_github')}
                 </>
               ) : (
                 <>
                   <FaGithub className="mr-3 h-5 w-5 text-white" />
-                  Continue with GitHub
+                  {t('auth.continue_github')}
                 </>
               )}
             </button>
@@ -271,12 +273,12 @@ const LoginForm = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Redirecting to TUKE SSO...
+                  {t('auth.redirecting_tuke')}
                 </>
               ) : (
                 <>
                   <FaUniversity className="mr-3 h-5 w-5 text-blue-600" />
-                  Sign in with TUKE SSO
+                  {t('auth.continue_tuke')}
                 </>
               )}
             </button>
@@ -288,7 +290,7 @@ const LoginForm = () => {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="px-2 bg-white text-gray-500">{t('auth.or_continue')}</span>
             </div>
           </div>
 
@@ -305,7 +307,7 @@ const LoginForm = () => {
                     htmlFor="email"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Email address
+                    {t('auth.email')}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -317,7 +319,7 @@ const LoginForm = () => {
                       name="email"
                       autoComplete="email"
                       className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="Enter your email"
+                      placeholder={t('auth.email_placeholder')}
                     />
                   </div>
                   <ErrorMessage
@@ -332,7 +334,7 @@ const LoginForm = () => {
                     htmlFor="password"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Password
+                    {t('auth.password')}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -344,7 +346,7 @@ const LoginForm = () => {
                       name="password"
                       autoComplete="current-password"
                       className="appearance-none block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="Enter your password"
+                      placeholder={t('auth.password_placeholder')}
                     />
                     <button
                       type="button"
@@ -377,7 +379,7 @@ const LoginForm = () => {
                       htmlFor="remember-me"
                       className="ml-2 block text-sm text-gray-700"
                     >
-                      Remember me
+                      {t('auth.remember_me')}
                     </label>
                   </div>
 
@@ -386,7 +388,7 @@ const LoginForm = () => {
                       to="/forgot-password"
                       className="font-medium text-blue-600 hover:text-blue-500"
                     >
-                      Forgot password?
+                      {t('auth.forgot_password')}
                     </Link>
                   </div>
                 </div>
@@ -419,10 +421,10 @@ const LoginForm = () => {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
-                        Signing in...
+                        {t('auth.signing_in')}
                       </>
                     ) : (
-                      "Sign in"
+                      t('auth.sign_in')
                     )}
                   </button>
                 </div>
@@ -433,12 +435,12 @@ const LoginForm = () => {
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
+              {t('auth.no_account')}{" "}
               <Link
                 to="/register"
                 className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
               >
-                Sign up
+                {t('auth.sign_up')}
               </Link>
             </p>
           </div>
@@ -447,7 +449,7 @@ const LoginForm = () => {
         {/* Footer */}
         <div className="text-center">
           <p className="text-xs text-gray-500">
-            By signing in, you agree to our Terms of Service and Privacy Policy
+            {t('auth.terms')}
           </p>
         </div>
       </div>

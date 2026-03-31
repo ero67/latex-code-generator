@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import Editor from "@monaco-editor/react";
 import PDFViewer from "./PDFViewer";
 import { compileLaTeX, compileLaTeXToSVG } from "../../services/latex.service";
@@ -13,13 +14,14 @@ import { FaPlay, FaDownload, FaEye, FaEyeSlash, FaFileCode, FaImage } from "reac
  * @param {function} onCodeChange - Callback when code changes
  * @param {object} props - Additional props
  */
-const LaTeXEditor = ({ 
-  initialCode = "", 
+const LaTeXEditor = ({
+  initialCode = "",
   onCodeChange,
   height = "600px",
   showToolbar = true,
-  ...props 
+  ...props
 }) => {
+  const { t } = useTranslation();
   const [code, setCode] = useState(initialCode || "");
   const [pdfBase64, setPdfBase64] = useState(null);
   const [isCompiling, setIsCompiling] = useState(false);
@@ -46,7 +48,7 @@ const LaTeXEditor = ({
 
   const handleCompile = async () => {
     if (!code.trim()) {
-      toast.error("LaTeX code is empty");
+      toast.error(t('editor.empty_code'));
       return;
     }
 
@@ -61,17 +63,17 @@ const LaTeXEditor = ({
         console.log("Compilation successful, PDF length:", result.pdf?.length);
         setPdfBase64(result.pdf);
         if (result.warnings?.length > 0) {
-          toast.warning(`Compiled with ${result.warnings.length} warning(s)`);
+          toast.warning(t('editor.compiled_warnings', { count: result.warnings.length }));
         } else {
-          toast.success("LaTeX compiled successfully!");
+          toast.success(t('editor.compiled_success'));
         }
       } else {
-        setErrors(result.errors || ["Compilation failed"]);
-        toast.error("LaTeX compilation failed");
+        setErrors(result.errors || [t('editor.compilation_failed')]);
+        toast.error(t('editor.compilation_failed'));
       }
     } catch (error) {
-      setErrors([`Failed to compile LaTeX: ${error.message}`]);
-      toast.error("Compilation error");
+      setErrors([t('editor.compile_error', { message: error.message })]);
+      toast.error(t('editor.compilation_error'));
     } finally {
       setIsCompiling(false);
     }
@@ -116,12 +118,12 @@ const LaTeXEditor = ({
         link.download = "document.svg";
         link.click();
         URL.revokeObjectURL(link.href);
-        toast.success("SVG downloaded successfully!");
+        toast.success(t('editor.svg_success'));
       } else {
-        toast.error(result.errors?.[0] || "SVG compilation failed");
+        toast.error(result.errors?.[0] || t('editor.svg_failed'));
       }
     } catch (error) {
-      toast.error(`Failed to generate SVG: ${error.message}`);
+      toast.error(t('editor.svg_error', { message: error.message }));
     } finally {
       setIsCompilingSVG(false);
     }
@@ -139,7 +141,7 @@ const LaTeXEditor = ({
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
             >
               <FaPlay className="text-sm" />
-              <span>{isCompiling ? "Compiling..." : "Compile"}</span>
+              <span>{isCompiling ? t('editor.compiling') : t('editor.compile')}</span>
             </button>
             {pdfBase64 && (
               <button
@@ -147,7 +149,7 @@ const LaTeXEditor = ({
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2 transition-colors"
               >
                 <FaDownload className="text-sm" />
-                <span>Download PDF</span>
+                <span>{t('editor.download_pdf')}</span>
               </button>
             )}
             {code.trim() && (
@@ -156,7 +158,7 @@ const LaTeXEditor = ({
                 className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center gap-2 transition-colors"
               >
                 <FaFileCode className="text-sm" />
-                <span>Download .tex</span>
+                <span>{t('editor.download_tex')}</span>
               </button>
             )}
             {code.trim() && (
@@ -166,7 +168,7 @@ const LaTeXEditor = ({
                 className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
               >
                 <FaImage className="text-sm" />
-                <span>{isCompilingSVG ? "Generating SVG..." : "Download SVG"}</span>
+                <span>{isCompilingSVG ? t('editor.generating_svg') : t('editor.download_svg')}</span>
               </button>
             )}
           </div>
@@ -175,7 +177,7 @@ const LaTeXEditor = ({
             className="px-3 py-1 text-sm border rounded hover:bg-gray-100 flex items-center gap-2 transition-colors"
           >
             {showPreview ? <FaEyeSlash /> : <FaEye />}
-            <span>{showPreview ? "Hide Preview" : "Show Preview"}</span>
+            <span>{showPreview ? t('editor.hide_preview') : t('editor.show_preview')}</span>
           </button>
         </div>
       )}
@@ -183,7 +185,7 @@ const LaTeXEditor = ({
       {/* Error Display */}
       {errors.length > 0 && (
         <div className="p-3 bg-red-50 border-b border-red-200">
-          <h4 className="font-semibold text-red-800 mb-2">Compilation Errors:</h4>
+          <h4 className="font-semibold text-red-800 mb-2">{t('editor.compilation_errors')}</h4>
           <ul className="list-disc list-inside text-sm text-red-700">
             {errors.map((error, idx) => (
               <li key={idx}>{error}</li>
@@ -219,7 +221,7 @@ const LaTeXEditor = ({
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Compiling LaTeX...</p>
+                  <p className="text-gray-600">{t('editor.compiling_latex')}</p>
                 </div>
               </div>
             ) : pdfBase64 ? (
@@ -228,7 +230,7 @@ const LaTeXEditor = ({
               <div className="flex items-center justify-center h-full text-gray-400">
                 <div className="text-center">
                   <FaEye className="text-4xl mx-auto mb-2 opacity-50" />
-                  <p>Click "Compile" to generate PDF preview</p>
+                  <p>{t('editor.click_compile')}</p>
                 </div>
               </div>
             )}

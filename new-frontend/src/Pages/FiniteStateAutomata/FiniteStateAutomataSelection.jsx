@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { fsaService } from "../../services/fsa.service";
 
@@ -9,6 +10,7 @@ const FiniteStateAutomataSelection = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const fetchSaved = async () => {
@@ -34,7 +36,7 @@ const FiniteStateAutomataSelection = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this automata?")) return;
+    if (!window.confirm(t('common.confirm_delete', { item: t('fsa.name') }))) return;
     try {
       await fsaService.deleteFSA(id);
       setSaved((prev) => prev.filter((a) => a._id !== id));
@@ -51,66 +53,46 @@ const FiniteStateAutomataSelection = () => {
   return (
     <div className="flex flex-col items-center w-full max-w-5xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-8 text-center">
-        Finite State Automata
+        {t('fsa.title')}
       </h1>
 
-      <div className="w-full mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+      <div className="w-full mb-8 flex justify-center">
+        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow max-w-md w-full">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            Create New Automata
+            {t('fsa.create_new')}
           </h2>
           <p className="text-gray-600 mb-4">
-            Design a new finite state automata from scratch and generate TikZ
-            code.
+            {t('fsa.create_new_desc')}
           </p>
           <Link
             to="/finite-state-automata/create"
             className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
           >
-            Create New Automata
+            {t('fsa.create_new')}
           </Link>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h2 className="text-xl font-semibold mb-3 text-gray-800">
-            Saved Automata
-          </h2>
-          <p className="text-gray-600 mb-4">
-            View and edit your previously saved finite state automata.
-          </p>
-          <button
-            onClick={() =>
-              document
-                .getElementById("saved-automata")
-                .scrollIntoView({ behavior: "smooth" })
-            }
-            className="block w-full py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded text-center transition-colors"
-          >
-            View Saved Automata
-          </button>
         </div>
       </div>
 
       <div id="saved-automata" className="w-full">
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-          Your Saved Automata
+          {t('fsa.your_saved')}
         </h2>
 
         {loading ? (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-            <p className="mt-2 text-gray-600">Loading your saved automata...</p>
+            <p className="mt-2 text-gray-600">{t('fsa.loading_saved')}</p>
           </div>
         ) : error ? (
           <div className="text-center py-8 text-red-500">{error}</div>
         ) : saved.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <p className="text-gray-600">You don't have any saved automata yet.</p>
+            <p className="text-gray-600">{t('fsa.no_saved')}</p>
             <Link
               to="/finite-state-automata/create"
               className="inline-block mt-4 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center transition-colors"
             >
-              Create Your First Automata
+              {t('fsa.create_first')}
             </Link>
           </div>
         ) : (
@@ -122,10 +104,10 @@ const FiniteStateAutomataSelection = () => {
               >
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-medium text-gray-800">
-                    {a.name || "Untitled Automata"}
+                    {a.name || t('common.untitled', { item: t('fsa.name') })}
                   </h3>
                   <span className="text-xs text-gray-500">
-                    {new Date(a.createdAt).toLocaleDateString()}
+                    {new Date(a.createdAt).toLocaleDateString(i18n.language === 'sk' ? 'sk-SK' : 'en-US')}
                   </span>
                 </div>
 
@@ -136,10 +118,10 @@ const FiniteStateAutomataSelection = () => {
                 )}
 
                 <div className="text-sm text-gray-600 mb-3">
-                  <p>States: {a.nodes?.length || 0}</p>
-                  <p>Transitions: {a.edges?.length || 0}</p>
-                  <p>Start: {countStart(a.nodes)}</p>
-                  <p>Accepting: {countAccepting(a.nodes)}</p>
+                  <p>{t('fsa.states')} {a.nodes?.length || 0}</p>
+                  <p>{t('fsa.transitions')} {a.edges?.length || 0}</p>
+                  <p>{t('fsa.start')} {countStart(a.nodes)}</p>
+                  <p>{t('fsa.accepting')} {countAccepting(a.nodes)}</p>
                 </div>
 
                 <div className="flex gap-2">
@@ -147,13 +129,13 @@ const FiniteStateAutomataSelection = () => {
                     onClick={() => handleEdit(a._id)}
                     className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded text-center text-sm transition-colors"
                   >
-                    Edit
+                    {t('common.edit')}
                   </button>
                   <button
                     onClick={() => handleDelete(a._id)}
                     className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-sm transition-colors"
                   >
-                    Delete
+                    {t('common.delete')}
                   </button>
                 </div>
               </div>

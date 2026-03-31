@@ -14,6 +14,7 @@ export const karnaughMapService = {
     if (!response.ok) {
       throw new Error(result.message || "Saving KM Failed");
     }
+    return result;
   },
 
   async getKM(id) {

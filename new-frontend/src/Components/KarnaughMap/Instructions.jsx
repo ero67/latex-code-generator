@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
 const Instructions = () => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleInstructions = () => {
@@ -14,7 +16,7 @@ const Instructions = () => {
         onClick={toggleInstructions}
         className="w-full p-4 text-left font-semibold text-lg flex items-center justify-between bg-blue-50 hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-inset"
       >
-        <span>{isOpen ? "Hide Instructions" : "Show Instructions"}</span>
+        <span>{isOpen ? t('common.hide_instructions') : t('common.show_instructions')}</span>
         <span className="text-blue-600">
           {isOpen ? <FaChevronUp /> : <FaChevronDown />}
         </span>
@@ -24,55 +26,51 @@ const Instructions = () => {
         <div className="p-5 border-t border-gray-200 animate-fadeIn">
           <div className="mb-5">
             <h3 className="text-xl font-bold text-gray-800 mb-3">
-              How to use?
+              {t('instructions.karnaugh_title')}
             </h3>
             <ol className="space-y-2 pl-2">
               <li className="flex items-start">
                 <span className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold mr-2">
                   1
                 </span>
-                <span>Choose dimensions of the map</span>
+                <span>{t('instructions.karnaugh_1')}</span>
               </li>
               <li className="flex items-start">
                 <span className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold mr-2">
                   2
                 </span>
-                <span>Fill the map with values</span>
+                <span>{t('instructions.karnaugh_2')}</span>
               </li>
               <li className="flex items-start">
                 <span className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold mr-2">
                   3
                 </span>
-                <span>After pressing submit, mark the needed implicants</span>
+                <span>{t('instructions.karnaugh_3')}</span>
               </li>
             </ol>
           </div>
 
           <div>
             <h3 className="text-xl font-bold text-gray-800 mb-3">
-              How to mark implicants?
+              {t('instructions.karnaugh_implicant_title')}
             </h3>
             <ul className="space-y-2">
               <li className="flex items-start">
                 <span className="text-blue-600 font-bold mr-2">•</span>
                 <span>
-                  If marking a <strong>rectangular implicant</strong>, click
-                  opposite corners of the rectangle in any order
+                  {t('instructions.karnaugh_4')}
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="text-blue-600 font-bold mr-2">•</span>
                 <span>
-                  If marking an implicant in a{" "}
-                  <strong>single row or column</strong>, click the beginning and
-                  the end of the implicant
+                  {t('instructions.karnaugh_5')}
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="text-blue-600 font-bold mr-2">•</span>
                 <span>
-                  If marking an <strong>edge implicant</strong>, click opposite
-                  corners of the rectangle of the desired implicant
+                  {t('instructions.karnaugh_6')}
                 </span>
               </li>
             </ul>
