@@ -549,7 +549,7 @@ const Kmap = () => {
           : "";
       code += `       \\implicantcorner${cornerSubmapArg}\n`;
     } else if (implicantCorner && (rows !== 4 || cols !== 4)) {
-      toast.error("Implicant na rohy sa dá zaznačiť len na poliach rozmeru 4x4");
+      toast.error(t("karnaugh.corner_implicant_4x4_only"));
     }
 
     // logic for generating code for edge implicant
@@ -831,9 +831,7 @@ const Kmap = () => {
             combinedArray[1].row === 3 &&
             combinedArray[1].col === 0)
         ) {
-          isHorizontal = window.confirm(
-            "Choose 'OK' for Horizontal or 'Cancel' for Vertical"
-          );
+          isHorizontal = window.confirm(t("karnaugh.edge_orientation_prompt"));
           setIsEightEdgeHorizontal(isHorizontal);
         }
 
@@ -1080,7 +1078,7 @@ const Kmap = () => {
     // The rest of your existing code for implicant handling
     if (markingImplicant && implicant.length <= 1) {
       if (activeSelectionMapIndex !== null && activeSelectionMapIndex !== mapIndex) {
-        toast.error("Select implicant points on the same submap");
+          toast.error(t("karnaugh.same_submap_implicant"));
         return;
       }
       if (activeSelectionMapIndex === null) {
@@ -1091,7 +1089,7 @@ const Kmap = () => {
       setNumberOfImplicants(numberOfImplicants + 1);
     } else if (markingEdgeImplicant) {
       if (activeSelectionMapIndex !== null && activeSelectionMapIndex !== mapIndex) {
-        toast.error("Select edge implicant points on the same submap");
+          toast.error(t("karnaugh.same_submap_edge_implicant"));
         return;
       }
       if (activeSelectionMapIndex === null) {
@@ -1105,7 +1103,7 @@ const Kmap = () => {
         ]);
         setNumberOfEdgeImplicants(numberOfEdgeImplicants + 1);
       } else {
-        toast.error("you can only select Cells on edges");
+        toast.error(t("karnaugh.edge_cells_only"));
         setMarkingEdgeImplicant(false);
         setfinishImplicantDisabled(true);
         setClassicImplicantDisabled(false);
@@ -1289,7 +1287,7 @@ const Kmap = () => {
         handleDisable();
       }, 100);
     } catch (e) {
-      toast.error("Failed to apply imported LaTeX");
+      toast.error(t("karnaugh.import_apply_failed"));
     }
   };
 
@@ -1769,21 +1767,24 @@ const Kmap = () => {
       {!disabled && (
         <div className="w-full mb-6 bg-white p-5 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-3 text-gray-700">
-            Map Configuration
+            {t("karnaugh.map_configuration")}
           </h2>
           <div className="flex flex-wrap gap-3 items-end">
             <div className="flex flex-col gap-1">
               <label className="text-sm text-gray-600 font-medium">
-                Map Size
+                {t("karnaugh.map_size")}
               </label>
               <Dropdown
                 trigger={
                   <button className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800 flex items-center justify-between w-40">
                     {tableSize === "0x0"
-                      ? "Select size"
+                      ? t("karnaugh.select_size")
                       : submapCount === 1
                         ? tableSize.replace("x", " × ")
-                        : `${tableSize.replace("x", " × ")} × ${submapCount} maps`}
+                        : t("karnaugh.size_with_maps", {
+                            size: tableSize.replace("x", " × "),
+                            count: submapCount,
+                          })}
                     <svg
                       className="w-4 h-4 ml-2"
                       fill="none"
@@ -1817,11 +1818,11 @@ const Kmap = () => {
                     onClick: () => handleTableSizeChange("4x4", 1),
                   },
                   {
-                    label: "5 vars (2 maps)",
+                     label: t("karnaugh.vars_maps_option", { vars: 5, count: 2 }),
                     onClick: () => handleTableSizeChange("4x4", 2),
                   },
                   {
-                    label: "6 vars (4 maps)",
+                     label: t("karnaugh.vars_maps_option", { vars: 6, count: 4 }),
                     onClick: () => handleTableSizeChange("4x4", 4),
                   },
                 ]}
@@ -1831,7 +1832,7 @@ const Kmap = () => {
 
             <div className="flex flex-col gap-1">
               <label className="text-sm text-gray-600 font-medium">
-                Fill Value
+                {t("karnaugh.fill_value")}
               </label>
               <Dropdown
                 trigger={
@@ -1852,7 +1853,7 @@ const Kmap = () => {
               onClick={fillCells}
               className="px-4 h-10 bg-gray-100 text-gray-800 font-medium rounded border border-gray-300 hover:bg-gray-200 transition-colors flex items-center"
             >
-              <span>Fill Remaining</span>
+              <span>{t("karnaugh.fill_remaining")}</span>
             </button>
 
             <div className="ml-auto">
@@ -1861,7 +1862,7 @@ const Kmap = () => {
                 onClick={handleDisable}
                 className="px-6 h-10 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition-colors flex items-center"
               >
-                <span>Create Map</span>
+                <span>{t("karnaugh.create_map")}</span>
               </button>
             </div>
           </div>
@@ -1889,12 +1890,12 @@ const Kmap = () => {
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                <span>Back to Map</span>
+                <span>{t("karnaugh.back_to_map")}</span>
               </button>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <h3 className="sr-only">Add Implicants</h3>
+              <h3 className="sr-only">{t("karnaugh.add_implicants")}</h3>
               <button
                 disabled={classicImplicantDisabled}
                 onClick={addingimplicant}
@@ -1905,9 +1906,9 @@ const Kmap = () => {
                 }`}
               >
                 <span className="mr-1">
-                  {markingImplicant ? "Cancel" : "+"}
+                  {markingImplicant ? t("common.cancel") : "+"}
                 </span>
-                <span>Implicant</span>
+                <span>{t("karnaugh.implicant")}</span>
               </button>
 
               <button
@@ -1920,9 +1921,9 @@ const Kmap = () => {
                 }`}
               >
                 <span className="mr-1">
-                  {markingEdgeImplicant ? "Cancel" : "+"}
+                  {markingEdgeImplicant ? t("common.cancel") : "+"}
                 </span>
-                <span>Edge Implicant</span>
+                <span>{t("karnaugh.edge_implicant")}</span>
               </button>
 
               <button
@@ -1933,14 +1934,14 @@ const Kmap = () => {
           `}
               >
                 <span className="mr-1">+</span>
-                <span>Corner Implicant</span>
+                <span>{t("karnaugh.corner_implicant")}</span>
               </button>
             </div>
           </div>
           {isMultiMap && (
             <div className="mt-4 border-t pt-4">
               <div className="text-sm font-medium text-gray-700 mb-2">
-                Apply new implicant to submaps:
+                {t("karnaugh.apply_implicant_to_submaps")}
               </div>
               <div className="flex flex-wrap gap-3">
                 {Array.from({ length: submapCount }).map((_, index) => (
@@ -1966,7 +1967,7 @@ const Kmap = () => {
                         }
                       }}
                     />
-                    <span>{`Submap ${index}`}</span>
+                    <span>{t("karnaugh.submap_index", { index })}</span>
                   </label>
                 ))}
               </div>
@@ -1988,7 +1989,10 @@ const Kmap = () => {
                 <div key={`kmap-${mapIndex}`} className="flex flex-col items-center">
                   {mapLabel && (
                     <div className="text-center text-sm font-semibold text-gray-700 mb-2">
-                      {`Submap ${mapIndex + 1}: ${mapLabel}`}
+                      {t("karnaugh.submap_label", {
+                        index: mapIndex + 1,
+                        label: mapLabel,
+                      })}
                     </div>
                   )}
 
@@ -2021,7 +2025,7 @@ const Kmap = () => {
         </div>
 
         <div className="xl:sticky xl:top-4 bg-white rounded-lg shadow p-4 max-h-[80vh] overflow-y-auto">
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Inspector</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-3">{t("common.inspector")}</h2>
           <ImplicantsList
             implicants={implicants}
             implicantSubmaps={implicantSubmaps}
