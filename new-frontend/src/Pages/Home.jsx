@@ -10,9 +10,9 @@ const Home = () => {
     <div className="flex flex-col items-center p-4">
       <h1 className="text-4xl font-bold mb-8">{t('home.title')}</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
-        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200">
+        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200 flex flex-col">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">{t('home.karnaugh_maps')}</h2>
-          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed flex-grow">
             {t('home.karnaugh_maps_desc')}
           </p>
           <Link to="/karnaugh-maps">
@@ -21,9 +21,9 @@ const Home = () => {
             </button>
           </Link>
         </div>
-        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200">
+        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200 flex flex-col">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">{t('home.ast')}</h2>
-          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed flex-grow">
             {t('home.ast_desc')}
           </p>
           <Link to="/ast">
@@ -32,9 +32,9 @@ const Home = () => {
             </button>
           </Link>
         </div>
-        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200">
+        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200 flex flex-col">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">{t('home.proof_trees')}</h2>
-          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed flex-grow">
             {t('home.proof_trees_desc')}
           </p>
           <Link to="/proof-trees">
@@ -43,9 +43,9 @@ const Home = () => {
             </button>
           </Link>
         </div>
-        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200">
+        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200 flex flex-col">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">{t('home.fsa')}</h2>
-          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed flex-grow">
             {t('home.fsa_desc')}
           </p>
           <Link to="/finite-state-automata">
@@ -54,9 +54,9 @@ const Home = () => {
             </button>
           </Link>
         </div>
-        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200">
+        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200 flex flex-col">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">{t('home.resolution_trees')}</h2>
-          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed flex-grow">
             {t('home.resolution_trees_desc')}
           </p>
           <Link to="/resolution-trees">
@@ -65,9 +65,9 @@ const Home = () => {
             </button>
           </Link>
         </div>
-        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200">
+        <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200 flex flex-col">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">{t('home.image_to_latex')}</h2>
-          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed flex-grow">
             {t('home.image_to_latex_desc')}
           </p>
           <Link to="/image-to-latex">
@@ -77,9 +77,9 @@ const Home = () => {
           </Link>
         </div>
         {user && user.isAdmin && (
-          <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200">
+          <div className="bg-white shadow-md hover:shadow-lg rounded-xl border border-gray-100 p-5 transition-shadow duration-200 flex flex-col">
             <h2 className="text-xl font-semibold mb-3 text-gray-800">{t('home.analytics')}</h2>
-            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed flex-grow">
               {t('home.analytics_desc')}
             </p>
             <Link to="/analytics">
