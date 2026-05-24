@@ -265,7 +265,7 @@ Where <orientationOption> is optional and only included if the tree is not top-d
       - Example: a set {a, b} in the image → $\\{a, b\\}$ in the LaTeX output
       - Example: {¬m, p} → $\\{\\neg m, p\\}$
       - Example: Γ = {a, b, c} → $\\Gamma = \\{a, b, c\\}$
-      - NEVER write ${a,b}$ — this produces broken output. ALWAYS write $\\{a,b\\}$.
+      - NEVER write \${a,b}$ — this produces broken output. ALWAYS write $\\{a,b\\}$.
 5.  **Rule Labels (CRITICAL — do NOT skip):**
     * You MUST capture ALL rule labels/annotations written next to inference lines in the diagram. These are typically written to the right of a horizontal line and name the inference rule being applied.
     * Use the format: \\RightLabel{\\scriptsize{<label>}}
