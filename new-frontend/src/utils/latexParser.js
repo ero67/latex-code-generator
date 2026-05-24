@@ -28,7 +28,7 @@ const cleanMathMode = (content) => {
 // We preserve $...$ in right labels since they often contain mixed math/text
 // (e.g. ($\Rightarrow$I)) where stripping $ would merge commands with adjacent letters.
 const extractRightLabel = (text) => {
-  const match = text.match(/\\RightLabel\{\\scriptsize\{([^}]*)\}\}/);
+  const match = text.match(/\\RightLabel\{\\scriptsize\{((?:[^{}\\]|\\.|\{[^}]*\})*)\}\}/);
   return match ? match[1] : '';
 };
 
@@ -110,8 +110,11 @@ export const parseLatexToProofTree = (latexCode) => {
         if (extracted) pendingRightLabel = extracted;
       }
 
-      // Extract the main command
-      const commandMatch = trimmedLine.match(/\\(AxiomC|UnaryInfC|BinaryInfC|TrinaryInfC|QuaternaryInfC|QuinaryInfC)\{([^}]*)\}/);
+      // Extract the main command. The content pattern handles:
+      // - escaped braces \{ \} (set notation)
+      // - nested brace groups like _{i} or \text{...}
+      // - regular characters
+      const commandMatch = trimmedLine.match(/\\(AxiomC|UnaryInfC|BinaryInfC|TrinaryInfC|QuaternaryInfC|QuinaryInfC)\{((?:[^{}\\]|\\.|\{[^}]*\})*)\}/);
       
       if (commandMatch) {
         const [, command, content] = commandMatch;
