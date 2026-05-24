@@ -723,22 +723,20 @@ const ProofTree = () => {
   }, [selectedNodeId]);
 
   const generateLatexCode = (node) => {
-    // ✨ FIX: This helper function now correctly handles both global and local math modes.
     const formatContent = (content, mathMode) => {
-      // Case 1: Global Math Mode is ON for this node.
-      // Wrap the entire content string in single '$' and we're done.
+      // If content already contains $ (preserved from import with mixed math/text),
+      // output as-is to avoid double-wrapping or breaking command boundaries.
+      if (content.includes('$')) {
+        return content;
+      }
+
+      // Global Math Mode is ON: wrap entire content in $.
       if (mathMode) {
         return `$${content}$`;
       }
 
-      // Case 2: Global Math Mode is OFF.
-      // We find all words that start with a '\' (like \lor, \land, etc.)
-      // and wrap just those words in '$' signs.
+      // Global Math Mode is OFF: wrap only \commands in $.
       const regex = /(\\[a-zA-Z]+)/g;
-
-      // In the replacement string '$$$1$$', the '$$' creates a literal '$'
-      // and '$1' is the command that was found (e.g., \lor).
-      // This correctly turns 'b \lor c' into 'b $\lor$ c'.
       return content.replace(regex, "$$$1$$");
     };
 
@@ -774,8 +772,16 @@ const ProofTree = () => {
 
     let code = "";
     if (node.rightLabel) {
-      // Apply the same robust formatting to the right label.
-      const rightLabelFormatted = formatContent(node.rightLabel, node.mathMode);
+      // Right labels have their own math context independent of the node's mathMode.
+      // If the label already contains $ (from import), output as-is.
+      // Otherwise, only wrap \commands in $ (don't apply node's mathMode to labels).
+      let rightLabelFormatted;
+      if (node.rightLabel.includes('$')) {
+        rightLabelFormatted = node.rightLabel;
+      } else {
+        const regex = /(\\[a-zA-Z]+)/g;
+        rightLabelFormatted = node.rightLabel.replace(regex, "$$$1$$");
+      }
       code = `${childrenCode} \\RightLabel{\\scriptsize{${rightLabelFormatted}}}\n${nodeCommand}\n`;
     } else {
       code = `${childrenCode} ${nodeCommand}\n`;

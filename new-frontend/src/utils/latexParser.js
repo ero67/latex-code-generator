@@ -10,18 +10,26 @@ const extractContent = (command, text) => {
   return match ? match[1] : '';
 };
 
-// Helper function to remove math mode formatting
+// Helper function to remove math mode formatting.
+// Only strips $ when the entire content is wrapped in a single $...$
+// to avoid merging commands with adjacent text (e.g. $\Rightarrow$I → \RightarrowI).
 const cleanMathMode = (content) => {
-  return content.replace(/\$([^$]*)\$/g, '$1');
+  const singleWrap = content.match(/^\$([^$]*)\$$/);
+  if (singleWrap) {
+    return singleWrap[1];
+  }
+  return content;
 };
 
 // Helper function to extract right label from RightLabel command
 // Note: in our generated LaTeX, \RightLabel typically appears on its own line
 // BEFORE the corresponding *InfC{...} command, so the parser must associate it
 // with the next inference node it sees.
+// We preserve $...$ in right labels since they often contain mixed math/text
+// (e.g. ($\Rightarrow$I)) where stripping $ would merge commands with adjacent letters.
 const extractRightLabel = (text) => {
   const match = text.match(/\\RightLabel\{\\scriptsize\{([^}]*)\}\}/);
-  return match ? cleanMathMode(match[1]) : '';
+  return match ? match[1] : '';
 };
 
 // Helper function to determine node type based on LaTeX command
