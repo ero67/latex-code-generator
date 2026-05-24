@@ -256,17 +256,33 @@ Where <orientationOption> is optional and only included if the tree is not top-d
     * \\TrinaryInfC{<content>} (for a node with 3 children)
     * \\QuaternaryInfC{<content>} (for a node with 4 children)
     * \\QuinaryInfC{<content>} (for a node with 5 children)
-    * \\RightLabel{\\scriptsize{<label>}} (if an inference rule has a label)
+    * \\RightLabel{\\scriptsize{<label>}} (for inference rule labels — see section 5 below)
 3.  **Forbidden Commands:** DO NOT use any other bussproofs commands (e.g., \\InferenceRule, \\fCenter, \\alwaysNoLine), environments, or any other LaTeX package commands.
-4.  **Math Mode Handling:**
+4.  **Math Mode Handling for Node Content:**
     * If a node contains logical commands starting with a backslash (e.g., \\lor, \\land, \\neg), wrap ONLY those commands in single $ delimiters (e.g., A $\\lor$ B). This is the local math mode.
     * If a node represents a self-contained logical formula (e.g., a premise or conclusion) or needs complex math, wrap the ENTIRE content string in single $ delimiters (e.g., $\\forall x P(x)$). This is the global math mode. Use this mode whenever possible for formulas.
+    * **Curly braces / set notation (CRITICAL):** If the image shows curly braces as part of mathematical content (e.g., sets like {a,b} or {¬m}), you MUST escape them with a backslash: \\{ and \\}. Curly braces are LaTeX grouping characters — without the backslash they are INVISIBLE in the output and their content may be lost.
+      - Example: a set {a, b} in the image → $\\{a, b\\}$ in the LaTeX output
+      - Example: {¬m, p} → $\\{\\neg m, p\\}$
+      - Example: Γ = {a, b, c} → $\\Gamma = \\{a, b, c\\}$
+      - NEVER write ${a,b}$ — this produces broken output. ALWAYS write $\\{a,b\\}$.
+5.  **Rule Labels (CRITICAL — do NOT skip):**
+    * You MUST capture ALL rule labels/annotations written next to inference lines in the diagram. These are typically written to the right of a horizontal line and name the inference rule being applied.
+    * Use the format: \\RightLabel{\\scriptsize{<label>}}
+    * Place the \\RightLabel command on its own line, immediately BEFORE the corresponding inference command (\\UnaryInfC, \\BinaryInfC, etc.).
+    * Common rule label formats — reproduce them EXACTLY as shown:
+      - Plain text labels: \\RightLabel{\\scriptsize{(ax)}}
+      - Labels with math symbols: \\RightLabel{\\scriptsize{($\\Rightarrow$I)}}
+      - More examples: ($\\Rightarrow$E), ($\\land$I), ($\\land$E), ($\\lor$I), ($\\lor$E), ($\\neg$I), ($\\neg$E), ($\\forall$I), ($\\forall$E), ($\\exists$I), ($\\exists$E), (MP), (cut), (ax)
+    * For labels containing logical symbols (→, ∧, ∨, ¬, ∀, ∃), wrap ONLY the symbol in $ delimiters within the label text. The surrounding text (like parentheses and rule name letters) stays outside $. For example: ($\\Rightarrow$I) NOT $\\Rightarrow I$ and NOT $(\\Rightarrow I)$.
+    * NEVER omit a label that is visible in the image, even if you are unsure of its exact text — make your best attempt.
 
 --- LOGICAL INTERPRETATION ---
 
 1.  Analyze the diagram's structure to determine the correct nesting order of premises and conclusions.
 2.  The number of premises directly above an inference line determines which command to use (\\UnaryInfC, \\BinaryInfC, etc.).
 3.  Place any rule label using the \\RightLabel command immediately before the inference command it annotates.
+4.  Read ALL text in the image carefully. Pay special attention to small annotations next to horizontal inference lines — these are rule labels and MUST be included.
 
 `,
 };
