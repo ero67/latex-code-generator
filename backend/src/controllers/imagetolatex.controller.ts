@@ -8,8 +8,6 @@ import { decryptSecret } from "../utils/encryption";
 import axios from "axios";
 import FormData from "form-data";
 
-// AI Provider configuration - set via environment variable
-// Options: "openai" | "openrouter"
 const AI_PROVIDER = process.env.AI_PROVIDER || "openrouter";
 
 const PREPROCESS_URL =
