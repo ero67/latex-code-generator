@@ -1,0 +1,531 @@
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import ImageService from "../../services/image.service";
+import ModelService from "../../services/model.service";
+import SettingsService from "../../services/settings.service";
+import ByokService from "../../services/byok.service";
+import GeneratedCode from "../../Components/GeneratedCode";
+import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
+import {
+  FaUpload,
+  FaImage,
+  FaSpinner,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaEdit,
+  FaInfoCircle,
+} from "react-icons/fa";
+
+const OPENROUTER_MODELS = [
+  "openai/gpt-4.1",
+  "openai/gpt-5.1",
+  "google/gemini-3-pro-preview",
+  "google/gemini-3-flash-preview",
+];
+
+const ImageToLatex = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [structureType, setStructureType] = useState("Karnaugh Map");
+  const [selectedModel, setSelectedModel] = useState("openai/gpt-4.1");
+  const [models, setModels] = useState(OPENROUTER_MODELS);
+  const [latexCode, setLatexCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [responseMeta, setResponseMeta] = useState(null);
+  const [byokEnabled, setByokEnabled] = useState(false);
+  const [byokConfigured, setByokConfigured] = useState(true);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        const response = await ModelService.getAvailableModels();
+        const apiModels = response.data?.data || [];
+        const modelIds = apiModels
+          .map((item) => item.modelId)
+          .filter(Boolean);
+
+        if (modelIds.length > 0) {
+          setModels(modelIds);
+          setSelectedModel((prev) =>
+            modelIds.includes(prev) ? prev : modelIds[0]
+          );
+        }
+      } catch (err) {
+        console.error("Failed to load models:", err);
+      }
+    };
+
+    loadModels();
+  }, []);
+
+  useEffect(() => {
+    const loadByokStatus = async () => {
+      try {
+        const [settingsResponse, statusResponse] = await Promise.all([
+          SettingsService.getPublicSettings(),
+          ByokService.getStatus(),
+        ]);
+        const settings = settingsResponse.data?.data || {};
+        const status = statusResponse.data?.data || {};
+        setByokEnabled(Boolean(settings.byokEnabled));
+        setByokConfigured(Boolean(status.configured));
+      } catch (err) {
+        console.error("Failed to load BYOK status:", err);
+        setByokEnabled(false);
+        setByokConfigured(true);
+      } finally {
+      }
+    };
+
+    loadByokStatus();
+  }, []);
+
+  const byokBlocked = byokEnabled && !byokConfigured;
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError(t('image.select_image'));
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        toast.error(t('image.valid_image'));
+        return;
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        setError(t('image.file_size'));
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        toast.error(t('image.file_size'));
+        return;
+      }
+      
+      setError(""); // Clear any previous errors
+      setSelectedFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setLatexCode("");
+    setError("");
+    // Reset file input
+    const fileInput = document.getElementById("file-upload");
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
+  const handleStructureChange = (event) => {
+    setStructureType(event.target.value);
+  };
+
+  const handleModelChange = (event) => {
+    setSelectedModel(event.target.value);
+  };
+
+  const handleEditInApp = () => {
+    if (!latexCode) {
+      toast.error(t('image.no_latex'));
+      return;
+    }
+
+    // Map structure types to routes
+    const routeMap = {
+      "Karnaugh Map": "/karnaugh-maps/create",
+      "Abstract Syntax Tree": "/ast/create",
+      "Proof Tree": "/proof-trees/create",
+      "Finite State Automata": "/finite-state-automata/create",
+      "Resolution Tree": "/resolution-trees/create",
+    };
+
+    const targetRoute = routeMap[structureType];
+    if (!targetRoute) {
+      toast.error(t('image.unknown_type', { type: structureType }));
+      return;
+    }
+
+    // Store LaTeX code in sessionStorage with structure type key
+    const storageKey = `pendingLatexImport_${structureType}`;
+    sessionStorage.setItem(storageKey, latexCode);
+
+    // Navigate to the appropriate page
+    navigate(targetRoute);
+    toast.success(t('image.redirecting', { type: structureType }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!selectedFile) {
+      toast.error(t('image.select_first'));
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setLatexCode("");
+    setResponseMeta(null);
+
+    try {
+      const response = await ImageService.uploadImage(
+        selectedFile,
+        structureType,
+        selectedModel
+      );
+      
+      if (response.data.status === "success") {
+        setLatexCode(response.data.latex);
+        setResponseMeta({
+          provider: response.data.provider,
+          model: response.data.model,
+          responseTimeMs: response.data.responseTimeMs,
+          cost: response.data.cost,
+          usage: response.data.usage,
+        });
+        toast.success(t('image.success'));
+        if (response.data.message) {
+          console.log("Server message:", response.data.message);
+        }
+      } else {
+        const errorMsg = response.data.message || "Failed to generate LaTeX. Please try again.";
+        setError(errorMsg);
+        toast.error(errorMsg);
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      let errorMsg = "Failed to generate LaTeX. Please try again.";
+      
+      if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (err.response?.status === 400) {
+        errorMsg = "Invalid file or missing structure type. Please check your input.";
+      } else if (err.response?.status === 500) {
+        errorMsg = "Server error. Please try again later.";
+      } else if (err.code === 'NETWORK_ERROR' || !err.response) {
+        errorMsg = "Network error. Please check your connection and try again.";
+      }
+      
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center p-6 md:p-8 bg-white rounded-xl shadow-lg max-w-4xl mx-auto my-8 border border-gray-200">
+      {/* Header */}
+      <div className="w-full mb-6">
+        <h2 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+          <FaImage className="text-blue-600" />
+          Image to LaTeX Converter
+        </h2>
+        <p className="text-gray-600 text-sm">
+          Upload an image and convert it to LaTeX code automatically
+        </p>
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
+          <FaInfoCircle className="text-blue-600 mt-0.5" />
+          <div className="text-sm text-blue-900">
+            <p className="font-semibold">Powered by OpenRouter</p>
+            <p className="text-blue-800">
+              Model selection uses OpenRouter to access multiple providers. Your
+              chosen model is sent with the request.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="w-full space-y-6">
+        {!byokBlocked && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <FaInfoCircle className="text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-900">
+                <p className="font-semibold mb-1">OpenRouter API key required</p>
+                <p className="text-blue-800 mb-2">
+                  You need to add your OpenRouter API key before using Image to LaTeX.
+                </p>
+                <Link
+                  to="/byok-tutorial"
+                  className="inline-flex items-center text-blue-700 font-semibold hover:text-blue-900"
+                >
+                  Add your API key now
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* File Upload Section */}
+        <div className="space-y-4">
+          <label
+            htmlFor="file-upload"
+            className="block text-sm font-semibold text-gray-700 mb-2"
+          >
+            Upload Image
+          </label>
+          
+          {!previewUrl ? (
+            <div className="relative">
+              <input
+                id="file-upload"
+                type="file"
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+                disabled={byokBlocked}
+              />
+              <label
+                htmlFor="file-upload"
+                className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 transition-colors duration-200 ${
+                  byokBlocked
+                    ? "cursor-not-allowed opacity-60"
+                    : "cursor-pointer hover:bg-gray-100 hover:border-blue-400"
+                }`}
+              >
+                <FaUpload className="w-12 h-12 text-gray-400 mb-3" />
+                <p className="mb-2 text-sm text-gray-600 font-medium">
+                  <span className="font-semibold text-blue-600">Click to upload</span> or drag and drop
+                </p>
+                <p className="text-xs text-gray-500">
+                  PNG, JPG, GIF up to 10MB
+                </p>
+              </label>
+            </div>
+          ) : (
+            <div className="relative border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors duration-200"
+                aria-label="Remove image"
+              >
+                <FaTimesCircle className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-4 mb-3">
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="max-h-48 max-w-full rounded-lg border border-gray-300 shadow-sm object-contain"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-700 mb-1">
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(selectedFile.size / 1024).toFixed(2)} KB
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Structure Type Selection */}
+        <div className="space-y-2">
+          <label
+            htmlFor="structure-type"
+            className="block text-sm font-semibold text-gray-700"
+          >
+            Structure Type
+          </label>
+          <select
+            id="structure-type"
+            value={structureType}
+            onChange={handleStructureChange}
+            disabled={byokBlocked}
+            className={`w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-700 transition-shadow duration-200 ${
+              byokBlocked
+                ? "opacity-60 cursor-not-allowed"
+                : "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            }`}
+          >
+            <option value="Karnaugh Map">Karnaugh Map</option>
+            <option value="Abstract Syntax Tree">Abstract Syntax Tree</option>
+            <option value="Proof Tree">Proof Tree</option>
+            <option value="Finite State Automata">Finite State Automata</option>
+            <option value="Resolution Tree">Resolution Tree</option>
+          </select>
+        </div>
+
+        {/* Model Selection */}
+        <div className="space-y-2">
+          <label
+            htmlFor="model-select"
+            className="block text-sm font-semibold text-gray-700"
+          >
+            OpenRouter Model
+          </label>
+          <select
+            id="model-select"
+            value={selectedModel}
+            onChange={handleModelChange}
+            disabled={byokBlocked}
+            className={`w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-700 transition-shadow duration-200 ${
+              byokBlocked
+                ? "opacity-60 cursor-not-allowed"
+                : "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            }`}
+          >
+            {models.map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500">
+            Uses OpenRouter to route requests to the selected model.
+          </p>
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          disabled={loading || !selectedFile || byokBlocked}
+          data-umami-event="Generate LaTeX from Image button"
+          data-umami-event-structure-type={structureType}
+        >
+          {loading ? (
+            <>
+              <FaSpinner className="animate-spin" />
+              <span>Generating LaTeX...</span>
+            </>
+          ) : (
+            <>
+              <FaCheckCircle />
+              <span>Generate LaTeX</span>
+            </>
+          )}
+        </button>
+
+        {loading && (
+          <div className="w-full mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-3 text-sm text-blue-900">
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse [animation-delay:150ms]" />
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse [animation-delay:300ms]" />
+              </div>
+              <span>Waiting for the model to respond...</span>
+            </div>
+            <span className="text-xs text-blue-700">OpenRouter</span>
+          </div>
+        )}
+      </form>
+
+      {byokBlocked && (
+        <div className="w-full mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+          <FaInfoCircle className="text-amber-600 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-amber-900">
+            <p className="font-semibold">OpenRouter key required</p>
+            <p className="text-amber-800">
+              BYOK is enabled. Add your OpenRouter API key in your profile to
+              use Image to LaTeX.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 mt-2">
+              <Link
+                to="/profile"
+                className="text-blue-700 hover:text-blue-900 font-semibold"
+              >
+                Go to Profile
+              </Link>
+              <Link
+                to="/byok-tutorial"
+                className="text-blue-700 hover:text-blue-900 font-semibold"
+              >
+                How to get a key
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Display */}
+      {error && (
+        <div className="w-full mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <FaTimesCircle className="text-red-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-red-700 text-sm">{error}</p>
+            {error.toLowerCase().includes("openrouter key not configured") && (
+              <Link
+                to="/byok-tutorial"
+                className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800 mt-2"
+              >
+                How to get an OpenRouter key
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Generated LaTeX Code */}
+      {latexCode && (
+        <div className="w-full mt-8 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <FaCheckCircle className="text-green-500" />
+              Generated LaTeX Code
+            </h3>
+          </div>
+          {responseMeta && (
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+              <span className="px-2 py-1 bg-gray-100 rounded-md">
+                Provider: {responseMeta.provider || "unknown"}
+              </span>
+              <span className="px-2 py-1 bg-gray-100 rounded-md">
+                Model: {responseMeta.model || "unknown"}
+              </span>
+              <span className="px-2 py-1 bg-gray-100 rounded-md">
+                Response time: {responseMeta.responseTimeMs ?? "-"} ms
+              </span>
+              {responseMeta.cost != null && (
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md font-medium">
+                  Cost: ${responseMeta.cost.toFixed(6)}
+                </span>
+              )}
+              {responseMeta.usage && (
+                <span className="px-2 py-1 bg-gray-100 rounded-md" title="Prompt / Completion / Total tokens">
+                  Tokens: {responseMeta.usage.prompt_tokens ?? 0} + {responseMeta.usage.completion_tokens ?? 0} = {responseMeta.usage.total_tokens ?? 0}
+                </span>
+              )}
+            </div>
+          )}
+          <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+            <GeneratedCode code={latexCode} />
+          </div>
+          {/* Edit in App Button */}
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={handleEditInApp}
+              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+              data-umami-event="Edit in App from Image to LaTeX button"
+              data-umami-event-structure-type={structureType}
+            >
+              <FaEdit />
+              <span>Edit in App</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ImageToLatex;

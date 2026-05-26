@@ -1,0 +1,200 @@
+version: "3.8"
+
+networks:
+  app-network:
+    driver: bridge
+
+services:
+  # Public entrypoint (ports 80/443) + HTTPS termination
+  reverse-proxy:
+    image: nginx:stable-alpine
+    container_name: latex-reverse-proxy
+    restart: always
+    environment:
+      - DOMAIN=${DOMAIN}
+      # Umami base URL used by nginx templates for proxying /umami/* + /api/send
+      - UMAMI_URL=${UMAMI_URL:-http://svra-ubuntu-server-0161.virtual.cloud.tuke.sk:9000}
+    # Ensure our config-generator runs even if the script file isn't marked executable on the host.
+    entrypoint: ["/bin/sh", "-c", "sh /docker-entrypoint.d/99-generate-conf.sh && exec nginx -g 'daemon off;'"]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/templates:/etc/nginx/templates:ro
+      - ./infra/nginx/docker-entrypoint.d:/docker-entrypoint.d:ro
+      # - certbot-www:/var/www/certbot:ro
+      # - certbot-conf:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+
+  # Let’s Encrypt one-off runner (used for initial issuance, manual renew/debug)
+  # certbot:
+  #   image: certbot/certbot:latest
+  #   container_name: latex-certbot
+  #   volumes:
+  #     - certbot-www:/var/www/certbot
+  #     - certbot-conf:/etc/letsencrypt
+  #   networks:
+  #     - app-network
+
+  # Let’s Encrypt auto-renew loop (runs in background)
+  # certbot-renew:
+  #   image: certbot/certbot:latest
+  #   container_name: latex-certbot-renew
+  #   volumes:
+  #     - certbot-www:/var/www/certbot
+  #     - certbot-conf:/etc/letsencrypt
+  #   entrypoint: /bin/sh -c
+  #   # Renew twice per day; nginx reload is handled by restarting/reloading reverse-proxy.
+  #   command: >
+  #     "trap exit TERM;
+  #      while :; do
+  #        certbot renew --webroot -w /var/www/certbot --quiet;
+  #        sleep 12h;
+  #      done"
+  #   networks:
+  #     - app-network
+
+  # Frontend (served internally; reverse-proxy exposes it publicly)
+  frontend:
+    build:
+      context: ./new-frontend
+      dockerfile: Dockerfile
+      args:
+        # Build frontend to use same-origin `/api` (served via reverse-proxy) to avoid HTTPS->HTTP mixed content.
+        - VITE_API_URL=/api
+    container_name: latex-frontend
+    restart: always
+    networks:
+      - app-network
+
+  # Backend Service (Node.js API)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: latex-backend
+    # Expose only to the internal docker network; reverse-proxy serves it publicly.
+    # If you need to access it directly for debugging, temporarily add back:
+    ports:
+      - "3001:3001"
+    restart: always
+    environment:
+      - PORT=3001
+      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@latex_db_instance:27017/latex-app?authSource=admin
+      - JWT_SECRET=${JWT_SECRET}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AI_PROVIDER=${AI_PROVIDER}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - BYOK_ENCRYPTION_KEY=${BYOK_ENCRYPTION_KEY}
+      - PREPROCESS_URL=http://python-preprocess:8000/preprocess
+      - UMAMI_URL=http://svra-ubuntu-server-0161.virtual.cloud.tuke.sk:9000
+      - LATEX_COMPILER_URL=http://latex-compiler:8080
+      - SSO_ISSUER=${SSO_ISSUER}
+      - SSO_CLIENT_ID=${SSO_CLIENT_ID}
+      - SSO_CLIENT_SECRET=${SSO_CLIENT_SECRET}
+      - SSO_REDIRECT_URI=${SSO_REDIRECT_URI}
+      - SSO_SCOPES=${SSO_SCOPES}
+      - GOOGLE_ISSUER=${GOOGLE_ISSUER}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - GOOGLE_SCOPES=${GOOGLE_SCOPES}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+    volumes:
+      - latex-temp:/tmp/latex
+    depends_on:
+      latex_db_instance:
+        condition: service_healthy
+      python-preprocess:
+        condition: service_started
+      latex-compiler:
+        condition: service_started
+    networks:
+      - app-network
+
+  # Database Service (MongoDB)
+  latex_db_instance:
+    image: mongo:latest
+    container_name: latex_db_instance
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app-network
+    healthcheck:
+      test: |
+        mongosh --host latex_db_instance \
+                --authenticationDatabase admin \
+                -u ${MONGO_ROOT_USERNAME} \
+                -p ${MONGO_ROOT_PASSWORD} \
+                --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 1)'
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: latex_db_instance
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD}
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASSWORD}
+    depends_on:
+      latex_db_instance:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Python preprocessing service (FastAPI + OpenCV)
+  python-preprocess:
+    build:
+      context: ./python-preprocess
+      dockerfile: Dockerfile
+    container_name: latex-preprocess
+    restart: always
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+
+  # LaTeX compilation service (FastAPI + TeXLive)
+  latex-compiler:
+    build:
+      context: ./latex-compiler
+      dockerfile: Dockerfile
+    container_name: latex-compiler
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - latex-temp:/tmp/latex
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  mongodb_data:
+  latex-temp:
+  # certbot-www:
+  # certbot-conf:

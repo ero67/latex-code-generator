@@ -1,0 +1,96 @@
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  ''      close;
+}
+
+# HTTP: serve ACME challenge + redirect everything else to HTTPS
+server {
+  listen 80;
+  server_name ${DOMAIN};
+
+  location /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+# HTTPS: terminate TLS and proxy to internal services
+server {
+  listen 443 ssl http2;
+  server_name ${DOMAIN};
+
+  client_max_body_size 25m;
+
+  # Docker DNS resolver (required so nginx re-resolves service names after container IP changes)
+  resolver 127.0.0.11 valid=10s ipv6=off;
+
+  ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+  # Reasonable defaults
+  ssl_session_cache shared:SSL:10m;
+  ssl_session_timeout 10m;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers off;
+
+  # Frontend (SPA)
+  location / {
+    set $frontend_upstream frontend:80;
+    proxy_pass http://$frontend_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # Backend API
+  location /api/ {
+    set $backend_upstream backend:3001;
+    # IMPORTANT: do NOT strip "/api" prefix; backend is mounted at /api/*
+    proxy_pass http://$backend_upstream;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # Umami tracking endpoint (script typically posts to /api/send).
+  # We proxy this exact path to Umami so tracking works even when the site is HTTPS.
+  location = /api/send {
+    set $umami_upstream ${UMAMI_URL};
+    proxy_pass $umami_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # Some Umami versions use /api/collect instead of /api/send.
+  location = /api/collect {
+    set $umami_upstream ${UMAMI_URL};
+    proxy_pass $umami_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # Serve Umami script and assets under /umami/* to avoid mixed-content blocking.
+  location ^~ /umami/ {
+    set $umami_upstream ${UMAMI_URL};
+    rewrite ^/umami/(.*)$ /$1 break;
+    proxy_pass $umami_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+
+
