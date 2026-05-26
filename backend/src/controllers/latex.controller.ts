@@ -1,11 +1,6 @@
 import { Request, Response } from "express";
 import { compileLaTeX, compileSVG } from "../services/latex.service";
 
-/**
- * Compile LaTeX code to PDF
- * POST /api/latex/compile
- * Body: { code: string }
- */
 export const compileLaTeXCode = async (req: Request, res: Response) => {
   try {
     const { code } = req.body;
@@ -56,11 +51,7 @@ export const compileLaTeXCode = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Compile LaTeX code to SVG
- * POST /api/latex/compile-svg
- * Body: { code: string }
- */
+
 export const compileLaTeXToSVG = async (req: Request, res: Response) => {
   try {
     const { code } = req.body;
