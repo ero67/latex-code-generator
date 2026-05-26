@@ -11,14 +11,11 @@ import {
   SSOProvider,
 } from "../config/sso.config";
 
-// In-memory store for SSO state (in production, use Redis or database)
-// Key: state token, Value: { codeVerifier, expiresAt }
 const ssoStateStore = new Map<
   string,
   { provider: SSOProvider; codeVerifier: string; expiresAt: number }
 >();
 
-// Clean up expired states every 10 minutes
 setInterval(() => {
   const now = Date.now();
   for (const [state, data] of ssoStateStore.entries()) {
@@ -28,10 +25,8 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000);
 
-/**
- * Initiate SSO login
- * Generates authorization URL and redirects user to SSO provider
- */
+
+ // Generates authorization URL and redirects user to SSO provider
 export const initiateSSO = async (req: Request, res: Response) => {
   try {
     const providerValue = req.params.provider;
@@ -67,10 +62,8 @@ export const initiateSSO = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Handle SSO callback
- * Processes the authorization code and creates/updates user
- */
+
+ //Processes the authorization code and creates/updates user
 export const handleCallback = async (req: Request, res: Response) => {
   try {
     const providerValue = req.params.provider;
@@ -133,15 +126,9 @@ export const handleCallback = async (req: Request, res: Response) => {
       );
     }
 
-    // Remove state from store (one-time use)
+    // Remove state from store
     ssoStateStore.delete(stateParam);
 
-    // IMPORTANT:
-    // Do NOT build callback URL from req.protocol/host. Behind reverse proxies,
-    // Express can see the internal scheme/host (often http), which causes a
-    // redirect_uri mismatch during the token exchange.
-    // Always use the configured redirect URI (must match the provider registration),
-    // and attach the query params from the incoming request.
     const { redirectUri } = getSSOConfig(providerParam);
     const callbackUrl = new URL(redirectUri);
     for (const [k, v] of Object.entries(req.query)) {
@@ -189,13 +176,10 @@ export const handleCallback = async (req: Request, res: Response) => {
     const token = user.generateAuthToken();
 
     // Redirect to frontend with token
-    // Option 1: Token in query parameter (simple, but less secure)
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
 
     // Create user object for frontend
     const userData = {
-      // Mongoose typings can expose `_id` as `unknown` depending on version/generics.
-      // `String(...)` safely normalizes it to a string without unsafe casting.
       id: String(user._id),
       email: user.email,
       name: user.name,
