@@ -1,0 +1,22 @@
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning,arrows}
+\pagestyle{empty}
+\begin{document}
+\begin{tikzpicture}[
+  ->,
+  >=stealth',
+  node distance=3cm,
+  every state/.style={thick, fill=gray!10},
+  initial text=$ $,
+]
+\node[state, initial] (q0) at (-3, 0) {q0};
+\node[state] (q1) at (0, 1) {q1};
+\node[state, accepting] (q2) at (3, 0) {q2};
+\draw
+  (q0) edge[above] node{a} (q1)
+  (q1) edge[above] node{b} (q2)
+  (q0) edge[loop above] node{b} (q0)
+  (q2) edge[loop above] node{a} (q2);
+\end{tikzpicture}
+\end{document}
