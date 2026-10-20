@@ -1,9 +1,9 @@
 # Illustrative examples
 
-Materials used in the SoftwareX article on LaTeX Code Generator. Application
-source release: [v1.0.0](https://github.com/ero67/latex-code-generator/releases/tag/v1.0.0),
-commit `84f9b2ab8ebf74e9738dda5070382c13513863b7`. These supplementary materials
-are provided in this directory separately from the v1.0.0 source archives.
+Materials used in the SoftwareX article on LaTeX Code Generator. These examples
+are included with the application source in
+[release v1.0.0](https://github.com/ero67/latex-code-generator/releases/tag/v1.0.0)
+and its source archives.
 
 | Article figure | Materials |
 | --- | --- |
