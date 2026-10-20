@@ -1,0 +1,19 @@
+\documentclass{article}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning,arrows}
+\pagestyle{empty}
+\begin{document}
+\begin{tikzpicture}[
+  ->,
+  >=stealth',
+  node distance=3cm,
+  every state/.style={thick, fill=gray!10},
+  initial text=$ $,
+]
+\node[state, initial] (q0) at (-2, 0) {q0};
+\node[state, accepting] (q1) at (1, 0) {q1};
+\draw
+  (q0) edge[above] node{a} (q1)
+  (q1) edge[loop above] node{b} (q1);
+\end{tikzpicture}
+\end{document}

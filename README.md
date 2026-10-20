@@ -247,6 +247,13 @@ The `deploy.sh` script automates deployment on a remote server:
 
 **Infrastructure:** Docker, Docker Compose, nginx, MongoDB, Umami (analytics)
 
+## Illustrative examples
+
+The [`examples/`](examples/README.md) directory contains the SoftwareX article's
+diagram inputs, saved LaTeX, PDF outputs, provenance notes, and deterministic
+checks. The examples were added after source release `v1.0.0`; they are available
+in the repository separately from that release's original source archives.
+
 ## License
 
 LaTeX Code Generator is licensed under the [MIT License](LICENSE.txt)
