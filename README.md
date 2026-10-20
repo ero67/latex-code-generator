@@ -249,12 +249,16 @@ The `deploy.sh` script automates deployment on a remote server:
 
 ## License
 
-MIT License
+LaTeX Code Generator is licensed under the [MIT License](LICENSE.txt)
+(SPDX identifier: `MIT`). The full license text is provided in `LICENSE.txt`.
 
 Copyright (c) 2026 Erik Laki and Ján Perháč
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: 
+You may use, copy, modify, distribute, sublicense, and sell copies of the software,
+including for commercial purposes, provided that you retain the copyright and
+permission notices in all copies or substantial portions of the software. The
+software is provided "AS IS", without warranty, as specified in the license.
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+Third-party dependencies and components retain their respective licenses. This
+software license is separate from the publication license of the accompanying
+SoftwareX article.
