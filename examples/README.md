@@ -1,6 +1,6 @@
 # Illustrative examples
 
-Materials used in the SoftwareX article on LaTeX Code Generator. These examples
+Materials used in the SoftwareX article on LaTeX Code Generator. The original illustrative examples
 are included with the application source in
 [release v1.0.0](https://github.com/ero67/latex-code-generator/releases/tag/v1.0.0)
 and its source archives.
@@ -51,4 +51,6 @@ not general parser correctness or a recognition benchmark.
 Original diagram materials are retained unchanged. Saved source can be compiled
 without an AI request. Fresh recognition depends on model availability and
 inference behavior and need not reproduce the retained output. No new user-study
-or recognition-benchmark dataset is reported.
+dataset is reported. A separate [three-model benchmark example](benchmark/README.md)
+contains the input image, original JSON export, and application screenshot.
+The benchmark materials were added after release `v1.0.0`.

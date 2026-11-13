@@ -1,0 +1,44 @@
+[
+    {
+        "model": "google/gemini-3.8-flash",
+        "structure": "Abstract Syntax Tree",
+        "file": "ast-input-original.png",
+        "latency": 6.96,
+        "output": "\\begin{forest}\n  [$+$\n    [$x$]\n    [$*$\n      [$y$]\n      [$-$\n        [$z$]\n        [$*$\n          [$2$]\n        ]\n      ]\n    ]\n  ]\n\\end{forest}",
+        "status": "success",
+        "cost": 0.00461175,
+        "usage": {
+            "prompt_tokens": 2194,
+            "completion_tokens": 679,
+            "total_tokens": 2873
+        }
+    },
+    {
+        "model": "anthropic/claude-sonnet-5.5",
+        "structure": "Abstract Syntax Tree",
+        "file": "ast-input-original.png",
+        "latency": 2.09,
+        "output": "\\begin{forest}\n[$+$\n  [$x$]\n  [$*$\n    [$y$]\n    [$-$\n      [$z$]\n      [$*$\n        [$2$]\n      ]\n    ]\n  ]\n]\n\\end{forest}",
+        "status": "success",
+        "cost": 0.013712,
+        "usage": {
+            "prompt_tokens": 6451,
+            "completion_tokens": 81,
+            "total_tokens": 6532
+        }
+    },
+    {
+        "model": "openai/gpt-6.1-sol",
+        "structure": "Abstract Syntax Tree",
+        "file": "ast-input-original.png",
+        "latency": 8.64,
+        "output": "\\begin{forest}\n[$+$,\n  [$x$]\n  [$*$,\n    [$y$]\n    [$-$,\n      [$z$]\n      [$*$,\n        [$2$]\n      ]\n    ]\n  ]\n]\n\\end{forest}",
+        "status": "success",
+        "cost": 0.018262,
+        "usage": {
+            "prompt_tokens": 8551,
+            "completion_tokens": 116,
+            "total_tokens": 8667
+        }
+    }
+]

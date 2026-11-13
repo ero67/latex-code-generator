@@ -252,6 +252,8 @@ The `deploy.sh` script automates deployment on a remote server:
 The [`examples/`](examples/README.md) directory contains the SoftwareX article's
 diagram inputs, saved LaTeX, PDF outputs, provenance notes, and deterministic
 checks. These materials are included in release `v1.0.0` and its source archives.
+A separate [three-model benchmark example](examples/benchmark/README.md), added
+after that release, includes the original input, JSON results, and screenshot.
 
 ## License
 
