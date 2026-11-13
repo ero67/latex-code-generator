@@ -1,11 +1,28 @@
 # Three-model AST transcription benchmark
 
-A retained Model Benchmark run from LaTeX Code Generator, supplied for the
-SoftwareX article. The same handwritten abstract syntax tree was submitted to
-three models through OpenRouter with structure type **Abstract Syntax Tree**.
-The input is deliberately unfinished: eight nodes and seven edges, with a
-missing operand at the lowest multiplication node. It is the original input
-used in Figure 6, before the user adds the missing `w`.
+This example shows how Model Benchmark compares the LaTeX produced by different
+multimodal models for the same handwritten diagram. The user uploads an image,
+selects **Abstract Syntax Tree**, and chooses **Gemini 3.8 Flash**, **Claude
+Sonnet 5.5**, and **GPT-6.1 Sol** from the model list. The application sends the
+image and AST prompt to each model through OpenRouter and displays the returned
+LaTeX alongside response time, token usage, and estimated cost.
+
+## Input diagram
+
+The handwritten syntax tree below is deliberately unfinished: it has eight
+nodes and seven edges, and its lowest multiplication node has only the operand
+`2`. This is the same input used in the article's Figure 6, before the missing
+operand `w` is added in the visual editor.
+
+<a href="ast-input-original.png"><img src="ast-input-original.png" alt="Original handwritten abstract syntax tree used as input for all three models" width="360"></a>
+
+## Results in the application
+
+The screenshot below records the Model Benchmark interface for this run.
+The original JSON export retains each model's complete LaTeX response and
+request measurements; the table in the next section summarizes those values.
+
+![Model Benchmark application screenshot for the three-model AST run](prtscr.png)
 
 ## Files
 

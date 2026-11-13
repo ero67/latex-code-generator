@@ -252,8 +252,34 @@ The `deploy.sh` script automates deployment on a remote server:
 The [`examples/`](examples/README.md) directory contains the SoftwareX article's
 diagram inputs, saved LaTeX, PDF outputs, provenance notes, and deterministic
 checks. These materials are included in release `v1.0.0` and its source archives.
-A separate [three-model benchmark example](examples/benchmark/README.md), added
-after that release, includes the original input, JSON results, and screenshot.
+
+### Comparing three models on the same handwritten diagram
+
+Model Benchmark lets users submit one diagram to several models and compare
+their generated LaTeX, response times, token usage, and estimated costs.
+The example below uses the same unfinished handwritten syntax tree with
+**Gemini 3.8 Flash**, **Claude Sonnet 5.5**, and **GPT-6.1 Sol** through OpenRouter.
+
+**Input image**
+
+<a href="examples/benchmark/ast-input-original.png"><img src="examples/benchmark/ast-input-original.png" alt="Handwritten syntax tree used in the three-model benchmark" width="320"></a>
+
+**Benchmark results in the application**
+
+![Application screenshot of the three-model AST benchmark](examples/benchmark/prtscr.png)
+
+| Model | Response time (s) | Total tokens | Estimated cost (USD) |
+| --- | ---: | ---: | ---: |
+| Gemini 3.8 Flash | 6.96 | 2873 | 0.00461175 |
+| Claude Sonnet 5.5 | 2.09 | 6532 | 0.01371200 |
+| GPT-6.1 Sol | 8.64 | 8667 | 0.01826200 |
+
+These are the recorded measurements for one input and one response per model.
+See the [benchmark documentation](examples/benchmark/README.md) for the workflow,
+field definitions, and full token counts, or download the
+[original JSON export](examples/benchmark/benchmark_Abstract_Syntax_Tree_1794585731056.json)
+to inspect the generated LaTeX. The benchmark materials were added after release
+`v1.0.0` and are available separately from its source archives.
 
 ## License
 
