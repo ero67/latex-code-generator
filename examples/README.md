@@ -53,4 +53,5 @@ without an AI request. Fresh recognition depends on model availability and
 inference behavior and need not reproduce the retained output. No new user-study
 dataset is reported. A separate [three-model benchmark example](benchmark/README.md)
 contains the input image, original JSON export, and application screenshot.
-The benchmark materials were added after release `v1.0.0`.
+The benchmark materials are included in the updated release `v1.0.0` and its
+source archives.

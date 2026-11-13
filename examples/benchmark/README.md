@@ -35,8 +35,10 @@ request measurements; the table in the next section summarizes those values.
   the export, retained without modification.
 - [checksums.json](checksums.json): SHA-256 checksums of these three source files.
 
-These materials were added after release `v1.0.0`; the original release and its
-source archives are unchanged.
+These materials are included in the updated [release `v1.0.0`](https://github.com/ero67/latex-code-generator/releases/tag/v1.0.0)
+and its source archives. The release tag was updated in November 2026 to include
+this benchmark; it previously pointed to commit
+`08b16a2a7bd40227cde6169113b09810151590c5`. The application code is unchanged.
 
 ## Exported results
 

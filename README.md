@@ -278,8 +278,8 @@ These are the recorded measurements for one input and one response per model.
 See the [benchmark documentation](examples/benchmark/README.md) for the workflow,
 field definitions, and full token counts, or download the
 [original JSON export](examples/benchmark/benchmark_Abstract_Syntax_Tree_1794585731056.json)
-to inspect the generated LaTeX. The benchmark materials were added after release
-`v1.0.0` and are available separately from its source archives.
+to inspect the generated LaTeX. The benchmark materials are included in the
+updated `v1.0.0` release and its source archives.
 
 ## License
 
